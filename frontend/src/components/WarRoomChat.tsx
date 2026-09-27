@@ -100,6 +100,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [roomsPagination, setRoomsPagination] = useState<Pagination>({ page: 1, pageSize: 50, total: 0, totalPages: 0 });
+  const [roomError, setRoomError] = useState('');
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isDebating, setIsDebating] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
@@ -120,6 +121,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
 
   const fetchRooms = async (page = 1) => {
     setLoadingRooms(true);
+    setRoomError('');
     try {
       const res = await fetch(apiUrl(`/api/rooms?page=${page}&pageSize=50`), {
         headers: { Authorization: `Bearer ${jwtToken}` }
@@ -360,6 +362,11 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
               </span>
             </div>
 
+            {roomError && (
+              <div className="mb-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2 text-[10px] text-rose-300">
+                {roomError}
+              </div>
+            )}
             <div className="space-y-1.5 overflow-y-auto max-h-[60vh] pr-1">
               {loadingRooms ? (
                 <div className="text-xs text-slate-500 p-3">Carregando salas...</div>
