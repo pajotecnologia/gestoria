@@ -155,7 +155,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
     setCreateLoading(true);
 
     try {
-      const res = await fetch('/api/rooms', {
+      const res = await fetch(apiUrl('/api/rooms'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
