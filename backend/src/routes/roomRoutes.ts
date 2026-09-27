@@ -4,6 +4,7 @@ import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { prisma } from './authRoutes';
 import { validateBody } from '../middlewares/validate';
 import { roomCreateSchema, roomMessageSchema, debateRoundSchema } from '../validation/schemas';
+import { parsePagination } from '../utils/pagination';
 
 const router = Router();
 router.use(tenantMiddleware);
@@ -83,14 +84,22 @@ Sua missão: Definir a estrutura técnica de distribuição de mídia para esta 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
-    const rooms = await prisma.room.findMany({
-      where: { tenantId },
-      include: {
-        _count: { select: { messages: true } }
-      },
-      orderBy: { updatedAt: 'desc' }
-    });
-    res.json({ success: true, data: rooms });
+    const { page, pageSize, skip, take } = parsePagination(req.query as Record<string, unknown>);
+    const [rooms, total] = await prisma.$transaction([
+      prisma.room.findMany({
+        where: { tenantId },
+        select: {
+          id: true, tenantId: true, title: true, topic: true, targetAudience: true,
+          objective: true, status: true, createdAt: true, updatedAt: true,
+          _count: { select: { messages: true } },
+        },
+        orderBy: { updatedAt: 'desc' },
+        skip,
+        take,
+      }),
+      prisma.room.count({ where: { tenantId } }),
+    ]);
+    res.json({ success: true, data: rooms, pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) } });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -141,7 +150,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     const room = await prisma.room.findFirst({
       where: { id, tenantId },
       include: {
-        messages: { orderBy: { createdAt: 'asc' } }
+        messages: { orderBy: { createdAt: 'asc' }, take: 500 }
       }
     });
 
