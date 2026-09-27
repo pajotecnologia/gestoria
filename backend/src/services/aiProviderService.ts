@@ -30,33 +30,37 @@ function candidates(preferred?: string | null): AiProvider[] {
   const order = [...env.aiFallbackOrder, 'openai', 'groq', 'ollama']
     .filter((value, index, all) => all.indexOf(value) === index)
     .filter((value): value is AiProvider => ['openai', 'groq', 'ollama'].includes(value));
-  if (!preferred || !['openai', 'groq', 'ollama'].includes(preferred)) return order;
-  return [preferred as AiProvider, ...order.filter((p) => p !== preferred)];
+  return preferred && ['openai', 'groq', 'ollama'].includes(preferred)
+    ? [preferred as AiProvider, ...order.filter((p) => p !== preferred)]
+    : order;
 }
 
-function nextKey(provider: AiProvider): string | null {
-  const keys = provider === 'openai' ? env.openaiApiKeys : provider === 'groq' ? env.groqApiKeys : [];
-  if (!keys.length) return null;
+function keyList(provider: AiProvider): string[] {
+  if (provider === 'openai') return env.openaiApiKeys;
+  if (provider === 'groq') return env.groqApiKeys;
+  return env.ollamaUrls;
+}
+
+function nextValue(provider: AiProvider): string | null {
+  const values = keyList(provider);
+  if (!values.length) return null;
   const cursor = keyCursor.get(provider) || 0;
-  const key = keys[cursor % keys.length];
-  keyCursor.set(provider, (cursor + 1) % keys.length);
-  return key;
+  const value = values[cursor % values.length];
+  keyCursor.set(provider, (cursor + 1) % values.length);
+  return value;
 }
 
-function markCapacity(provider: AiProvider, key?: string | null): void {
-  const suffix = key ? key.slice(-8) : 'default';
-  cooldownUntil.set(provider + ':' + suffix, Date.now() + 60_000);
+function isAvailable(provider: AiProvider, value: string): boolean {
+  return (cooldownUntil.get(provider + ':' + value.slice(-16)) || 0) <= Date.now();
 }
 
-function available(provider: AiProvider, key?: string | null): boolean {
-  const suffix = key ? key.slice(-8) : 'default';
-  return (cooldownUntil.get(provider + ':' + suffix) || 0) <= Date.now();
+function markCapacity(provider: AiProvider, value: string): void {
+  cooldownUntil.set(provider + ':' + value.slice(-16), Date.now() + 60_000);
 }
 
-async function callProvider(provider: AiProvider, options: ChatOptions): Promise<string> {
+async function callChat(provider: AiProvider, value: string, options: ChatOptions): Promise<string> {
   if (provider === 'ollama') {
-    const baseUrl = env.ollamaUrls[0];
-    const response = await axios.post(baseUrl.replace(/\/$/, '') + '/api/chat', {
+    const response = await axios.post(value.replace(/\/$/, '') + '/api/chat', {
       model: options.model || 'llama3.1',
       messages: options.messages,
       stream: false,
@@ -65,12 +69,8 @@ async function callProvider(provider: AiProvider, options: ChatOptions): Promise
     return response.data?.message?.content || response.data?.response || '';
   }
 
-  const key = nextKey(provider);
-  if (!key) throw new Error(provider.toUpperCase() + '_API_KEY não configurada.');
-  if (!available(provider, key)) throw new Error(provider.toUpperCase() + ' key em cooldown.');
-
   const client = new OpenAI({
-    apiKey: key,
+    apiKey: value,
     ...(provider === 'groq' ? { baseURL: 'https://api.groq.com/openai/v1' } : {}),
   });
   const completion = await client.chat.completions.create({
@@ -84,16 +84,18 @@ async function callProvider(provider: AiProvider, options: ChatOptions): Promise
 export async function generateText(options: ChatOptions): Promise<{ text: string; provider: AiProvider }> {
   const errors: string[] = [];
   for (const provider of candidates(options.provider)) {
-    try {
-      const text = await callProvider(provider, options);
-      if (!text.trim()) throw new Error('Provedor retornou resposta vazia.');
-      return { text, provider };
-    } catch (error: any) {
-      if (isCapacityError(error)) {
-        const key = provider === 'openai' ? env.openaiApiKeys[0] : provider === 'groq' ? env.groqApiKeys[0] : null;
-        markCapacity(provider, key);
+    const attempts = Math.max(1, keyList(provider).length);
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const value = nextValue(provider);
+      if (!value || !isAvailable(provider, value)) continue;
+      try {
+        const text = await callChat(provider, value, options);
+        if (!text.trim()) throw new Error('Provedor retornou resposta vazia.');
+        return { text, provider };
+      } catch (error: any) {
+        if (isCapacityError(error)) markCapacity(provider, value);
+        errors.push(provider + ': ' + String(error?.message || error));
       }
-      errors.push(provider + ': ' + String(error?.message || error));
     }
   }
   throw new Error('Nenhum provedor de IA disponível. ' + errors.join(' | '));
@@ -101,9 +103,10 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
 
 export async function generateEmbeddings(input: string[]): Promise<number[][]> {
   const errors: string[] = [];
-  for (let attempt = 0; attempt < Math.max(1, env.openaiApiKeys.length); attempt++) {
-    const key = nextKey('openai');
-    if (!key || !available('openai', key)) continue;
+  const attempts = Math.max(1, env.openaiApiKeys.length);
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const key = nextValue('openai');
+    if (!key || !isAvailable('openai', key)) continue;
     try {
       const client = new OpenAI({ apiKey: key });
       const response = await client.embeddings.create({ model: 'text-embedding-3-small', input });
