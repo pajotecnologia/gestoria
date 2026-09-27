@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { prisma } from './authRoutes';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { compileRTCEPrompt } from './promptCompiler';
+import { validateBody } from '../middlewares/validate';
+import { agentCreateSchema, agentUpdateSchema } from '../validation/schemas';
 
 const router = Router();
 router.use(tenantMiddleware);
@@ -43,7 +45,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Criar / Salvar Agente
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/', validateBody(agentCreateSchema), async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
     const { name, niche, provider, model, temperature, structure, variables, instanceName } = req.body;
@@ -80,7 +82,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Atualizar Agente
-router.put('/:id', async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', validateBody(agentUpdateSchema), async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
     const { id } = req.params;
