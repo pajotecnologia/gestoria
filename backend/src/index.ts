@@ -17,6 +17,7 @@ import roomRoutes from './routes/roomRoutes';
 import evolutionWebhookRoutes from './webhooks/evolutionWebhook';
 import userRoutes from './routes/userRoutes';
 import auditRoutes from './routes/auditRoutes';
+import tenantRoutes from './routes/tenantRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -51,6 +52,7 @@ app.get('/ready', async (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/tenant', tenantRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/prompts', promptCompilerRoutes);
 app.use('/api/rag', ragServiceRoutes);
