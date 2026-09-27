@@ -6,17 +6,18 @@ import { QdrantClient } from '@qdrant/js-client-rest';
 import crypto from 'crypto';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { prisma } from './authRoutes';
+import { env } from '../config/env';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } }); // 15MB
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
+const openai = env.openaiApiKey ? new OpenAI({ apiKey: env.openaiApiKey }) : null;
 const qdrant = new QdrantClient({
-  url: process.env.QDRANT_URL || 'http://localhost:6333',
-  apiKey: process.env.QDRANT_API_KEY || undefined,
+  url: env.qdrantUrl,
+  apiKey: env.qdrantApiKey || undefined,
 });
 
-const QDRANT_COLLECTION = process.env.QDRANT_COLLECTION || 'agency_saas_knowledge_base';
+const QDRANT_COLLECTION = env.qdrantCollection;
 
 async function ensureCollection() {
   try {
@@ -103,6 +104,11 @@ router.post(
       }
 
       const chunks = splitTextIntoChunks(extractedText, 1000, 150);
+
+      if (!openai) {
+        res.status(503).json({ error: 'Service Unavailable', message: 'OPENAI_API_KEY não configurada. A indexação RAG está indisponível.' });
+        return;
+      }
 
       // Gera embeddings em batch via OpenAI
       const embeddingResponse = await openai.embeddings.create({
