@@ -7,7 +7,8 @@ const router = Router();
 router.use(tenantMiddleware);
 
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '42960869-82j3-42be-923f-3602e5054d50';
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '';
+const EVOLUTION_WEBHOOK_SECRET = process.env.EVOLUTION_WEBHOOK_SECRET || '';
 
 const evoClient = axios.create({
   baseURL: EVOLUTION_API_URL,
@@ -37,6 +38,7 @@ router.post('/connect/:agentId', async (req: Request, res: Response): Promise<vo
         qrcode: true,
         webhook: `${process.env.APP_BACKEND_URL || 'http://backend:3000'}/api/evolution/webhook`,
         webhook_by_events: true,
+        headers: { 'x-webhook-secret': EVOLUTION_WEBHOOK_SECRET },
         events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE']
       });
     } catch (e: any) {
