@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import pdfParse from 'pdf-parse';
-import OpenAI from 'openai';
+import { generateEmbeddings } from '../services/aiProviderService';
 import { QdrantClient } from '@qdrant/js-client-rest';
 import crypto from 'crypto';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
@@ -13,7 +13,6 @@ import { writeAuditLog } from '../services/auditLog';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } }); // 15MB
 
-const openai = env.openaiApiKey ? new OpenAI({ apiKey: env.openaiApiKey }) : null;
 const qdrant = new QdrantClient({
   url: env.qdrantUrl,
   apiKey: env.qdrantApiKey || undefined,
@@ -108,22 +107,14 @@ router.post(
       await assertPlanCapacity(tenantId, 'knowledgeBytes', file.size);
       const chunks = splitTextIntoChunks(extractedText, 1000, 150);
 
-      if (!openai) {
-        res.status(503).json({ error: 'Service Unavailable', message: 'OPENAI_API_KEY não configurada. A indexação RAG está indisponível.' });
-        return;
-      }
-
-      // Gera embeddings em batch via OpenAI
-      const embeddingResponse = await openai.embeddings.create({
-        model: 'text-embedding-3-small',
-        input: chunks,
-      });
+      // Gera embeddings usando rotação automática de chaves OpenAI.
+      const embeddings = await generateEmbeddings(chunks);
 
       const points = chunks.map((chunk, index) => {
         const pointId = crypto.randomUUID();
         return {
           id: pointId,
-          vector: embeddingResponse.data[index].embedding,
+          vector: embeddings[index],
           payload: {
             tenantId,
             agentId,
