@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
+import { validateBody } from '../middlewares/validate';
+import { promptCompileSchema } from '../validation/schemas';
 
 const router = Router();
 
@@ -54,7 +56,7 @@ ${compiledSections.execution}
   return { compiledSections, fullSystemPrompt };
 }
 
-router.post('/compile', tenantMiddleware, async (req: Request, res: Response): Promise<void> => {
+router.post('/compile', tenantMiddleware, validateBody(promptCompileSchema), async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
     const { templateName, structure, variables, agentId } = req.body as PromptCompilerPayload;
