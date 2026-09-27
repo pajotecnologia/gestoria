@@ -1,5 +1,4 @@
 import crypto from 'crypto';
-import { env } from '../config/env';
 
 function getKey(): Buffer {
   const raw = process.env.AI_CREDENTIALS_ENCRYPTION_KEY?.trim();
