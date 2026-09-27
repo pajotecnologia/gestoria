@@ -19,6 +19,7 @@ import userRoutes from './routes/userRoutes';
 import auditRoutes from './routes/auditRoutes';
 import tenantRoutes from './routes/tenantRoutes';
 import aiProviderRoutes from './routes/aiProviderRoutes';
+import aiUsageRoutes from './routes/aiUsageRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -55,6 +56,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/tenant', tenantRoutes);
 app.use('/api/ai-providers', aiProviderRoutes);
+app.use('/api/ai-usage', aiUsageRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/prompts', promptCompilerRoutes);
 app.use('/api/rag', ragServiceRoutes);
