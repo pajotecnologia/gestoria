@@ -2,6 +2,7 @@ import { prisma } from '../routes/authRoutes';
 
 export type AiUsageInput = {
   tenantId: string;
+  requestId?: string | null;
   providerAccountId?: string | null;
   provider: string;
   model: string;
@@ -14,7 +15,7 @@ export type AiUsageInput = {
   errorType?: string | null;
 };
 
-export async function recordAiUsage(input: AiUsageInput): Promise<void> {
+export class AiMonthlyLimitError extends Error {\n  statusCode = 402;\n  code = 'AI_MONTHLY_LIMIT_REACHED';\n  constructor(public limit: number, public current: number) { super('Limite mensal de requisições de IA atingido.'); }\n}\n\nexport async function createAiRequest(tenantId: string, taskType: string): Promise<string> {\n  const { getPlanLimits } = await import('./planLimits');\n  const limits = await getPlanLimits(tenantId);\n  const request = await prisma.$transaction(async (tx) => {\n    if (limits.aiRequestsMonthly >= 0) {\n      await tx.$executeRawUnsafe('SELECT pg_advisory_xact_lock(hashtext($1)::bigint)', tenantId);\n      const since = new Date(); since.setUTCDate(1); since.setUTCHours(0, 0, 0, 0);\n      const current = await tx.aiRequest.count({ where: { tenantId, createdAt: { gte: since } } });\n      if (current >= limits.aiRequestsMonthly) throw new AiMonthlyLimitError(limits.aiRequestsMonthly, current);\n    }\n    return tx.aiRequest.create({ data: { tenantId, taskType } });\n  });\n  return request.id;\n}\n\nexport async function finalizeAiRequest(requestId: string, data: { success: boolean; provider?: string; model?: string; totalTokens?: number }) {\n  await prisma.aiRequest.update({ where: { id: requestId }, data: { success: data.success, provider: data.provider, model: data.model, totalTokens: Math.max(0, data.totalTokens || 0) } }).catch(() => undefined);\n}\n\nexport async function recordAiUsage(input: AiUsageInput): Promise<void> {
   await prisma.aiUsage.create({
     data: {
       tenantId: input.tenantId,
