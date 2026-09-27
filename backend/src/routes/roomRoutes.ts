@@ -242,6 +242,7 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
       const completion = await generateText({
         provider: 'openai',
         tenantId,
+        taskType: 'war_room',
         model: 'gpt-4o',
         temperature: 0.7,
         messages: [
