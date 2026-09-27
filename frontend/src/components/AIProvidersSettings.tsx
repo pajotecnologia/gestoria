@@ -55,7 +55,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
           <option value="openai">OpenAI</option><option value="groq">Groq</option><option value="ollama">Ollama</option>
         </select>
         <input required placeholder="Modelo" value={form.model} onChange={e => setForm({...form,model:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-        <input required type="password" placeholder="API Key / URL" value={form.apiKey} onChange={e => setForm({...form,apiKey:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+        <input required type="password" placeholder={form.provider === "ollama" ? "URL do Ollama" : "API Key"} value={form.apiKey} onChange={e => setForm({...form,apiKey:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
         <input required type="number" min="1" max="1000" placeholder="Prioridade" value={form.priority} onChange={e => setForm({...form,priority:Number(e.target.value) || 100})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
         <button className="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2">Cadastrar IA</button>
       </form>
