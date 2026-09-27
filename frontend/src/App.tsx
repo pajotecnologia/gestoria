@@ -4,6 +4,8 @@ import { AgentsDashboard } from './components/AgentsDashboard';
 import { WarRoomChat } from './components/WarRoomChat';
 import { apiUrl } from './api/client';
 import { AIProvidersSettings } from './components/AIProvidersSettings';
+import { UserManagement } from './components/UserManagement';
+import { AuditLogViewer } from './components/AuditLogViewer';
 
 export const App: React.FC = () => {
   const [token, setToken] = useState<string>(localStorage.getItem('token') || '');
@@ -11,7 +13,7 @@ export const App: React.FC = () => {
   const [tenant, setTenant] = useState<any>(JSON.parse(localStorage.getItem('tenant') || 'null'));
 
   // Navegação Principal
-  const [currentView, setCurrentView] = useState<'agents' | 'warroom' | 'ai'>('agents');
+  const [currentView, setCurrentView] = useState<'agents' | 'warroom' | 'ai' | 'users' | 'audit'>('agents');
 
   // Estados do Formulário de Auth
   const [isRegistering, setIsRegistering] = useState(false);
@@ -63,7 +65,9 @@ export const App: React.FC = () => {
     setToken('');
     setUser(null);
     setTenant(null);
-    localStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('tenant');
   };
 
   if (!token) {
@@ -214,6 +218,8 @@ export const App: React.FC = () => {
               <Users className="w-3.5 h-3.5 text-purple-400" />
               <span className="hidden md:inline">Mesa Redonda</span>
             </button>
+            {user?.role === 'AGENCY_ADMIN' && <button type="button" onClick={() => setCurrentView('users')} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'users' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}><Users className="w-3.5 h-3.5"/><span className="hidden md:inline">Usuários</span></button>}
+            {user?.role === 'AGENCY_ADMIN' && <button type="button" onClick={() => setCurrentView('audit')} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'audit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}><ShieldCheck className="w-3.5 h-3.5"/><span className="hidden md:inline">Auditoria</span></button>}
           </nav>
         </div>
 
@@ -240,8 +246,12 @@ export const App: React.FC = () => {
           <AgentsDashboard jwtToken={token} />
         ) : currentView === 'warroom' ? (
           <WarRoomChat jwtToken={token} />
-        ) : user?.role === 'AGENCY_ADMIN' ? (
+        ) : currentView === 'ai' && user?.role === 'AGENCY_ADMIN' ? (
           <AIProvidersSettings jwtToken={token} />
+        ) : currentView === 'users' && user?.role === 'AGENCY_ADMIN' ? (
+          <UserManagement jwtToken={token} />
+        ) : currentView === 'audit' && user?.role === 'AGENCY_ADMIN' ? (
+          <AuditLogViewer jwtToken={token} />
         ) : (
           <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl text-sm text-slate-400">A configuração de provedores de IA está disponível apenas para administradores da agência.</div>
         )}
