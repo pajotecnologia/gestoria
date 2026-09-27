@@ -322,6 +322,27 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
         </div>
       </div>
 
+      {/* Seletor de salas para mobile */}
+      <div className="md:hidden border-b border-slate-800 bg-slate-950/80 p-3 overflow-x-auto">
+        <div className="flex items-center gap-2 min-w-max">
+          {rooms.map((room) => (
+            <button
+              type="button"
+              key={room.id}
+              onClick={() => loadRoom(room)}
+              className={`px-3 py-2 rounded-xl border text-left max-w-56 ${
+                selectedRoom?.id === room.id
+                  ? 'bg-indigo-600/15 border-indigo-500/40 text-white'
+                  : 'bg-slate-900 border-slate-800 text-slate-400'
+              }`}
+            >
+              <p className="text-xs font-semibold truncate">{room.title}</p>
+              <p className="text-[10px] text-slate-500 truncate">{room.topic}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Main Layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar Esquerda: Lista de Salas */}
@@ -362,6 +383,29 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                 ))
               )}
             </div>
+            {roomsPagination.totalPages > 1 && (
+              <div className="pt-2 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  disabled={roomsPagination.page <= 1 || loadingRooms}
+                  onClick={() => fetchRooms(roomsPagination.page - 1)}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-[10px] text-slate-300 disabled:opacity-40"
+                >
+                  Anterior
+                </button>
+                <span className="text-[10px] text-slate-500">
+                  {roomsPagination.page}/{roomsPagination.totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={roomsPagination.page >= roomsPagination.totalPages || loadingRooms}
+                  onClick={() => fetchRooms(roomsPagination.page + 1)}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-[10px] text-slate-300 disabled:opacity-40"
+                >
+                  Próxima
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Squad Roster */}
