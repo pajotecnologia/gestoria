@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PLAN_LIMITS } from '../src/services/planLimits';
+import { PLAN_LIMITS } from '../src/config/planCatalog';
 
 describe('plan limits', () => {
   it('keeps explicit capacities for paid plans and unlimited enterprise', () => {
