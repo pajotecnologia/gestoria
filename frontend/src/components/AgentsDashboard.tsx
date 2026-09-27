@@ -12,8 +12,15 @@ interface Agent {
   provider: string;
   model: string;
   whatsappStatus: 'CONNECTED' | 'CONNECTING' | 'DISCONNECTED';
-  knowledgeFiles?: any[];
+  _count?: { knowledgeFiles: number };
   createdAt: string;
+}
+
+interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 }
 
 interface AgentsDashboardProps {
@@ -23,21 +30,23 @@ interface AgentsDashboardProps {
 export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState<Pagination>({ page: 1, pageSize: 50, total: 0, totalPages: 0 });
 
   // Modais e Telas
   const [selectedAgentForQR, setSelectedAgentForQR] = useState<Agent | null>(null);
   const [selectedAgentForRAG, setSelectedAgentForRAG] = useState<Agent | null>(null);
   const [editingAgent, setEditingAgent] = useState<Agent | null | 'new'>(null);
 
-  const fetchAgents = async () => {
+  const fetchAgents = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(apiUrl('/api/agents'), {
+      const res = await fetch(apiUrl(`/api/agents?page=${page}&pageSize=50`), {
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       const data = await res.json();
       if (data.success) {
         setAgents(data.data);
+        if (data.pagination) setPagination(data.pagination);
       }
     } catch (err) {
       console.error('Erro ao carregar agentes:', err);
@@ -53,7 +62,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
         method: 'DELETE',
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
-      fetchAgents();
+      fetchAgents(pagination.page);
     } catch (err) {
       console.error(err);
     }
@@ -83,7 +92,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
           jwtToken={jwtToken}
           onSaved={() => {
             setEditingAgent(null);
-            fetchAgents();
+            fetchAgents(pagination.page);
           }}
         />
       </div>
@@ -176,7 +185,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                   <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
                     <span className="flex items-center space-x-1">
                       <Database className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>{agent.knowledgeFiles?.length || 0} arquivos RAG</span>
+                      <span>{agent._count?.knowledgeFiles || 0} arquivos RAG</span>
                     </span>
                   </div>
                 </div>
@@ -224,6 +233,32 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3">
+          <span className="text-[11px] text-slate-400">
+            {pagination.total} agentes • Página {pagination.page} de {pagination.totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={pagination.page <= 1 || loading}
+              onClick={() => fetchAgents(pagination.page - 1)}
+              className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs text-slate-300 disabled:opacity-40"
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              disabled={pagination.page >= pagination.totalPages || loading}
+              onClick={() => fetchAgents(pagination.page + 1)}
+              className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs text-slate-300 disabled:opacity-40"
+            >
+              Próxima
+            </button>
+          </div>
         </div>
       )}
 
