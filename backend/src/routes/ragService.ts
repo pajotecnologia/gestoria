@@ -7,6 +7,8 @@ import crypto from 'crypto';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { prisma } from './authRoutes';
 import { env } from '../config/env';
+import { assertPlanCapacity, PlanLimitError } from '../services/planLimits';
+import { writeAuditLog } from '../services/auditLog';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } }); // 15MB
@@ -103,6 +105,7 @@ router.post(
         return;
       }
 
+      await assertPlanCapacity(tenantId, 'knowledgeBytes', file.size);
       const chunks = splitTextIntoChunks(extractedText, 1000, 150);
 
       if (!openai) {
@@ -140,7 +143,7 @@ router.post(
       });
 
       // Salva referência do arquivo no banco PostgreSQL
-      await prisma.knowledgeFile.create({
+      const knowledgeFile = await prisma.knowledgeFile.create({
         data: {
           tenantId,
           agentId,
@@ -150,6 +153,8 @@ router.post(
           chunksCount: points.length
         }
       });
+
+      await writeAuditLog({ tenantId, userId: req.user?.userId, action: 'KNOWLEDGE_FILE_CREATED', entity: 'KnowledgeFile', entityId: knowledgeFile.id, metadata: { fileName: file.originalname, fileSize: file.size, chunks: points.length } });
 
       res.status(200).json({
         success: true,
@@ -162,6 +167,7 @@ router.post(
         }
       });
     } catch (error: any) {
+      if (error instanceof PlanLimitError) { res.status(error.statusCode).json({ error: error.code, resource: error.resource, limit: error.limit, current: error.current }); return; }
       console.error('[RAG Service Error]:', error);
       res.status(500).json({ error: 'Internal Server Error', message: error.message });
     }
