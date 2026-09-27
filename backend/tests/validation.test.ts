@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { agentCreateSchema, loginSchema, roomMessageSchema } from '../src/validation/schemas';
+import { parsePagination } from '../src/utils/pagination';
 
 describe('request validation', () => {
   it('normalizes login email and rejects weak passwords', () => {
