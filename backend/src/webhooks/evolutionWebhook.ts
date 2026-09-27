@@ -10,7 +10,9 @@ const router = Router();
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379;
 const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '42960869-82j3-42be-923f-3602e5054d50';
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '';
+const EVOLUTION_WEBHOOK_SECRET = process.env.EVOLUTION_WEBHOOK_SECRET || '';
+if (process.env.NODE_ENV === 'production' && !EVOLUTION_WEBHOOK_SECRET) throw new Error('EVOLUTION_WEBHOOK_SECRET é obrigatório em produção.');
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/ai-agent';
 
 const redisConnection = new IORedis({
@@ -128,6 +130,10 @@ export const evolutionWorker = new Worker<WebhookJobData>(
 
 router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
   try {
+    const providedSecret = req.header('x-webhook-secret') || '';
+    if (!EVOLUTION_WEBHOOK_SECRET || providedSecret !== EVOLUTION_WEBHOOK_SECRET) {
+      res.status(401).json({ error: 'Unauthorized', message: 'Webhook não autenticado.' }); return;
+    }
     const body = req.body;
 
     if (body.event !== 'messages.upsert') {
