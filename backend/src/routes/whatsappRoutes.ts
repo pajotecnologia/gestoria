@@ -2,13 +2,14 @@ import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { prisma } from './authRoutes';
+import { env } from '../config/env';
 
 const router = Router();
 router.use(tenantMiddleware);
 
-const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '';
-const EVOLUTION_WEBHOOK_SECRET = process.env.EVOLUTION_WEBHOOK_SECRET || '';
+const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL?.trim();
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY?.trim();
+const EVOLUTION_WEBHOOK_SECRET = env.evolutionWebhookSecret || '';
 
 const evoClient = axios.create({
   baseURL: EVOLUTION_API_URL,
@@ -19,6 +20,7 @@ const evoClient = axios.create({
 // Criar instância e requisitar QR Code
 router.post('/connect/:agentId', async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY || !EVOLUTION_WEBHOOK_SECRET) { res.status(503).json({ error: 'Evolution API não está configurada corretamente.' }); return; }
     const tenantId = req.tenantId!;
     const { agentId } = req.params;
 
@@ -62,6 +64,7 @@ router.post('/connect/:agentId', async (req: Request, res: Response): Promise<vo
 // Checar Status de Conexão
 router.get('/status/:agentId', async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY) { res.status(503).json({ error: 'Evolution API não está configurada.' }); return; }
     const tenantId = req.tenantId!;
     const { agentId } = req.params;
 
