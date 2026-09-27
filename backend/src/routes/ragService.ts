@@ -10,7 +10,7 @@ import { prisma } from './authRoutes';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } }); // 15MB
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'placeholder-openai-key' });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
 const qdrant = new QdrantClient({
   url: process.env.QDRANT_URL || 'http://localhost:6333',
   apiKey: process.env.QDRANT_API_KEY || undefined,
@@ -76,6 +76,12 @@ router.post(
 
       if (!file) {
         res.status(400).json({ error: 'Bad Request', message: 'Nenhum arquivo enviado.' });
+        return;
+      }
+
+      const agent = await prisma.agent.findFirst({ where: { id: agentId, tenantId }, select: { id: true } });
+      if (!agent) {
+        res.status(404).json({ error: 'Not Found', message: 'Agente não encontrado ou não pertence a este tenant.' });
         return;
       }
 
