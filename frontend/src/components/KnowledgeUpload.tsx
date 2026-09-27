@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, FileText, CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
+import { apiUrl } from '../api/client';
 
 interface KnowledgeUploadProps {
   agentId: string;
@@ -68,7 +69,7 @@ export const KnowledgeUpload: React.FC<KnowledgeUploadProps> = ({
     formData.append('agentId', agentId);
 
     try {
-      const response = await fetch(apiEndpoint, {
+      const response = await fetch(apiUrl(apiEndpoint), {
         method: 'POST',
         headers: {
           Authorization: jwtToken ? `Bearer ${jwtToken}` : '',
