@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Bot, LogOut, ShieldCheck, Sparkles } from 'lucide-react';
+import { Bot, LogOut, ShieldCheck, Users, Radio } from 'lucide-react';
 import { AgentsDashboard } from './components/AgentsDashboard';
+import { WarRoomChat } from './components/WarRoomChat';
 
 export const App: React.FC = () => {
   const [token, setToken] = useState<string>(localStorage.getItem('token') || '');
   const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('user') || 'null'));
   const [tenant, setTenant] = useState<any>(JSON.parse(localStorage.getItem('tenant') || 'null'));
+
+  // Navegação Principal
+  const [currentView, setCurrentView] = useState<'agents' | 'warroom'>('agents');
 
   // Estados do Formulário de Auth
   const [isRegistering, setIsRegistering] = useState(false);
@@ -159,17 +163,48 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       {/* Navbar Superior */}
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
-            <Bot className="w-5 h-5" />
+      <header className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-bold text-sm text-white tracking-wide">Gestor IA SaaS</span>
+              <span className="text-[10px] text-slate-400 ml-2 px-2 py-0.5 bg-slate-800 rounded-full border border-slate-700">
+                {tenant?.name}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="font-bold text-sm text-white tracking-wide">Gestor IA SaaS</span>
-            <span className="text-[10px] text-slate-400 ml-2 px-2 py-0.5 bg-slate-800 rounded-full border border-slate-700">
-              {tenant?.name}
-            </span>
-          </div>
+
+          {/* Navegação de Módulos */}
+          <nav className="hidden sm:flex items-center space-x-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+            <button
+              type="button"
+              onClick={() => setCurrentView('agents')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                currentView === 'agents'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Radio className="w-3.5 h-3.5" />
+              <span>Agentes WhatsApp</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCurrentView('warroom')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                currentView === 'warroom'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 text-purple-400" />
+              <span>Mesa Redonda (War Room)</span>
+            </button>
+          </nav>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -181,7 +216,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs transition"
+            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs transition cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sair</span>
@@ -191,12 +226,16 @@ export const App: React.FC = () => {
 
       {/* Conteúdo Principal */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
-        <AgentsDashboard jwtToken={token} />
+        {currentView === 'agents' ? (
+          <AgentsDashboard jwtToken={token} />
+        ) : (
+          <WarRoomChat jwtToken={token} />
+        )}
       </main>
 
       {/* Footer */}
       <footer className="py-4 border-t border-slate-900 text-center text-xs text-slate-600">
-        Gestor IA &bull; Arquitetura Multi-Tenant com RAG Qdrant e Evolution API
+        Gestor IA &bull; Plataforma Multi-Tenant com RAG Qdrant, Evolution API e AI War Room
       </footer>
     </div>
   );

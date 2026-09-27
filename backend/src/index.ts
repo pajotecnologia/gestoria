@@ -8,6 +8,7 @@ import agentRoutes from './routes/agentRoutes';
 import promptCompilerRoutes from './routes/promptCompiler';
 import ragServiceRoutes from './routes/ragService';
 import whatsappRoutes from './routes/whatsappRoutes';
+import roomRoutes from './routes/roomRoutes';
 import evolutionWebhookRoutes from './webhooks/evolutionWebhook';
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/prompts', promptCompilerRoutes);
 app.use('/api/rag', ragServiceRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/rooms', roomRoutes);
 app.use('/api/evolution', evolutionWebhookRoutes);
 
 // Tratamento 404

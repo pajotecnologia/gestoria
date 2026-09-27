@@ -1,16 +1,29 @@
 # 🚀 Gestor IA - Plataforma SaaS Multi-Tenant para Agências de IA
 
-Plataforma SaaS de nível de produção para agências de marketing gerenciarem múltiplos agentes de IA e bases de conhecimento (RAG) para seus clientes de forma totalmente agnóstica a nicho de mercado.
+Plataforma SaaS de nível de produção para agências de marketing gerenciarem múltiplos agentes de IA de conversão/atendimento e operarem uma **Mesa Redonda de Agentes Especialistas (AI War Room)** para criação colaborativa de campanhas, copys, artes com IA (DALL-E 3) e roteiros de vídeo.
 
 ---
 
 ## 🛠️ Stack Tecnológica
-- **Backend**: Node.js, TypeScript, Express, Prisma ORM, PostgreSQL, BullMQ, Redis, Multer, OpenAI SDK.
+- **Backend**: Node.js, TypeScript, Express, Prisma ORM, PostgreSQL, BullMQ, Redis, Multer, OpenAI SDK (Chat + Embeddings + DALL-E 3).
 - **Frontend**: React.js, TypeScript, Vite, Tailwind CSS, Lucide Icons.
 - **RAG & Vector Database**: Qdrant Vector DB com particionamento seguro por `tenantId` e `agentId`.
 - **WhatsApp Gateway**: Evolution API com retentativas assíncronas e leitura de QR Code.
+- **Multi-Agent War Room**: Mesa redonda com Estrategista (CMO), Copywriter Sênior, Designer (DALL-E 3), Roteirista de Vídeos Curtos e Gestora de Tráfego.
 - **Orquestração de IA**: n8n Workflow com memória de sessão e LLM Router.
 - **Deploy & Hospedagem**: 100% pronto para **Coolify** e Docker Compose.
+
+---
+
+## 👥 Squad de Especialistas na Mesa Redonda (War Room)
+
+| Especialista | Papel & Atuação | Entregável |
+| :--- | :--- | :--- |
+| **🧠 Dr. Arthur Valente** | Estrategista Chefe & CMO | Tese da campanha, público-alvo e 3 ângulos de conversão |
+| **✍️ Camila Rocha** | Copywriter Sênior | Títulos magnéticos, textos de anúncios (AIDA/PAS) e CTAs |
+| **🎨 Lucas Viana** | Diretor de Arte & Designer | Paleta visual, conceito e **geração de artes em alta resolução (DALL-E 3)** |
+| **🎬 Gabriel Sato** | Roteirista de Vídeo | Roteiro estruturado segundo a segundo para Reels / TikTok / Shorts |
+| **📊 Renata Dias** | Gestora de Tráfego | Segmentação de público, orçamento de teste e KPIs de escala |
 
 ---
 
@@ -20,17 +33,17 @@ Plataforma SaaS de nível de produção para agências de marketing gerenciarem 
 GestorIA/
 ├── backend/                  # API REST TypeScript + Prisma + BullMQ
 │   ├── Dockerfile            # Multi-stage production build
-│   ├── prisma/schema.prisma  # Modelagem PostgreSQL Multi-Tenant
+│   ├── prisma/schema.prisma  # Modelagem PostgreSQL Multi-Tenant (Tenants, Agents, Rooms, Messages)
 │   └── src/
 │       ├── index.ts          # Servidor Express
 │       ├── middlewares/      # Isolamento JWT Multi-Tenant
-│       ├── routes/           # Auth, Agents, RTCE Compiler, RAG, WhatsApp
+│       ├── routes/           # Auth, Agents, RTCE Compiler, RAG, WhatsApp, Rooms (War Room)
 │       └── webhooks/         # Webhook assíncrono Evolution API
 ├── frontend/                 # Painel SPA React + Vite + Tailwind CSS
 │   ├── Dockerfile            # Multi-stage build com Nginx para SPA
 │   └── src/
-│       ├── components/       # PromptGenerator, AgentConfig, RAG Upload, QR Code Modal, Dashboard
-│       └── App.tsx           # Layout autenticado & Login/Register
+│       ├── components/       # PromptGenerator, AgentConfig, RAG Upload, QR Code Modal, Dashboard, WarRoomChat
+│       └── App.tsx           # Layout autenticado, Navegação Central/War Room & Login/Register
 ├── coolify-stack.yml         # Stack pronta para deploy com 1-clique no Coolify
 ├── docker-compose.yml        # Infraestrutura para rodar localmente
 ├── n8n-workflow-saas-agent.json # Fluxo do n8n exportado
@@ -49,7 +62,7 @@ GestorIA/
 
 ### 2. Conectar o Backend (Node.js)
 1. Clique em **+ New Resource** > **Git Repository**.
-2. Aponte para o repositório deste projeto.
+2. Aponte para `https://github.com/pajotecnologia/gestoria.git`.
 3. Configure:
    - **Base Directory**: `/backend`
    - **Build Pack**: `Dockerfile`
@@ -83,7 +96,7 @@ docker compose up -d
 cd backend
 npm install
 cp ../.env.example .env
-npx prisma migrate dev --name init
+npx prisma migrate dev --name init_warroom
 npm run dev
 ```
 

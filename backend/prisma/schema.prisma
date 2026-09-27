@@ -32,6 +32,7 @@ model Tenant {
   users       User[]
   agents      Agent[]
   knowledge   KnowledgeFile[]
+  rooms       Room[]
 
   @@map("tenants")
 }
@@ -100,4 +101,42 @@ model KnowledgeFile {
 
   @@index([tenantId, agentId])
   @@map("knowledge_files")
+}
+
+// ==========================================
+// SALAS DE REUNIÃO MULTI-AGENTE (WAR ROOM)
+// ==========================================
+model Room {
+  id          String   @id @default(uuid())
+  tenantId    String
+  title       String
+  topic       String   @db.Text
+  targetAudience String? @db.Text
+  objective   String?  @db.Text
+  status      String   @default("ACTIVE") // ACTIVE, ARCHIVED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages    RoomMessage[]
+
+  @@index([tenantId])
+  @@map("rooms")
+}
+
+model RoomMessage {
+  id          String   @id @default(uuid())
+  roomId      String
+  senderType  String   // USER, AGENT
+  agentRole   String   // STRATEGIST, COPYWRITER, DESIGNER, VIDEOMAKER, TRAFFIC_MANAGER, HUMAN
+  senderName  String
+  content     String   @db.Text
+  imageUrl    String?  @db.Text
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now())
+
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@map("room_messages")
 }
