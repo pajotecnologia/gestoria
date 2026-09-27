@@ -5,11 +5,11 @@ import { PrismaClient } from '@prisma/client';
 import { authRateLimiter } from '../middlewares/rateLimit';
 import { validateBody } from '../middlewares/validate';
 import { loginSchema, registerSchema } from '../validation/schemas';
+import { env } from '../config/env';
 
 export const prisma = new PrismaClient();
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) throw new Error('JWT_SECRET é obrigatório e deve possuir pelo menos 32 caracteres.');
+const JWT_SECRET = env.jwtSecret;
 
 // Registro de Nova Agência + Usuário Administrador
 router.post('/register', authRateLimiter, validateBody(registerSchema), async (req: Request, res: Response): Promise<void> => {
