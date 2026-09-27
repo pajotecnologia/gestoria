@@ -36,6 +36,7 @@ model Tenant {
   auditLogs   AuditLog[]
   aiProviders AiProviderAccount[]
   aiUsage     AiUsage[]
+  aiRequests  AiRequest[]
 
   @@map("tenants")
 }
@@ -168,6 +169,7 @@ model AuditLog {
 
 model AiUsage {
   id               String   @id @default(uuid())
+  requestId        String?
   tenantId         String
   providerAccountId String?
   provider         String
@@ -182,11 +184,13 @@ model AiUsage {
   createdAt        DateTime @default(now())
 
   tenant           Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  request          AiRequest?          @relation(fields: [requestId], references: [id], onDelete: SetNull)
   providerAccount  AiProviderAccount?  @relation(fields: [providerAccountId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, createdAt])
   @@index([tenantId, provider, createdAt])
   @@index([providerAccountId, createdAt])
+  @@index([requestId])
   @@map("ai_usage")
 }
 
@@ -209,4 +213,20 @@ model AiProviderAccount {
 
   @@index([tenantId, enabled, priority])
   @@map("ai_provider_accounts")
+}
+
+model AiRequest {
+  id            String   @id @default(uuid())
+  tenantId      String
+  taskType      String
+  success       Boolean  @default(false)
+  provider      String?
+  model         String?
+  totalTokens   Int      @default(0)
+  estimatedCost Float?
+  createdAt     DateTime @default(now())
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  usage         AiUsage[]
+  @@index([tenantId, createdAt])
+  @@map("ai_requests")
 }
