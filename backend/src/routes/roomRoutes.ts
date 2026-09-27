@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
+import { generateText } from '../services/aiProviderService';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { prisma } from './authRoutes';
 import { validateBody } from '../middlewares/validate';
@@ -12,9 +13,6 @@ import { env } from '../config/env';
 const router = Router();
 router.use(tenantMiddleware);
 
-const openai = env.openaiApiKey
-  ? new OpenAI({ apiKey: env.openaiApiKey })
-  : null;
 
 export interface AgentPersona {
   roleKey: 'STRATEGIST' | 'COPYWRITER' | 'DESIGNER' | 'VIDEOMAKER' | 'TRAFFIC_MANAGER';
@@ -234,11 +232,6 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
       ? [specificRole]
       : ['STRATEGIST', 'COPYWRITER', 'DESIGNER', 'VIDEOMAKER', 'TRAFFIC_MANAGER'];
 
-    if (!openai) {
-      res.status(503).json({ error: 'OPENAI_API_KEY não configurada. O War Room de IA está indisponível.' });
-      return;
-    }
-
     const newMessages = [];
 
     // Carrega histórico para contexto da conversa
@@ -248,7 +241,8 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
       const persona = SQUAD_PERSONAS[roleKey];
       if (!persona) continue;
 
-      const completion = await openai.chat.completions.create({
+      const completion = await generateText({
+        provider: 'openai',
         model: 'gpt-4o',
         temperature: 0.7,
         messages: [
@@ -269,7 +263,7 @@ Agora é a sua vez de contribuir, ${persona.name}. Construa suas ideias integran
         ]
       });
 
-      let content = completion.choices[0].message?.content || '';
+      let content = completion.text || '';
       let generatedImageUrl: string | null = null;
 
       // Se for o Designer e tiver gerado prompt de imagem, chama DALL-E 3
@@ -278,7 +272,9 @@ Agora é a sua vez de contribuir, ${persona.name}. Construa suas ideias integran
         if (promptMatch && promptMatch[1]) {
           const imagePrompt = promptMatch[1].trim();
           try {
-            const imageResponse = await openai.images.generate({
+            const imageClient = env.openaiApiKeys.length ? new OpenAI({ apiKey: env.openaiApiKeys[0] }) : null;
+            if (!imageClient) throw new Error('Nenhuma chave OpenAI configurada para geração de imagem.');
+            const imageResponse = await imageClient.images.generate({
               model: 'dall-e-3',
               prompt: imagePrompt,
               n: 1,
