@@ -115,7 +115,7 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
         if (!result.text.trim()) throw new Error('Provedor retornou resposta vazia.');
         if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, providerAccountId: account.id, provider, model: account.model, taskType: options.taskType || 'chat', inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens, success: true }).catch(() => undefined);
         await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastUsedAt: new Date(), lastError: null } });
-        if (options.tenantId && errors.length > 0) await writeAuditLog({ tenantId: options.tenantId, action: 'AI_PROVIDER_USED', entity: 'AiProviderAccount', entityId: null, metadata: { provider, taskType: options.taskType || 'chat' } }).catch(() => undefined);
+        if (options.tenantId && errors.length > 0) await writeAuditLog({ tenantId: options.tenantId, action: 'AI_PROVIDER_FALLBACK', entity: 'AiProviderAccount', entityId: null, metadata: { provider, taskType: options.taskType || 'chat' } }).catch(() => undefined);
         return { text: result.text, provider };
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity(provider, `account:${account.id}`);
