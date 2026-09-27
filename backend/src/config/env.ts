@@ -11,6 +11,10 @@ export const env = {
     .map((origin) => origin.trim())
     .filter(Boolean),
   openaiApiKey: process.env.OPENAI_API_KEY?.trim() || null,
+  openaiApiKeys: (process.env.OPENAI_API_KEYS || process.env.OPENAI_API_KEY || '').split(',').map((key) => key.trim()).filter(Boolean),
+  groqApiKeys: (process.env.GROQ_API_KEYS || process.env.GROQ_API_KEY || '').split(',').map((key) => key.trim()).filter(Boolean),
+  ollamaUrls: (process.env.OLLAMA_URLS || process.env.OLLAMA_URL || 'http://localhost:11434').split(',').map((url) => url.trim()).filter(Boolean),
+  aiFallbackOrder: (process.env.AI_FALLBACK_ORDER || 'openai,groq,ollama').split(',').map((provider) => provider.trim().toLowerCase()).filter(Boolean),
   evolutionWebhookSecret: process.env.EVOLUTION_WEBHOOK_SECRET?.trim() || null,
   qdrantUrl: process.env.QDRANT_URL?.trim() || 'http://localhost:6333',
   qdrantApiKey: process.env.QDRANT_API_KEY?.trim() || null,
