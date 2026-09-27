@@ -32,6 +32,7 @@ async function ensureCollection() {
 
       await qdrant.createPayloadIndex(QDRANT_COLLECTION, { field_name: 'tenantId', field_schema: 'keyword' });
       await qdrant.createPayloadIndex(QDRANT_COLLECTION, { field_name: 'agentId', field_schema: 'keyword' });
+      await qdrant.createPayloadIndex(QDRANT_COLLECTION, { field_name: 'knowledgeFileId', field_schema: 'keyword' });
     }
   } catch (err: any) {
     console.warn('[Qdrant Warning] Não foi possível conectar ao Qdrant no momento:', err.message);
