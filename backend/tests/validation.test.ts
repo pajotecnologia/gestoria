@@ -20,3 +20,16 @@ describe('request validation', () => {
     expect(roomMessageSchema.safeParse({ content: '   ' }).success).toBe(false);
   });
 });
+
+import { parsePagination } from '../src/utils/pagination';
+
+describe('pagination bounds', () => {
+  it('uses safe defaults and computes offsets', () => {
+    expect(parsePagination({})).toEqual({ page: 1, pageSize: 20, skip: 0, take: 20 });
+    expect(parsePagination({ page: '3', pageSize: '50' })).toEqual({ page: 3, pageSize: 50, skip: 100, take: 50 });
+  });
+
+  it('rejects abusive page sizes', () => {
+    expect(() => parsePagination({ pageSize: '1000' })).toThrow();
+  });
+});
