@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import OpenAI from 'openai';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { prisma } from './authRoutes';
+import { validateBody } from '../middlewares/validate';
+import { roomCreateSchema, roomMessageSchema, debateRoundSchema } from '../validation/schemas';
 
 const router = Router();
 router.use(tenantMiddleware);
@@ -95,7 +97,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Criar nova Sala de Reunião
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/', validateBody(roomCreateSchema), async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
     const { title, topic, targetAudience, objective } = req.body;
@@ -155,7 +157,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Usuário envia mensagem / feedback na sala
-router.post('/:id/message', async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/message', validateBody(roomMessageSchema), async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
     const { id } = req.params;
@@ -189,7 +191,7 @@ router.post('/:id/message', async (req: Request, res: Response): Promise<void> =
 });
 
 // Orquestrador do Debate em Rodada do Squad (Estrategista -> Copywriter -> Designer com DALL-E -> Videomaker -> Tráfego)
-router.post('/:id/debate-round', async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
     const { id } = req.params;
