@@ -3,6 +3,8 @@ import axios from 'axios';
 import { env } from '../config/env';
 import { prisma } from '../routes/authRoutes';
 import { decryptCredential } from './aiCredentialCrypto';
+import { recordAiUsage } from './aiUsage';
+import { writeAuditLog } from './auditLog';
 
 export type AiProvider = 'openai' | 'groq' | 'ollama';
 
@@ -17,6 +19,7 @@ export interface ChatOptions {
   temperature?: number;
   messages: ChatMessage[];
   tenantId?: string;
+  taskType?: 'chat' | 'embedding' | 'image' | 'rag' | 'war_room' | 'whatsapp';
 }
 
 const cooldownUntil = new Map<string, number>();
@@ -65,7 +68,7 @@ function markCapacity(provider: AiProvider, identity: string): void {
   cooldownUntil.set(cooldownKey(provider, identity), Date.now() + 60_000);
 }
 
-async function callChat(provider: AiProvider, value: string, options: ChatOptions): Promise<string> {
+async function callChat(provider: AiProvider, value: string, options: ChatOptions): Promise<{ text: string; inputTokens: number; outputTokens: number; totalTokens: number }> {
   if (provider === 'ollama') {
     const response = await axios.post(value.replace(/\/$/, '') + '/api/chat', {
       model: options.model || 'llama3.1',
@@ -73,7 +76,10 @@ async function callChat(provider: AiProvider, value: string, options: ChatOption
       stream: false,
       options: { temperature: options.temperature ?? 0.7 },
     }, { timeout: 60_000 });
-    return response.data?.message?.content || response.data?.response || '';
+    const text = response.data?.message?.content || response.data?.response || '';
+    const inputTokens = Number(response.data?.prompt_eval_count || 0);
+    const outputTokens = Number(response.data?.eval_count || 0);
+    return { text, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
   }
 
   const client = new OpenAI({
@@ -85,7 +91,10 @@ async function callChat(provider: AiProvider, value: string, options: ChatOption
     temperature: options.temperature ?? 0.7,
     messages: options.messages,
   });
-  return completion.choices[0]?.message?.content || '';
+  const text = completion.choices[0]?.message?.content || '';
+  const inputTokens = completion.usage?.prompt_tokens || 0;
+  const outputTokens = completion.usage?.completion_tokens || 0;
+  return { text, inputTokens, outputTokens, totalTokens: completion.usage?.total_tokens || inputTokens + outputTokens };
 }
 
 export async function generateText(options: ChatOptions): Promise<{ text: string; provider: AiProvider }> {
@@ -102,14 +111,17 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
       try {
         const value = decryptCredential(account.encryptedKey);
         if (!isAvailable(provider, `account:${account.id}`)) continue;
-        const text = await callChat(provider, value, { ...options, model: account.model });
-        if (!text.trim()) throw new Error('Provedor retornou resposta vazia.');
+        const result = await callChat(provider, value, { ...options, model: account.model });
+        if (!result.text.trim()) throw new Error('Provedor retornou resposta vazia.');
+        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, providerAccountId: account.id, provider, model: account.model, taskType: options.taskType || 'chat', inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens, success: true }).catch(() => undefined);
         await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastUsedAt: new Date(), lastError: null } });
-        return { text, provider };
+        if (options.tenantId && errors.length > 0) await writeAuditLog({ tenantId: options.tenantId, action: 'AI_PROVIDER_USED', entity: 'AiProviderAccount', entityId: null, metadata: { provider, taskType: options.taskType || 'chat' } }).catch(() => undefined);
+        return { text: result.text, provider };
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity(provider, `account:${account.id}`);
         await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastError: String(error?.message || error).slice(0, 500) } }).catch(() => undefined);
         errors.push(account.name + ': ' + String(error?.message || error));
+        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, providerAccountId: account.id, provider, model: account.model, taskType: options.taskType || 'chat', success: false, errorType: isCapacityError(error) ? 'CAPACITY' : 'PROVIDER_ERROR' }).catch(() => undefined);
       }
     }
   }
@@ -120,12 +132,14 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
       const value = nextValue(provider);
       if (!value || !isAvailable(provider, value)) continue;
       try {
-        const text = await callChat(provider, value, options);
-        if (!text.trim()) throw new Error('Provedor retornou resposta vazia.');
-        return { text, provider };
+        const result = await callChat(provider, value, options);
+        if (!result.text.trim()) throw new Error('Provedor retornou resposta vazia.');
+        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, provider, model: options.model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o'), taskType: options.taskType || 'chat', inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens, success: true }).catch(() => undefined);
+        return { text: result.text, provider };
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity(provider, value);
         errors.push(provider + ': ' + String(error?.message || error));
+        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, provider, model: options.model || 'unknown', taskType: options.taskType || 'chat', success: false, errorType: isCapacityError(error) ? 'CAPACITY' : 'PROVIDER_ERROR' }).catch(() => undefined);
       }
     }
   }
