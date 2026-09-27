@@ -25,7 +25,7 @@ Você pode criar um **Grupo no WhatsApp da sua Agência** e adicionar o bot. Os 
 | `@copywriter [tema]` | A Copywriter cria 3 headlines magnéticas + 2 variações completas de copy (AIDA / PAS). |
 | `@estrategista [tema]` | O Estrategista define posicionamento, público-alvo e 3 teses de conversão. |
 | `@video [tema]` | O Roteirista cria roteiro de 30 a 45 segundos estruturado cena a cena para Reels / TikTok. |
-| `@trafego [tema]` | A Gestora de Tráfego define segmentação de públicos, orçamento de teste e KPIs. |
+| `@trafego [tema]` | A Gestora de Tráfego define segmentação de público, orçamento de teste e KPIs. |
 | `!ajuda` | Exibe o menu com todos os comandos disponíveis no WhatsApp. |
 
 ---
@@ -56,13 +56,9 @@ GestorIA/
 │       ├── services/         # whatsappSquadService.ts (Comandos de Squad e DALL-E 3 no WhatsApp)
 │       └── webhooks/         # Webhook assíncrono Evolution API (Suporte a Grupos e Privado)
 ├── frontend/                 # Painel SPA React + Vite + Tailwind CSS
-│   ├── Dockerfile            # Multi-stage build com Nginx para SPA
-│   └── src/
-│       ├── components/       # PromptGenerator, AgentConfig, RAG Upload, QR Code Modal, Dashboard, WarRoomChat
-│       └── App.tsx           # Layout autenticado, Navegação Central/War Room & Login/Register
-├── coolify-stack.yml         # Stack pronta para deploy com 1-clique no Coolify
+├── coolify-stack.yml         # Stack de infraestrutura para Coolify
 ├── docker-compose.yml        # Infraestrutura para rodar localmente
-├── n8n-workflow-saas-agent.json # Fluxo do n8n exportado
+├── n8n-workflow-saas-agent.json
 └── .env.example              # Modelo de variáveis de ambiente
 ```
 
@@ -71,12 +67,16 @@ GestorIA/
 ## 🚢 Como Fazer o Deploy no Coolify
 
 ### 1. Subir a Stack de Infraestrutura
-1. No painel do **Coolify**, crie um **New Project** (ex: `Gestor IA`).
+
+1. No painel do **Coolify**, crie um **New Project** (ex.: `Gestor IA`).
 2. Clique em **+ New Resource** > **Docker Compose**.
-3. Cole o conteúdo de `coolify-stack.yml`.
-4. Defina as variáveis de ambiente necessárias (`POSTGRES_PASSWORD`, `EVOLUTION_API_KEY`, etc.) e clique em **Deploy**.
+3. Use o `coolify-stack.yml` deste repositório.
+4. Defina as variáveis de ambiente necessárias para os serviços que realmente serão utilizados.
+
+> **PostgreSQL externo:** se o Backend utilizar o PostgreSQL externo informado por você, o serviço `postgres` da `coolify-stack.yml` não precisa ser utilizado como banco da aplicação. Nesse cenário, o `DATABASE_URL` do Backend aponta diretamente para o servidor PostgreSQL externo.
 
 ### 2. Conectar o Backend (Node.js)
+
 1. Clique em **+ New Resource** > **Git Repository**.
 2. Aponte para `https://github.com/pajotecnologia/gestoria.git`.
 3. Configure:
@@ -84,10 +84,17 @@ GestorIA/
    - **Build Pack**: `Dockerfile`
    - **Port**: `3000`
    - **Domain**: `https://api.seudominio.com`
-4. Em **Environment Variables**, adicione as variáveis de conexão interna (`DATABASE_URL`, `REDIS_HOST=redis`, `QDRANT_URL=http://qdrant:6333`, `OPENAI_API_KEY`, etc.).
-5. Clique em **Deploy**. O Coolify executará o build e rodará as migrations automaticamente.
+4. Em **Environment Variables**, configure o PostgreSQL externo:
+   - `DATABASE_URL=postgresql://postgres:SENHA@HOST:5432/gestoria?schema=public`
+   - `JWT_SECRET` com pelo menos 32 caracteres
+   - `EVOLUTION_WEBHOOK_SECRET` em produção
+   - demais variáveis do `.env.example` conforme os serviços utilizados.
+5. **Não** coloque a senha do PostgreSQL no GitHub, `.env.example`, Dockerfile ou `docker-compose.yml`. No Coolify, use a área **Environment Variables / Secrets** do recurso Backend.
+6. Se o PostgreSQL estiver fora do Coolify, o servidor do Coolify precisa conseguir alcançar `HOST:5432` (firewall, ACL e configuração de acesso do PostgreSQL).
+7. O Dockerfile executará `prisma migrate deploy` automaticamente antes de iniciar a API.
 
 ### 3. Conectar o Frontend (React)
+
 1. Clique em **+ New Resource** > **Git Repository**.
 2. Configure:
    - **Base Directory**: `/frontend`
