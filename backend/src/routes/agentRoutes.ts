@@ -5,6 +5,8 @@ import { compileRTCEPrompt } from './promptCompiler';
 import { validateBody } from '../middlewares/validate';
 import { agentCreateSchema, agentUpdateSchema } from '../validation/schemas';
 import { parsePagination } from '../utils/pagination';
+import { assertPlanCapacity, PlanLimitError } from '../services/planLimits';
+import { writeAuditLog } from '../services/auditLog';
 
 const router = Router();
 router.use(tenantMiddleware);
@@ -60,6 +62,7 @@ router.post('/', validateBody(agentCreateSchema), async (req: Request, res: Resp
   try {
     const tenantId = req.tenantId!;
     const { name, niche, provider, model, temperature, structure, variables, instanceName } = req.body;
+    await assertPlanCapacity(tenantId, 'agents');
 
     if (!structure || !structure.role || !structure.task || !structure.context || !structure.execution) {
       res.status(400).json({ error: 'Estrutura RTCE incompleta.' });
@@ -86,8 +89,13 @@ router.post('/', validateBody(agentCreateSchema), async (req: Request, res: Resp
       }
     });
 
+    await writeAuditLog({ tenantId, userId: req.user?.userId, action: 'AGENT_CREATED', entity: 'Agent', entityId: agent.id, metadata: { provider: agent.provider, model: agent.model } });
     res.status(201).json({ success: true, data: agent });
   } catch (error: any) {
+    if (error instanceof PlanLimitError) {
+      res.status(error.statusCode).json({ error: error.code, resource: error.resource, limit: error.limit, current: error.current });
+      return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -123,6 +131,7 @@ router.put('/:id', validateBody(agentUpdateSchema), async (req: Request, res: Re
       return;
     }
 
+    await writeAuditLog({ tenantId, userId: req.user?.userId, action: 'AGENT_UPDATED', entity: 'Agent', entityId: id });
     res.json({ success: true, message: 'Agente atualizado com sucesso.' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -135,10 +144,9 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
     const tenantId = req.tenantId!;
     const { id } = req.params;
 
-    await prisma.agent.deleteMany({
-      where: { id, tenantId }
-    });
-
+    const deleted = await prisma.agent.deleteMany({ where: { id, tenantId } });
+    if (!deleted.count) { res.status(404).json({ error: 'Agente não encontrado.' }); return; }
+    await writeAuditLog({ tenantId, userId: req.user?.userId, action: 'AGENT_DELETED', entity: 'Agent', entityId: id });
     res.json({ success: true, message: 'Agente removido com sucesso.' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
