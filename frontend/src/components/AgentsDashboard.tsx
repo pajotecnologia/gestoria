@@ -3,6 +3,7 @@ import { Bot, Plus, QrCode, FileUp, Settings, Trash2, Database } from 'lucide-re
 import { WhatsAppConnectModal } from './WhatsAppConnectModal';
 import { KnowledgeUpload } from './KnowledgeUpload';
 import { AgentConfigForm } from './AgentConfigForm';
+import { apiUrl } from '../api/client';
 
 interface Agent {
   id: string;
@@ -31,7 +32,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
   const fetchAgents = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/agents', {
+      const res = await fetch(apiUrl('/api/agents'), {
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       const data = await res.json();
@@ -48,7 +49,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este agente?')) return;
     try {
-      await fetch(`/api/agents/${id}`, {
+      await fetch(apiUrl(`/api/agents/${id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
