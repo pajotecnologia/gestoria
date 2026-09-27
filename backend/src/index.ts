@@ -18,6 +18,7 @@ import evolutionWebhookRoutes from './webhooks/evolutionWebhook';
 import userRoutes from './routes/userRoutes';
 import auditRoutes from './routes/auditRoutes';
 import tenantRoutes from './routes/tenantRoutes';
+import aiProviderRoutes from './routes/aiProviderRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -53,6 +54,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/tenant', tenantRoutes);
+app.use('/api/ai-providers', aiProviderRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/prompts', promptCompilerRoutes);
 app.use('/api/rag', ragServiceRoutes);
