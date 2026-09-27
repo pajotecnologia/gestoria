@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, Cpu, FileCode2, Save, CheckCircle2 } from 'lucide-react';
 import { PromptGenerator, RTCEStructure, MARKET_TEMPLATES } from './PromptGenerator';
+import { apiUrl } from '../api/client';
 
 type TabType = 'general' | 'engine' | 'instructions';
 
@@ -89,7 +90,7 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
       const url = initialData?.id ? `/api/agents/${initialData.id}` : '/api/agents';
       const method = initialData?.id ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await fetch(apiUrl(url), {
         method,
         headers: {
           'Content-Type': 'application/json',
