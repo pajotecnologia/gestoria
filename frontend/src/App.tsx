@@ -3,6 +3,7 @@ import { Bot, LogOut, ShieldCheck, Users, Radio } from 'lucide-react';
 import { AgentsDashboard } from './components/AgentsDashboard';
 import { WarRoomChat } from './components/WarRoomChat';
 import { apiUrl } from './api/client';
+import { AIProvidersSettings } from './components/AIProvidersSettings';
 
 export const App: React.FC = () => {
   const [token, setToken] = useState<string>(localStorage.getItem('token') || '');
@@ -10,7 +11,7 @@ export const App: React.FC = () => {
   const [tenant, setTenant] = useState<any>(JSON.parse(localStorage.getItem('tenant') || 'null'));
 
   // Navegação Principal
-  const [currentView, setCurrentView] = useState<'agents' | 'warroom'>('agents');
+  const [currentView, setCurrentView] = useState<'agents' | 'warroom' | 'ai'>('agents');
 
   // Estados do Formulário de Auth
   const [isRegistering, setIsRegistering] = useState(false);
@@ -195,6 +196,14 @@ export const App: React.FC = () => {
 
             <button
               type="button"
+              onClick={() => setCurrentView('ai')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'ai' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+            >
+              <Bot className="w-3.5 h-3.5" />
+              <span>Provedores IA</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setCurrentView('warroom')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 currentView === 'warroom'
@@ -229,8 +238,12 @@ export const App: React.FC = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
         {currentView === 'agents' ? (
           <AgentsDashboard jwtToken={token} />
-        ) : (
+        ) : currentView === 'warroom' ? (
           <WarRoomChat jwtToken={token} />
+        ) : user?.role === 'AGENCY_ADMIN' ? (
+          <AIProvidersSettings jwtToken={token} />
+        ) : (
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl text-sm text-slate-400">A configuração de provedores de IA está disponível apenas para administradores da agência.</div>
         )}
       </main>
 
