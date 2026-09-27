@@ -53,12 +53,16 @@ function nextValue(provider: AiProvider): string | null {
   return value;
 }
 
-function isAvailable(provider: AiProvider, value: string): boolean {
-  return (cooldownUntil.get(provider + ':' + value.slice(-16)) || 0) <= Date.now();
+function cooldownKey(provider: AiProvider, identity: string): string {
+  return provider + ':' + identity.slice(-32);
 }
 
-function markCapacity(provider: AiProvider, value: string): void {
-  cooldownUntil.set(provider + ':' + value.slice(-16), Date.now() + 60_000);
+function isAvailable(provider: AiProvider, identity: string): boolean {
+  return (cooldownUntil.get(cooldownKey(provider, identity)) || 0) <= Date.now();
+}
+
+function markCapacity(provider: AiProvider, identity: string): void {
+  cooldownUntil.set(cooldownKey(provider, identity), Date.now() + 60_000);
 }
 
 async function callChat(provider: AiProvider, value: string, options: ChatOptions): Promise<string> {
@@ -97,13 +101,13 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
       if (!['openai', 'groq', 'ollama'].includes(provider)) continue;
       try {
         const value = decryptCredential(account.encryptedKey);
-        if (!isAvailable(provider, value)) continue;
+        if (!isAvailable(provider, `account:${account.id}`)) continue;
         const text = await callChat(provider, value, { ...options, model: account.model });
         if (!text.trim()) throw new Error('Provedor retornou resposta vazia.');
         await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastUsedAt: new Date(), lastError: null } });
         return { text, provider };
       } catch (error: any) {
-        if (isCapacityError(error)) markCapacity(provider, account.id);
+        if (isCapacityError(error)) markCapacity(provider, `account:${account.id}`);
         await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastError: String(error?.message || error).slice(0, 500) } }).catch(() => undefined);
         errors.push(account.name + ': ' + String(error?.message || error));
       }
@@ -165,4 +169,69 @@ export async function generateEmbeddings(input: string[], tenantId?: string): Pr
     }
   }
   throw new Error('Nenhuma chave OpenAI disponível para embeddings. ' + errors.join(' | '));
+}
+
+export async function generateImage(
+  prompt: string,
+  tenantId?: string
+): Promise<{ url: string; provider: 'openai' }> {
+  const errors: string[] = [];
+
+  if (tenantId) {
+    const accounts = await prisma.aiProviderAccount.findMany({
+      where: { tenantId, enabled: true, provider: 'openai' },
+      orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
+    });
+
+    for (const account of accounts) {
+      try {
+        const key = decryptCredential(account.encryptedKey);
+        if (!isAvailable('openai', `account:${account.id}:image`)) continue;
+        const client = new OpenAI({ apiKey: key });
+        const response = await client.images.generate({
+          model: account.model || 'dall-e-3',
+          prompt,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard',
+        });
+        const url = response.data?.[0]?.url;
+        if (!url) throw new Error('Provedor não retornou URL da imagem.');
+        await prisma.aiProviderAccount.update({
+          where: { id: account.id },
+          data: { lastUsedAt: new Date(), lastError: null },
+        });
+        return { url, provider: 'openai' };
+      } catch (error: any) {
+        if (isCapacityError(error)) markCapacity('openai', `account:${account.id}:image`);
+        errors.push(account.name + ': ' + String(error?.message || error));
+        await prisma.aiProviderAccount.update({
+          where: { id: account.id },
+          data: { lastError: String(error?.message || error).slice(0, 500) },
+        }).catch(() => undefined);
+      }
+    }
+  }
+
+  for (const key of env.openaiApiKeys) {
+    if (!isAvailable('openai', `env:${key}:image`)) continue;
+    try {
+      const client = new OpenAI({ apiKey: key });
+      const response = await client.images.generate({
+        model: 'dall-e-3',
+        prompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+      });
+      const url = response.data?.[0]?.url;
+      if (!url) throw new Error('OpenAI não retornou URL da imagem.');
+      return { url, provider: 'openai' };
+    } catch (error: any) {
+      if (isCapacityError(error)) markCapacity('openai', `env:${key}:image`);
+      errors.push('openai: ' + String(error?.message || error));
+    }
+  }
+
+  throw new Error('Nenhum provedor OpenAI disponível para geração de imagem. ' + errors.join(' | '));
 }
