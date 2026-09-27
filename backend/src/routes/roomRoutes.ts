@@ -150,7 +150,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     const room = await prisma.room.findFirst({
       where: { id, tenantId },
       include: {
-        messages: { orderBy: { createdAt: 'asc' }, take: 500 }
+        messages: { orderBy: { createdAt: 'desc' }, take: 500 }
       }
     });
 
@@ -159,6 +159,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    room.messages.reverse();
     res.json({ success: true, data: room });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -217,6 +218,8 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
       res.status(404).json({ error: 'Sala não encontrada.' });
       return;
     }
+
+    room.messages.reverse();
 
     // Papéis a serem executados na rodada
     const rolesToExecute: Array<keyof typeof SQUAD_PERSONAS> = specificRole
