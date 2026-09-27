@@ -6,7 +6,7 @@ import { prisma } from './authRoutes';
 const router = Router();
 router.use(tenantMiddleware);
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'placeholder-key' });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
 
 export interface AgentPersona {
   roleKey: 'STRATEGIST' | 'COPYWRITER' | 'DESIGNER' | 'VIDEOMAKER' | 'TRAFFIC_MANAGER';
