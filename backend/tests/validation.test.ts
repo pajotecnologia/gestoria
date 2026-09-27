@@ -22,7 +22,6 @@ describe('request validation', () => {
   });
 });
 
-import { parsePagination } from '../src/utils/pagination';
 
 describe('pagination bounds', () => {
   it('uses safe defaults and computes offsets', () => {
