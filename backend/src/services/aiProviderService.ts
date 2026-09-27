@@ -221,6 +221,7 @@ export async function generateImage(
           where: { id: account.id },
           data: { lastUsedAt: new Date(), lastError: null },
         });
+        if (tenantId) await recordAiUsage({ tenantId, providerAccountId: account.id, provider: 'openai', model: account.model || 'dall-e-3', taskType: 'image', success: true }).catch(() => undefined);
         return { url, provider: 'openai' };
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity('openai', `account:${account.id}:image`);
