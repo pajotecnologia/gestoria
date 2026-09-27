@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Bot, LogOut, ShieldCheck, Users, Radio } from 'lucide-react';
 import { AgentsDashboard } from './components/AgentsDashboard';
 import { WarRoomChat } from './components/WarRoomChat';
+import { apiUrl } from './api/client';
 
 export const App: React.FC = () => {
   const [token, setToken] = useState<string>(localStorage.getItem('token') || '');
@@ -31,7 +32,7 @@ export const App: React.FC = () => {
         ? { agencyName, name, email, password }
         : { email, password };
 
-      const res = await fetch(endpoint, {
+      const res = await fetch(apiUrl(endpoint), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
