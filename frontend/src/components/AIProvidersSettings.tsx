@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { BrainCircuit, CheckCircle2, Power, Trash2 } from 'lucide-react';
 import { apiUrl } from '../api/client';
 
+type UsageSummary = { totals: { requests: number; failures: number; totalTokens: number; estimatedCost: number }; byProvider: Array<{ provider: string; taskType: string; requests: number; failures: number; totalTokens: number; estimatedCost: number }> };
+
 type ProviderAccount = {
   id: string; name: string; provider: string; model: string; enabled: boolean; priority: number; lastError?: string | null; lastUsedAt?: string | null;
 };
@@ -10,6 +12,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
   const [accounts, setAccounts] = useState<ProviderAccount[]>([]);
   const [form, setForm] = useState({ name: '', provider: 'openai', model: 'gpt-4o', apiKey: '', priority: 100 });
   const [message, setMessage] = useState('');
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
 
   const load = async () => {
     const res = await fetch(apiUrl('/api/ai-providers'), { headers: { Authorization: `Bearer ${jwtToken}` } });
@@ -18,7 +21,13 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
     else setMessage(data.error || 'Não foi possível carregar os provedores.');
   };
 
-  useEffect(() => { void load(); }, [jwtToken]);
+  const loadUsage = async () => {
+    const res = await fetch(apiUrl('/api/ai-usage/summary?days=30'), { headers: { Authorization: `Bearer ${jwtToken}` } });
+    const data = await res.json();
+    if (res.ok) setUsage(data.data || null);
+  };
+
+  useEffect(() => { void load(); void loadUsage(); }, [jwtToken]);
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault(); setMessage('');
@@ -29,18 +38,18 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
     });
     const data = await res.json();
     if (!res.ok) { setMessage(data.error || 'Falha ao cadastrar IA.'); return; }
-    setForm({ ...form, name: '', apiKey: '' }); setMessage('Provedor cadastrado com segurança.'); await load();
+    setForm({ ...form, name: '', apiKey: '' }); setMessage('Provedor cadastrado com segurança.'); await load(); await loadUsage();
   };
 
   const toggle = async (id: string) => {
     await fetch(apiUrl(`/api/ai-providers/${id}/toggle`), { method: 'PATCH', headers: { Authorization: `Bearer ${jwtToken}` } });
-    await load();
+    await load(); await loadUsage();
   };
 
   const remove = async (id: string) => {
     if (!window.confirm('Remover este provedor de IA?')) return;
     await fetch(apiUrl(`/api/ai-providers/${id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${jwtToken}` } });
-    await load();
+    await load(); await loadUsage();
   };
 
   return (
@@ -49,6 +58,14 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         <div className="flex items-center gap-3"><BrainCircuit className="w-6 h-6 text-indigo-400" /><h2 className="text-xl font-bold text-white">Provedores de IA</h2></div>
         <p className="text-xs text-slate-400 mt-1">Cadastre várias contas. Se uma atingir quota, crédito ou rate limit, o sistema tenta automaticamente a próxima.</p>
       </div>
+      {usage && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div className="text-[11px] text-slate-400">Requisições (30 dias)</div><div className="text-xl font-bold text-white mt-1">{usage.totals.requests}</div></div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div className="text-[11px] text-slate-400">Falhas</div><div className="text-xl font-bold text-white mt-1">{usage.totals.failures}</div></div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div className="text-[11px] text-slate-400">Tokens</div><div className="text-xl font-bold text-white mt-1">{usage.totals.totalTokens.toLocaleString('pt-BR')}</div></div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div className="text-[11px] text-slate-400">Custo estimado</div><div className="text-xl font-bold text-white mt-1">US$ {usage.totals.estimatedCost.toFixed(4)}</div></div>
+        </div>
+      )}
       <form onSubmit={add} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <input required placeholder="Nome" value={form.name} onChange={e => setForm({...form,name:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
         <select value={form.provider} onChange={e => setForm({...form,provider:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
