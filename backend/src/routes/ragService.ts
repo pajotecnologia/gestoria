@@ -108,7 +108,7 @@ router.post(
       const chunks = splitTextIntoChunks(extractedText, 1000, 150);
 
       // Gera embeddings usando rotação automática de chaves OpenAI.
-      const embeddings = await generateEmbeddings(chunks);
+      const embeddings = await generateEmbeddings(chunks, tenantId);
 
       const points = chunks.map((chunk, index) => {
         const pointId = crypto.randomUUID();
