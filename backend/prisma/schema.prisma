@@ -33,6 +33,7 @@ model Tenant {
   agents      Agent[]
   knowledge   KnowledgeFile[]
   rooms       Room[]
+  auditLogs   AuditLog[]
 
   @@map("tenants")
 }
@@ -48,6 +49,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  auditLogs    AuditLog[]
 
   @@index([tenantId])
   @@map("users")
@@ -139,4 +141,24 @@ model RoomMessage {
 
   @@index([roomId])
   @@map("room_messages")
+}
+
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entity])
+  @@index([userId])
+  @@map("audit_logs")
 }
