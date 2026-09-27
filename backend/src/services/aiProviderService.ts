@@ -151,50 +151,104 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
 }
 
 export async function generateEmbeddings(input: string[], tenantId?: string): Promise<number[][]> {
+  if (!input.length) return [];
+
   const errors: string[] = [];
   const requestId = tenantId ? await createAiRequest(tenantId, 'rag') : null;
+  const model = env.openaiEmbeddingModel;
 
   if (tenantId) {
     const accounts = await prisma.aiProviderAccount.findMany({
       where: { tenantId, enabled: true, provider: 'openai' },
       orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
     });
+
     for (const account of accounts) {
       try {
         const key = decryptCredential(account.encryptedKey);
         if (!isAvailable('openai', `account:${account.id}:embedding`)) continue;
+
         const client = new OpenAI({ apiKey: key });
-        const response = await client.embeddings.create({ model: account.model || 'text-embedding-3-small', input });
-        await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastUsedAt: new Date(), lastError: null } });
-        if (tenantId) {
-          const inputTokens = Number(response.usage?.prompt_tokens || 0);
-          await recordAiUsage({ tenantId, requestId, providerAccountId: account.id, provider: 'openai', model: account.model || 'text-embedding-3-small', taskType: 'rag', inputTokens, totalTokens: inputTokens, success: true }).catch(() => undefined);
+        const response = await client.embeddings.create({ model, input });
+        const embeddings = response.data.map((item) => item.embedding);
+        const inputTokens = Number(response.usage?.prompt_tokens || 0);
+
+        await prisma.aiProviderAccount.update({
+          where: { id: account.id },
+          data: { lastUsedAt: new Date(), lastError: null },
+        });
+
+        await recordAiUsage({
+          tenantId,
+          requestId,
+          providerAccountId: account.id,
+          provider: 'openai',
+          model,
+          taskType: 'rag',
+          inputTokens,
+          totalTokens: inputTokens,
+          success: true,
+        }).catch(() => undefined);
+
+        if (requestId) {
+          await finalizeAiRequest(requestId, {
+            success: true,
+            provider: 'openai',
+            model,
+            totalTokens: inputTokens,
+          });
         }
-        if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'openai', model: account.model || 'text-embedding-3-small', totalTokens: inputTokens });
-        if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'openai', model: 'text-embedding-3-small', totalTokens: Number(response.usage?.prompt_tokens || 0) });
-      return response.data.map((item) => item.embedding);
+
+        return embeddings;
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity('openai', `account:${account.id}:embedding`);
-        errors.push(account.name + ': ' + String(error?.message || error));
-        if (tenantId) await recordAiUsage({ tenantId, requestId, providerAccountId: account.id, provider: 'openai', model: account.model || 'text-embedding-3-small', taskType: 'rag', success: false, errorType: isCapacityError(error) ? 'CAPACITY' : 'PROVIDER_ERROR' }).catch(() => undefined);
-        await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastError: String(error?.message || error).slice(0, 500) } }).catch(() => undefined);
+        const message = String(error?.message || error);
+        errors.push(account.name + ': ' + message);
+
+        await recordAiUsage({
+          tenantId,
+          requestId,
+          providerAccountId: account.id,
+          provider: 'openai',
+          model,
+          taskType: 'rag',
+          success: false,
+          errorType: isCapacityError(error) ? 'CAPACITY' : 'PROVIDER_ERROR',
+        }).catch(() => undefined);
+
+        await prisma.aiProviderAccount.update({
+          where: { id: account.id },
+          data: { lastError: message.slice(0, 500) },
+        }).catch(() => undefined);
       }
     }
   }
 
-  const attempts = Math.max(1, env.openaiApiKeys.length);
-  for (let attempt = 0; attempt < attempts; attempt++) {
+  for (let attempt = 0; attempt < Math.max(1, env.openaiApiKeys.length); attempt++) {
     const key = nextValue('openai');
     if (!key || !isAvailable('openai', key)) continue;
+
     try {
       const client = new OpenAI({ apiKey: key });
-      const response = await client.embeddings.create({ model: 'text-embedding-3-small', input });
-      return response.data.map((item) => item.embedding);
+      const response = await client.embeddings.create({ model, input });
+      const embeddings = response.data.map((item) => item.embedding);
+
+      if (requestId) {
+        await finalizeAiRequest(requestId, {
+          success: true,
+          provider: 'openai',
+          model,
+          totalTokens: Number(response.usage?.prompt_tokens || 0),
+        });
+      }
+
+      return embeddings;
     } catch (error: any) {
       if (isCapacityError(error)) markCapacity('openai', key);
-      errors.push(String(error?.message || error));
+      errors.push('openai: ' + String(error?.message || error));
     }
   }
+
   if (requestId) await finalizeAiRequest(requestId, { success: false });
   throw new Error('Nenhuma chave OpenAI disponível para embeddings. ' + errors.join(' | '));
 }
