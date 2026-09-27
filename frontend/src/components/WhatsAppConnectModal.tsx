@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { QrCode, WifiOff, RefreshCw, CheckCircle2, Loader2, X } from 'lucide-react';
+import { apiUrl } from '../api/client';
 
 interface WhatsAppConnectModalProps {
   agentId: string;
@@ -23,7 +24,7 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
   const fetchQRCode = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/whatsapp/connect/${agentId}`, {
+      const res = await fetch(apiUrl(`/api/whatsapp/connect/${agentId}`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
@@ -44,7 +45,7 @@ export const WhatsAppConnectModal: React.FC<WhatsAppConnectModalProps> = ({
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/whatsapp/status/${agentId}`, {
+        const res = await fetch(apiUrl(`/api/whatsapp/status/${agentId}`), {
           headers: { Authorization: `Bearer ${jwtToken}` }
         });
         const data = await res.json();
