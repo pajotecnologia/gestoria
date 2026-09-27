@@ -13,7 +13,7 @@ const router = Router();
 router.use(tenantMiddleware);
 
 const openai = env.openaiApiKey
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  ? new OpenAI({ apiKey: env.openaiApiKey })
   : null;
 
 export interface AgentPersona {
