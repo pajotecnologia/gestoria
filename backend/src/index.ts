@@ -15,6 +15,7 @@ import ragServiceRoutes from './routes/ragService';
 import whatsappRoutes from './routes/whatsappRoutes';
 import roomRoutes from './routes/roomRoutes';
 import evolutionWebhookRoutes from './webhooks/evolutionWebhook';
+import userRoutes from './routes/userRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,7 @@ app.get('/ready', async (_req, res) => {
 
 // Rotas da Aplicação
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/prompts', promptCompilerRoutes);
 app.use('/api/rag', ragServiceRoutes);
