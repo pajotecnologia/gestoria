@@ -62,7 +62,7 @@ router.post('/register', authRateLimiter, validateBody(registerSchema), async (r
       success: true,
       token,
       user: { id: result.user.id, name: result.user.name, email: result.user.email, role: result.user.role },
-      tenant: { id: result.tenant.id, name: result.tenant.name }
+      tenant: { id: result.tenant.id, name: result.tenant.name, plan: result.tenant.plan }
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -99,7 +99,7 @@ router.post('/login', authRateLimiter, validateBody(loginSchema), async (req: Re
       success: true,
       token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role },
-      tenant: { id: user.tenant.id, name: user.tenant.name }
+      tenant: { id: user.tenant.id, name: user.tenant.name, plan: user.tenant.plan }
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
