@@ -147,6 +147,9 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Não foi possível carregar a sala.');
+      }
       if (data.success) {
         setMessages(data.data.messages || []);
       }
