@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bot, Plus, QrCode, FileUp, Settings, Trash2, Database } from 'lucide-react';
 import { WhatsAppConnectModal } from './WhatsAppConnectModal';
-import { KnowledgeUpload } from './KnowledgeUpload';
+import { KnowledgeBaseManager } from './KnowledgeBaseManager';
 import { AgentConfigForm } from './AgentConfigForm';
 import { apiUrl } from '../api/client';
 
@@ -290,10 +290,11 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
             >
               Fechar &times;
             </button>
-            <KnowledgeUpload
+            <KnowledgeBaseManager
               agentId={selectedAgentForRAG.id}
+              agentName={selectedAgentForRAG.name}
               jwtToken={jwtToken}
-              onSuccess={() => fetchAgents()}
+              onChanged={() => fetchAgents()}
             />
           </div>
         </div>
