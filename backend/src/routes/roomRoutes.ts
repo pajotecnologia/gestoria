@@ -209,7 +209,7 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
     const room = await prisma.room.findFirst({
       where: { id, tenantId },
       include: {
-        messages: { orderBy: { createdAt: 'asc' } }
+        messages: { orderBy: { createdAt: 'asc' }, take: 500 }
       }
     });
 
