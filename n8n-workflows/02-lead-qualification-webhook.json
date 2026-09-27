@@ -1,0 +1,135 @@
+{
+  "name": "[Gestor IA] 02 - Qualificação Automática de Leads & Notificação",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "qualify-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Lead Event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "id": "node-qualify-webhook"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.2
+        },
+        "messages": {
+          "messageValues": [
+            {
+              "role": "system",
+              "message": "Você é um classificador de intenção de compra e qualificador de leads B2B/B2C.\nAnalise a última mensagem do lead e classifique:\n1. leadScore: de 0 a 100\n2. buyingIntent: 'HOT' (quer agendar/comprar agora), 'WARM' (tirando dúvidas sobre preço/condições), 'COLD' (apenas curioso)\n3. summary: Resumo da dor ou interesse em 1 frase curta\n\nResponda APENAS um JSON no formato:\n{\n  \"leadScore\": number,\n  \"buyingIntent\": \"HOT\" | \"WARM\" | \"COLD\",\n  \"summary\": \"string\",\n  \"needsHumanHandover\": boolean\n}"
+            },
+            {
+              "role": "user",
+              "message": "=Lead Name: {{ $json.body.userName }}\nMensagem: {{ $json.body.userMessage }}"
+            }
+          ]
+        }
+      },
+      "name": "OpenAI Intent Classifier",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.4,
+      "position": [460, 300],
+      "id": "node-intent-classifier"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawOutput = $input.first().json.message?.content || '{}';\ntry {\n  const parsed = JSON.parse(rawOutput.replace(/```json|```/g, '').trim());\n  return {\n    json: {\n      ...parsed,\n      userName: $('Webhook Lead Event').first().json.body.userName,\n      senderPhone: $('Webhook Lead Event').first().json.body.senderPhone,\n      timestamp: new Date().toISOString()\n    }\n  };\n} catch (e) {\n  return {\n    json: {\n      leadScore: 50,\n      buyingIntent: 'WARM',\n      summary: 'Conversa em andamento',\n      needsHumanHandover: false\n    }\n  };\n}"
+      },
+      "name": "Parse Qualification JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300],
+      "id": "node-parse-json"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.needsHumanHandover }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "É Lead Quente / Precisa de Humano?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [940, 300],
+      "id": "node-if-hot-lead"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"processed\",\n  \"qualification\": {{ JSON.stringify($json) }}\n}",
+        "options": {}
+      },
+      "name": "Devolver Status",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 300],
+      "id": "node-respond-lead"
+    }
+  ],
+  "connections": {
+    "Webhook Lead Event": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Intent Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Intent Classifier": {
+      "main": [
+        [
+          {
+            "node": "Parse Qualification JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Qualification JSON": {
+      "main": [
+        [
+          {
+            "node": "É Lead Quente / Precisa de Humano?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É Lead Quente / Precisa de Humano?": {
+      "main": [
+        [
+          {
+            "node": "Devolver Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Devolver Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

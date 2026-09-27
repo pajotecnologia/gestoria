@@ -1,0 +1,172 @@
+{
+  "name": "[Gestor IA] 01 - Agente de Atendimento RAG Multi-Tenant (WhatsApp + Qdrant)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Inbound (Backend Gestor IA)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [220, 300],
+      "id": "node-inbound-webhook"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-buffer",
+        "qdrantCollection": "agency_saas_knowledge_base",
+        "topK": 4,
+        "options": {
+          "filter": {
+            "must": [
+              {
+                "key": "tenantId",
+                "match": { "value": "={{ $json.body.tenantId }}" }
+              },
+              {
+                "key": "agentId",
+                "match": { "value": "={{ $json.body.agentId }}" }
+              }
+            ]
+          }
+        }
+      },
+      "name": "Qdrant Vector RAG (Multi-Tenant Filter)",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1,
+      "position": [540, 500],
+      "id": "node-qdrant-rag"
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small"
+      },
+      "name": "OpenAI Embeddings Engine",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [540, 720],
+      "id": "node-openai-embeddings"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.sessionId }}",
+        "contextWindowLength": 10
+      },
+      "name": "Memória Contextual (Window Buffer)",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.2,
+      "position": [780, 520],
+      "id": "node-window-memory"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "name": "OpenAI LLM Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [980, 520],
+      "id": "node-openai-llm"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.userMessage }}",
+        "hasOutputParser": false,
+        "systemMessage": "=Você é o assistente virtual oficial do cliente.\n\n### DIRETRIZES DO AGENTE:\n{{ $json.body.systemPrompt }}\n\n### DADOS DO ATENDIMENTO:\n- Nome do Usuário: {{ $json.body.userName }}\n- Telefone: {{ $json.body.senderPhone }}\n\n### REGRAS CRÍTICAS:\n1. Use as informações recuperadas na base de conhecimento (RAG) para responder com precisão e autoridade.\n2. Responda em parágrafos curtos e amigáveis, ideais para leitura no WhatsApp.\n3. Se a informação não constar na base de conhecimento, diga educadamente que irá encaminhar para um especialista humano da equipe."
+      },
+      "name": "AI Agent Conversational Orchestrator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [780, 300],
+      "id": "node-conversational-agent"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"output\": {{ JSON.stringify($json.output) }},\n  \"sessionId\": \"{{ $('Webhook Inbound (Backend Gestor IA)').item.json.body.sessionId }}\",\n  \"status\": \"success\"\n}",
+        "options": {}
+      },
+      "name": "Devolver Resposta ao Backend",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1160, 300],
+      "id": "node-respond-backend"
+    }
+  ],
+  "connections": {
+    "Webhook Inbound (Backend Gestor IA)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Conversational Orchestrator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector RAG (Multi-Tenant Filter)": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Conversational Orchestrator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings Engine": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector RAG (Multi-Tenant Filter)",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memória Contextual (Window Buffer)": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Conversational Orchestrator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI LLM Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Conversational Orchestrator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Conversational Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Devolver Resposta ao Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
