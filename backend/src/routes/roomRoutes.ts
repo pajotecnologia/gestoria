@@ -305,7 +305,6 @@ Agora é a sua vez de contribuir, ${persona.name}. Construa suas ideias integran
     res.status(200).json({ success: true, data: newMessages });
   } catch (error: any) {
     console.error('[War Room Error]:', error);
-    if (error instanceof AiMonthlyLimitError) { res.status(error.statusCode).json({ error: error.code, limit: error.limit, current: error.current }); return; }
     res.status(500).json({ error: error.message });
   }
 });
