@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
-import OpenAI from 'openai';
-import { generateText } from '../services/aiProviderService';
+import { generateImage, generateText } from '../services/aiProviderService';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { prisma } from './authRoutes';
 import { validateBody } from '../middlewares/validate';
@@ -8,7 +7,6 @@ import { roomCreateSchema, roomMessageSchema, debateRoundSchema } from '../valid
 import { parsePagination } from '../utils/pagination';
 import { assertPlanCapacity, PlanLimitError } from '../services/planLimits';
 import { writeAuditLog } from '../services/auditLog';
-import { env } from '../config/env';
 
 const router = Router();
 router.use(tenantMiddleware);
@@ -273,18 +271,10 @@ Agora é a sua vez de contribuir, ${persona.name}. Construa suas ideias integran
         if (promptMatch && promptMatch[1]) {
           const imagePrompt = promptMatch[1].trim();
           try {
-            const imageClient = env.openaiApiKeys.length ? new OpenAI({ apiKey: env.openaiApiKeys[0] }) : null;
-            if (!imageClient) throw new Error('Nenhuma chave OpenAI configurada para geração de imagem.');
-            const imageResponse = await imageClient.images.generate({
-              model: 'dall-e-3',
-              prompt: imagePrompt,
-              n: 1,
-              size: '1024x1024',
-              quality: 'standard'
-            });
-            generatedImageUrl = imageResponse.data?.[0]?.url || null;
+            const imageResponse = await generateImage(imagePrompt, tenantId);
+            generatedImageUrl = imageResponse.url;
           } catch (imgErr: any) {
-            console.warn('[DALL-E 3 Warning]: Não foi possível gerar a imagem:', imgErr.message);
+            console.warn('[AI Image Warning]: Não foi possível gerar a imagem:', imgErr.message);
           }
         }
       }
