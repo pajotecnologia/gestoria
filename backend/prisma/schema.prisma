@@ -1,0 +1,103 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  AGENCY_ADMIN
+  CLIENT_ADMIN
+  OPERATOR
+}
+
+enum PlanType {
+  TRIAL
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String
+  document    String?  // CNPJ / CPF
+  plan        PlanType @default(STARTER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  agents      Agent[]
+  knowledge   KnowledgeFile[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(OPERATOR)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Agent {
+  id                String   @id @default(uuid())
+  tenantId          String
+  name              String
+  niche             String
+  provider          String   @default("openai") // openai, groq, ollama
+  model             String   @default("gpt-4o")
+  temperature       Float    @default(0.4)
+  
+  // Estrutura RTCE
+  roleText          String   @db.Text
+  taskText          String   @db.Text
+  contextText       String   @db.Text
+  executionText     String   @db.Text
+  
+  // JSON de variáveis e System Prompt compilado
+  variablesJson     Json     @default("{}")
+  fullSystemPrompt  String   @db.Text
+  
+  // WhatsApp / Evolution API
+  instanceName      String?  @unique
+  whatsappStatus    String   @default("DISCONNECTED") // CONNECTED, DISCONNECTED, CONNECTING
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  knowledgeFiles    KnowledgeFile[]
+
+  @@index([tenantId])
+  @@map("agents")
+}
+
+model KnowledgeFile {
+  id            String   @id @default(uuid())
+  tenantId      String
+  agentId       String
+  fileName      String
+  fileSize      Int
+  mimeType      String
+  chunksCount   Int
+  createdAt     DateTime @default(now())
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, agentId])
+  @@map("knowledge_files")
+}

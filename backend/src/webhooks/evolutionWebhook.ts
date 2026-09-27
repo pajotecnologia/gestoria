@@ -1,0 +1,161 @@
+import { Router, Request, Response } from 'express';
+import { Queue, Worker, Job } from 'bullmq';
+import IORedis from 'ioredis';
+import axios from 'axios';
+import { prisma } from '../routes/authRoutes';
+
+const router = Router();
+
+const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
+const REDIS_PORT = Number(process.env.REDIS_PORT) || 6379;
+const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'http://localhost:8080';
+const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '42960869-82j3-42be-923f-3602e5054d50';
+const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/ai-agent';
+
+const redisConnection = new IORedis({
+  host: REDIS_HOST,
+  port: REDIS_PORT,
+  maxRetriesPerRequest: null,
+  lazyConnect: true,
+});
+
+redisConnection.on('error', (err) => {
+  console.warn('[Redis Warning] Não foi possível conectar ao Redis no momento:', err.message);
+});
+
+export interface WebhookJobData {
+  instanceName: string;
+  senderPhone: string;
+  messageText: string;
+  messageId: string;
+  pushName?: string;
+  receivedAt: number;
+}
+
+export const evolutionQueue = new Queue<WebhookJobData>('evolution-messages-queue', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 2000 },
+    removeOnComplete: 1000,
+    removeOnFail: 5000,
+  }
+});
+
+export const evolutionWorker = new Worker<WebhookJobData>(
+  'evolution-messages-queue',
+  async (job: Job<WebhookJobData>) => {
+    const { instanceName, senderPhone, messageText, pushName } = job.data;
+    const sessionId = `${instanceName}_${senderPhone}`;
+
+    try {
+      // 1. Busca no PostgreSQL dados do agente associado à instância
+      const agent = await prisma.agent.findFirst({
+        where: { instanceName }
+      });
+
+      // 2. Dispara requisição ao n8n
+      const n8nResponse = await axios.post(
+        N8N_WEBHOOK_URL,
+        {
+          sessionId,
+          instanceName,
+          senderPhone,
+          userName: pushName || 'Cliente',
+          userMessage: messageText,
+          tenantId: agent?.tenantId || 'global',
+          agentId: agent?.id || 'default',
+          systemPrompt: agent?.fullSystemPrompt || ''
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 45000
+        }
+      );
+
+      const aiReplyText = n8nResponse.data?.output || n8nResponse.data?.response || n8nResponse.data?.text;
+
+      if (!aiReplyText) {
+        return { status: 'skipped', reason: 'Nenhuma resposta gerada pelo fluxo n8n.' };
+      }
+
+      // 3. Devolve resposta via Evolution API
+      await axios.post(
+        `${EVOLUTION_API_URL}/message/sendText/${instanceName}`,
+        {
+          number: senderPhone,
+          text: aiReplyText,
+          delay: 1200,
+          linkPreview: false,
+        },
+        {
+          headers: {
+            'apikey': EVOLUTION_API_KEY,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      return { status: 'success', recipient: senderPhone, reply: aiReplyText };
+    } catch (err: any) {
+      console.error(`[Worker Error] Falha ao processar mensagem para ${senderPhone}:`, err.message);
+      throw err;
+    }
+  },
+  { connection: redisConnection, concurrency: 10 }
+);
+
+router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const body = req.body;
+
+    if (body.event !== 'messages.upsert') {
+      res.status(200).json({ received: true, ignoredEvent: body.event });
+      return;
+    }
+
+    const messageData = body.data;
+    const key = messageData?.key;
+    const isFromMe = key?.fromMe;
+
+    if (isFromMe) {
+      res.status(200).json({ received: true, ignored: 'self_message' });
+      return;
+    }
+
+    const instanceName = body.instance;
+    const senderJid = key?.remoteJid || '';
+    const senderPhone = senderJid.replace('@s.whatsapp.net', '');
+    const pushName = messageData?.pushName;
+
+    const messageText =
+      messageData?.message?.conversation ||
+      messageData?.message?.extendedTextMessage?.text ||
+      '';
+
+    if (!messageText.trim()) {
+      res.status(200).json({ received: true, ignored: 'empty_or_non_text_message' });
+      return;
+    }
+
+    await evolutionQueue.add(
+      'process-whatsapp-message',
+      {
+        instanceName,
+        senderPhone,
+        messageText,
+        messageId: key?.id || `${Date.now()}`,
+        pushName,
+        receivedAt: Date.now()
+      },
+      { jobId: key?.id }
+    );
+
+    res.status(200).json({ status: 'queued', messageId: key?.id });
+  } catch (error: any) {
+    console.error('[Evolution Webhook Error]:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+export default router;

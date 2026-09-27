@@ -1,0 +1,171 @@
+{
+  "name": "SaaS AI Agent Multi-Tenant (WhatsApp + Qdrant RAG + LLM)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Inbound Message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "node-webhook-inbound"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-buffer",
+        "qdrantCollection": "agency_saas_knowledge_base",
+        "topK": 3,
+        "options": {
+          "filter": {
+            "must": [
+              {
+                "key": "tenantId",
+                "match": { "value": "={{ $json.body.tenantId }}" }
+              },
+              {
+                "key": "agentId",
+                "match": { "value": "={{ $json.body.agentId }}" }
+              }
+            ]
+          }
+        }
+      },
+      "name": "Qdrant Vector Search",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1,
+      "position": [540, 480],
+      "id": "node-qdrant-search"
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-small"
+      },
+      "name": "OpenAI Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1,
+      "position": [540, 680],
+      "id": "node-openai-embeddings"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.sessionId }}"
+      },
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1,
+      "position": [780, 520],
+      "id": "node-chat-memory"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [980, 520],
+      "id": "node-openai-llm"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.userMessage }}",
+        "hasOutputParser": false,
+        "systemMessage": "Você é um assistente de conversão de alta performance.\nUse o contexto recuperado da base de conhecimento (RAG) para responder com máxima precisão.\nSe não souber, diga educadamente que irá transferir para um atendente humano."
+      },
+      "name": "AI Agent Orchestrator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [780, 300],
+      "id": "node-agent-orchestrator"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"output\": {{ JSON.stringify($json.output) }},\n  \"sessionId\": \"{{ $('Webhook Inbound Message').item.json.body.sessionId }}\"\n}",
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1140, 300],
+      "id": "node-respond-webhook"
+    }
+  ],
+  "connections": {
+    "Webhook Inbound Message": {
+      "main": [
+        [
+          {
+            "node": "AI Agent Orchestrator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent Orchestrator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Search",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent Orchestrator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent Orchestrator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

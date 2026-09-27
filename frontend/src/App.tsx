@@ -1,0 +1,203 @@
+import React, { useState } from 'react';
+import { Bot, LogOut, ShieldCheck, Sparkles } from 'lucide-react';
+import { AgentsDashboard } from './components/AgentsDashboard';
+
+export const App: React.FC = () => {
+  const [token, setToken] = useState<string>(localStorage.getItem('token') || '');
+  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('user') || 'null'));
+  const [tenant, setTenant] = useState<any>(JSON.parse(localStorage.getItem('tenant') || 'null'));
+
+  // Estados do Formulário de Auth
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [agencyName, setAgencyName] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthLoading(true);
+
+    try {
+      const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
+      const body = isRegistering
+        ? { agencyName, name, email, password }
+        : { email, password };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Falha na autenticação.');
+      }
+
+      setToken(data.token);
+      setUser(data.user);
+      setTenant(data.tenant);
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('tenant', JSON.stringify(data.tenant));
+    } catch (err: any) {
+      setAuthError(err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setToken('');
+    setUser(null);
+    setTenant(null);
+    localStorage.clear();
+  };
+
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
+          <div className="text-center mb-8">
+            <div className="inline-flex p-3 bg-indigo-600/20 text-indigo-400 rounded-2xl border border-indigo-500/30 mb-3">
+              <Bot className="w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">Gestor IA SaaS</h1>
+            <p className="text-xs text-slate-400 mt-1">Plataforma Multi-Tenant de Agentes de IA para Agências</p>
+          </div>
+
+          <form onSubmit={handleAuth} className="space-y-4">
+            {isRegistering && (
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nome da Agência / Empresa</label>
+                  <input
+                    type="text"
+                    required
+                    value={agencyName}
+                    onChange={(e) => setAgencyName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    placeholder="Ex: Agência Nexus Marketing"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Seu Nome</label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    placeholder="Ex: Carlos Silva"
+                  />
+                </div>
+              </>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Email Profissional</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                placeholder="seu@email.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Senha</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {authError && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs">
+                {authError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition cursor-pointer"
+            >
+              {authLoading ? 'Processando...' : isRegistering ? 'Criar Conta da Agência' : 'Acessar Painel'}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIsRegistering(!isRegistering);
+                setAuthError('');
+              }}
+              className="text-xs text-indigo-400 hover:text-indigo-300"
+            >
+              {isRegistering ? 'Já possui conta? Faça login' : 'Não tem conta? Cadastre sua agência'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      {/* Navbar Superior */}
+      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+            <Bot className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="font-bold text-sm text-white tracking-wide">Gestor IA SaaS</span>
+            <span className="text-[10px] text-slate-400 ml-2 px-2 py-0.5 bg-slate-800 rounded-full border border-slate-700">
+              {tenant?.name}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <div className="hidden sm:flex items-center space-x-2 text-xs text-slate-400">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>{user?.email}</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs transition"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sair</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Conteúdo Principal */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6">
+        <AgentsDashboard jwtToken={token} />
+      </main>
+
+      {/* Footer */}
+      <footer className="py-4 border-t border-slate-900 text-center text-xs text-slate-600">
+        Gestor IA &bull; Arquitetura Multi-Tenant com RAG Qdrant e Evolution API
+      </footer>
+    </div>
+  );
+};
