@@ -9,7 +9,9 @@ import { parsePagination } from '../utils/pagination';
 const router = Router();
 router.use(tenantMiddleware);
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' });
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 export interface AgentPersona {
   roleKey: 'STRATEGIST' | 'COPYWRITER' | 'DESIGNER' | 'VIDEOMAKER' | 'TRAFFIC_MANAGER';
@@ -225,6 +227,11 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
     const rolesToExecute: Array<keyof typeof SQUAD_PERSONAS> = specificRole
       ? [specificRole]
       : ['STRATEGIST', 'COPYWRITER', 'DESIGNER', 'VIDEOMAKER', 'TRAFFIC_MANAGER'];
+
+    if (!openai) {
+      res.status(503).json({ error: 'OPENAI_API_KEY não configurada. O War Room de IA está indisponível.' });
+      return;
+    }
 
     const newMessages = [];
 
