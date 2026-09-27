@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { UserPlus, Trash2, Save, Users } from 'lucide-react';
+import { UserPlus, Trash2, Users } from 'lucide-react';
 import { apiUrl } from '../api/client';
 
 type UserRow = { id: string; name: string; email: string; role: string };
