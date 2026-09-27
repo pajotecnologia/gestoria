@@ -128,8 +128,29 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
   throw new Error('Nenhum provedor de IA disponível. ' + errors.join(' | '));
 }
 
-export async function generateEmbeddings(input: string[]): Promise<number[][]> {
+export async function generateEmbeddings(input: string[], tenantId?: string): Promise<number[][]> {
   const errors: string[] = [];
+
+  if (tenantId) {
+    const accounts = await prisma.aiProviderAccount.findMany({
+      where: { tenantId, enabled: true, provider: 'openai' },
+      orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
+    });
+    for (const account of accounts) {
+      try {
+        const key = decryptCredential(account.encryptedKey);
+        if (!isAvailable('openai', key)) continue;
+        const client = new OpenAI({ apiKey: key });
+        const response = await client.embeddings.create({ model: account.model || 'text-embedding-3-small', input });
+        await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastUsedAt: new Date(), lastError: null } });
+        return response.data.map((item) => item.embedding);
+      } catch (error: any) {
+        errors.push(account.name + ': ' + String(error?.message || error));
+        await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastError: String(error?.message || error).slice(0, 500) } }).catch(() => undefined);
+      }
+    }
+  }
+
   const attempts = Math.max(1, env.openaiApiKeys.length);
   for (let attempt = 0; attempt < attempts; attempt++) {
     const key = nextValue('openai');
