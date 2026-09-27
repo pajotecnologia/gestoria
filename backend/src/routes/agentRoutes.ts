@@ -4,6 +4,7 @@ import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { compileRTCEPrompt } from './promptCompiler';
 import { validateBody } from '../middlewares/validate';
 import { agentCreateSchema, agentUpdateSchema } from '../validation/schemas';
+import { parsePagination } from '../utils/pagination';
 
 const router = Router();
 router.use(tenantMiddleware);
@@ -12,12 +13,22 @@ router.use(tenantMiddleware);
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
-    const agents = await prisma.agent.findMany({
-      where: { tenantId },
-      include: { knowledgeFiles: true },
-      orderBy: { createdAt: 'desc' }
-    });
-    res.json({ success: true, data: agents });
+    const { page, pageSize, skip, take } = parsePagination(req.query as Record<string, unknown>);
+    const [agents, total] = await prisma.$transaction([
+      prisma.agent.findMany({
+        where: { tenantId },
+        select: {
+          id: true, tenantId: true, name: true, niche: true, provider: true, model: true,
+          temperature: true, instanceName: true, whatsappStatus: true, createdAt: true, updatedAt: true,
+          _count: { select: { knowledgeFiles: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      prisma.agent.count({ where: { tenantId } }),
+    ]);
+    res.json({ success: true, data: agents, pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) } });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
