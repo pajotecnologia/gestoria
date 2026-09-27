@@ -5,7 +5,6 @@ import {
   Sparkles, 
   Plus, 
   Download, 
-  Bot, 
   User, 
   Palette, 
   PenTool, 
