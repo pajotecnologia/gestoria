@@ -5,11 +5,14 @@ import { prisma } from './authRoutes';
 import { validateBody } from '../middlewares/validate';
 import { roomCreateSchema, roomMessageSchema, debateRoundSchema } from '../validation/schemas';
 import { parsePagination } from '../utils/pagination';
+import { assertPlanCapacity, PlanLimitError } from '../services/planLimits';
+import { writeAuditLog } from '../services/auditLog';
+import { env } from '../config/env';
 
 const router = Router();
 router.use(tenantMiddleware);
 
-const openai = process.env.OPENAI_API_KEY
+const openai = env.openaiApiKey
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
@@ -112,6 +115,7 @@ router.post('/', validateBody(roomCreateSchema), async (req: Request, res: Respo
   try {
     const tenantId = req.tenantId!;
     const { title, topic, targetAudience, objective } = req.body;
+    await assertPlanCapacity(tenantId, 'rooms');
 
     if (!title || !topic) {
       res.status(400).json({ error: 'Título e Tópico/Briefing são obrigatórios.' });
@@ -137,8 +141,10 @@ router.post('/', validateBody(roomCreateSchema), async (req: Request, res: Respo
       include: { messages: true }
     });
 
+    await writeAuditLog({ tenantId, userId: req.user?.userId, action: 'ROOM_CREATED', entity: 'Room', entityId: room.id });
     res.status(201).json({ success: true, data: room });
   } catch (error: any) {
+    if (error instanceof PlanLimitError) { res.status(error.statusCode).json({ error: error.code, resource: error.resource, limit: error.limit, current: error.current }); return; }
     res.status(500).json({ error: error.message });
   }
 });
