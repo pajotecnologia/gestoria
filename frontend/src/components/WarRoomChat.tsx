@@ -28,6 +28,13 @@ interface Room {
   _count?: { messages: number };
 }
 
+interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 interface RoomMessage {
   id: string;
   senderType: 'USER' | 'AGENT';
@@ -92,6 +99,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
+  const [roomsPagination, setRoomsPagination] = useState<Pagination>({ page: 1, pageSize: 50, total: 0, totalPages: 0 });
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isDebating, setIsDebating] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
@@ -110,15 +118,16 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fetchRooms = async () => {
+  const fetchRooms = async (page = 1) => {
     setLoadingRooms(true);
     try {
-      const res = await fetch(apiUrl('/api/rooms'), {
+      const res = await fetch(apiUrl(`/api/rooms?page=${page}&pageSize=50`), {
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       const data = await res.json();
       if (data.success) {
         setRooms(data.data);
+        if (data.pagination) setRoomsPagination(data.pagination);
         if (data.data.length > 0 && !selectedRoom) {
           loadRoom(data.data[0]);
         }
@@ -236,9 +245,29 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
     }
   };
 
-  const handleExportPlan = () => {
+  const handleExportPlan = async () => {
     if (!selectedRoom) return;
-    window.open(apiUrl(`/api/rooms/${selectedRoom.id}/export`), '_blank');
+    try {
+      const res = await fetch(apiUrl(`/api/rooms/${selectedRoom.id}/export`), {
+        headers: { Authorization: `Bearer ${jwtToken}` }
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || data?.error || 'Não foi possível exportar o plano.');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Plano_Campanha_${selectedRoom.id}.md`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Erro ao exportar plano:', err);
+      window.alert(err.message || 'Não foi possível exportar o plano.');
+    }
   };
 
   useEffect(() => {
