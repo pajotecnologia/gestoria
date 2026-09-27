@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { apiRateLimiter } from './middlewares/rateLimit';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
+import { logger } from './utils/logger';
 
 import authRoutes from './routes/authRoutes';
 import agentRoutes from './routes/agentRoutes';
@@ -46,6 +47,5 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`🚀 [Backend SaaS Agentes IA] rodando na porta ${PORT}`);
-  console.log(`👉 Health Check: http://localhost:${PORT}/health`);
+  logger.info('server_started', { port: PORT, healthcheck: '/health' });
 });
