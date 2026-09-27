@@ -161,10 +161,15 @@ export async function generateEmbeddings(input: string[], tenantId?: string): Pr
         const client = new OpenAI({ apiKey: key });
         const response = await client.embeddings.create({ model: account.model || 'text-embedding-3-small', input });
         await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastUsedAt: new Date(), lastError: null } });
+        if (tenantId) {
+          const inputTokens = Number(response.usage?.prompt_tokens || 0);
+          await recordAiUsage({ tenantId, providerAccountId: account.id, provider: 'openai', model: account.model || 'text-embedding-3-small', taskType: 'rag', inputTokens, totalTokens: inputTokens, success: true }).catch(() => undefined);
+        }
         return response.data.map((item) => item.embedding);
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity('openai', `account:${account.id}:embedding`);
         errors.push(account.name + ': ' + String(error?.message || error));
+        if (tenantId) await recordAiUsage({ tenantId, providerAccountId: account.id, provider: 'openai', model: account.model || 'text-embedding-3-small', taskType: 'rag', success: false, errorType: isCapacityError(error) ? 'CAPACITY' : 'PROVIDER_ERROR' }).catch(() => undefined);
         await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastError: String(error?.message || error).slice(0, 500) } }).catch(() => undefined);
       }
     }
