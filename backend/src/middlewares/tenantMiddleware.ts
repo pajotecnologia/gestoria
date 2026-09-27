@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { logger } from '../utils/logger';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET || JWT_SECRET.length < 32) throw new Error('JWT_SECRET é obrigatório e deve possuir pelo menos 32 caracteres.');
@@ -51,6 +52,7 @@ export const tenantMiddleware = (req: Request, res: Response, next: NextFunction
       res.status(401).json({ error: 'Unauthorized', message: 'Token expirado.' });
       return;
     }
+    logger.warn('authentication_failed', { reason: error.name });
     res.status(401).json({ error: 'Unauthorized', message: 'Assinatura do token inválida.' });
   }
 };
