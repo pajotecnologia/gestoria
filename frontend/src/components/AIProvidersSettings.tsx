@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrainCircuit, CheckCircle2, Power, Trash2 } from 'lucide-react';
+import { BrainCircuit, CheckCircle2, Power, Trash2, Activity } from 'lucide-react';
 import { apiUrl } from '../api/client';
 
 type UsageSummary = { totals: { requests: number; failures: number; totalTokens: number; estimatedCost: number }; byProvider: Array<{ provider: string; taskType: string; requests: number; failures: number; totalTokens: number; estimatedCost: number }> };
@@ -13,6 +13,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
   const [form, setForm] = useState({ name: '', provider: 'openai', model: 'gpt-4o', apiKey: '', priority: 100 });
   const [message, setMessage] = useState('');
   const [usage, setUsage] = useState<UsageSummary | null>(null);
+  const [health, setHealth] = useState<Record<string, string>>({});
 
   const load = async () => {
     const res = await fetch(apiUrl('/api/ai-providers'), { headers: { Authorization: `Bearer ${jwtToken}` } });
@@ -44,6 +45,13 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
   const toggle = async (id: string) => {
     await fetch(apiUrl(`/api/ai-providers/${id}/toggle`), { method: 'PATCH', headers: { Authorization: `Bearer ${jwtToken}` } });
     await load(); await loadUsage();
+  };
+
+  const checkHealth = async (id: string) => {
+    const res = await fetch(apiUrl(`/api/ai-providers/${id}/health`), { headers: { Authorization: `Bearer ${jwtToken}` } });
+    const data = await res.json();
+    if (res.ok) setHealth(prev => ({ ...prev, [id]: data.data?.health || 'unknown' }));
+    else setMessage(data.error || 'Não foi possível verificar o provedor.');
   };
 
   const remove = async (id: string) => {
@@ -82,6 +90,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
           <div key={account.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div><div className="flex items-center gap-2 text-sm font-semibold text-white">{account.name}{account.enabled && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}</div><div className="text-xs text-slate-400 mt-1">{account.provider} • {account.model} • prioridade {account.priority}</div>{account.lastError && <div className="text-[11px] text-amber-400 mt-1 truncate max-w-xl">{account.lastError}</div>}</div>
             <div className="flex gap-2">
+              <button onClick={() => void checkHealth(account.id)} className="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs"><Activity className="w-3.5 h-3.5 inline mr-1" />{health[account.id] || 'Verificar'}</button>
               <button onClick={() => void toggle(account.id)} className="px-3 py-2 rounded-lg bg-slate-800 text-slate-300 text-xs"><Power className="w-3.5 h-3.5 inline mr-1" />{account.enabled ? 'Desativar' : 'Ativar'}</button>
               <button onClick={() => void remove(account.id)} className="px-3 py-2 rounded-lg bg-rose-500/10 text-rose-300 text-xs"><Trash2 className="w-3.5 h-3.5 inline mr-1" />Remover</button>
             </div>
