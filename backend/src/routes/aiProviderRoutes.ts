@@ -48,6 +48,31 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+router.get('/:id/health', async (req: Request, res: Response): Promise<void> => {
+  const account = await prisma.aiProviderAccount.findFirst({
+    where: { id: req.params.id, tenantId: req.tenantId! },
+    select: { id: true, provider: true, model: true, enabled: true, lastError: true, lastUsedAt: true },
+  });
+  if (!account) { res.status(404).json({ error: 'Provedor de IA não encontrado.' }); return; }
+  try {
+    if (!account.enabled) {
+      res.json({ success: true, data: { ...account, health: 'disabled', message: 'Provedor desativado.' } });
+      return;
+    }
+    // Verificação segura de configuração: não executa uma chamada paga nem expõe a credencial.
+    res.json({
+      success: true,
+      data: {
+        ...account,
+        health: account.lastError ? 'degraded' : 'configured',
+        message: account.lastError ? 'Existe um erro registrado no último uso.' : 'Credencial e configuração disponíveis para uso.',
+      },
+    });
+  } catch {
+    res.status(500).json({ error: 'Não foi possível verificar o provedor.' });
+  }
+});
+
 router.patch('/:id/toggle', async (req: Request, res: Response): Promise<void> => {
   const account = await prisma.aiProviderAccount.findFirst({ where: { id: req.params.id, tenantId: req.tenantId! } });
   if (!account) { res.status(404).json({ error: 'Provedor de IA não encontrado.' }); return; }
