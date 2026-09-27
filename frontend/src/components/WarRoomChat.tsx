@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   MessageSquare
 } from 'lucide-react';
+import { apiUrl } from '../api/client';
 
 interface Room {
   id: string;
@@ -112,7 +113,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
   const fetchRooms = async () => {
     setLoadingRooms(true);
     try {
-      const res = await fetch('/api/rooms', {
+      const res = await fetch(apiUrl('/api/rooms'), {
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       const data = await res.json();
@@ -133,7 +134,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
     setSelectedRoom(room);
     setLoadingMessages(true);
     try {
-      const res = await fetch(`/api/rooms/${room.id}`, {
+      const res = await fetch(apiUrl(`/api/rooms/${room.id}`), {
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       const data = await res.json();
@@ -192,7 +193,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
     setInputMessage('');
 
     try {
-      const res = await fetch(`/api/rooms/${selectedRoom.id}/message`, {
+      const res = await fetch(apiUrl(`/api/rooms/${selectedRoom.id}/message`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -215,7 +216,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
     setIsDebating(true);
 
     try {
-      const res = await fetch(`/api/rooms/${selectedRoom.id}/debate-round`, {
+      const res = await fetch(apiUrl(`/api/rooms/${selectedRoom.id}/debate-round`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -237,7 +238,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
 
   const handleExportPlan = () => {
     if (!selectedRoom) return;
-    window.open(`/api/rooms/${selectedRoom.id}/export`, '_blank');
+    window.open(apiUrl(`/api/rooms/${selectedRoom.id}/export`), '_blank');
   };
 
   useEffect(() => {
