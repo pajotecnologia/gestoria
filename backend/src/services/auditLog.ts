@@ -15,7 +15,7 @@ export async function writeAuditLog(params: {
       action: params.action,
       entity: params.entity,
       entityId: params.entityId || null,
-      metadata: params.metadata || {},
+      metadata: (params.metadata || {}) as any,
     },
   });
 }
