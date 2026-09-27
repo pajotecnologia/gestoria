@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { logger } from '../utils/logger';
+import { env } from '../config/env';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) throw new Error('JWT_SECRET é obrigatório e deve possuir pelo menos 32 caracteres.');
+const JWT_SECRET = env.jwtSecret;
 
 export interface JwtPayloadCustom {
   sub: string;
