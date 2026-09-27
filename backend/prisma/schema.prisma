@@ -34,6 +34,7 @@ model Tenant {
   knowledge   KnowledgeFile[]
   rooms       Room[]
   auditLogs   AuditLog[]
+  aiProviders AiProviderAccount[]
 
   @@map("tenants")
 }
@@ -161,4 +162,25 @@ model AuditLog {
   @@index([tenantId, entity])
   @@index([userId])
   @@map("audit_logs")
+}
+
+
+model AiProviderAccount {
+  id            String     @id @default(uuid())
+  tenantId      String
+  name          String
+  provider      String
+  model         String
+  encryptedKey  String
+  enabled       Boolean    @default(true)
+  priority      Int        @default(100)
+  lastError     String?
+  lastUsedAt    DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, enabled, priority])
+  @@map("ai_provider_accounts")
 }
