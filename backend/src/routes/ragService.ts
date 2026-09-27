@@ -107,6 +107,10 @@ router.post(
       await assertPlanCapacity(tenantId, 'knowledgeBytes', file.size);
       const chunks = splitTextIntoChunks(extractedText, 1000, 150);
 
+      const knowledgeFile = await prisma.knowledgeFile.create({
+        data: { tenantId, agentId, fileName: file.originalname, fileSize: file.size, mimeType: file.mimetype, chunksCount: chunks.length }
+      });
+
       // Gera embeddings usando rotação automática de chaves OpenAI.
       const embeddings = await generateEmbeddings(chunks, tenantId);
 
@@ -118,6 +122,7 @@ router.post(
           payload: {
             tenantId,
             agentId,
+            knowledgeFileId: knowledgeFile.id,
             fileName: file.originalname,
             chunkIndex: index,
             totalChunks: chunks.length,
@@ -128,22 +133,12 @@ router.post(
       });
 
       // Salva no Qdrant
-      await qdrant.upsert(QDRANT_COLLECTION, {
-        wait: true,
-        points: points
-      });
-
-      // Salva referência do arquivo no banco PostgreSQL
-      const knowledgeFile = await prisma.knowledgeFile.create({
-        data: {
-          tenantId,
-          agentId,
-          fileName: file.originalname,
-          fileSize: file.size,
-          mimeType: file.mimetype,
-          chunksCount: points.length
-        }
-      });
+      try {
+        await qdrant.upsert(QDRANT_COLLECTION, { wait: true, points });
+      } catch (qdrantError) {
+        await prisma.knowledgeFile.delete({ where: { id: knowledgeFile.id } }).catch(() => undefined);
+        throw qdrantError;
+      }
 
       await writeAuditLog({ tenantId, userId: req.user?.userId, action: 'KNOWLEDGE_FILE_CREATED', entity: 'KnowledgeFile', entityId: knowledgeFile.id, metadata: { fileName: file.originalname, fileSize: file.size, chunks: points.length } });
 
@@ -164,5 +159,43 @@ router.post(
     }
   }
 );
+
+
+router.get('/knowledge', async (req: Request, res: Response): Promise<void> => {
+  const files = await prisma.knowledgeFile.findMany({
+    where: { tenantId: req.tenantId! },
+    select: { id: true, agentId: true, fileName: true, fileSize: true, mimeType: true, chunksCount: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json({ success: true, data: files });
+});
+
+router.delete('/knowledge/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const file = await prisma.knowledgeFile.findFirst({ where: { id: req.params.id, tenantId } });
+    if (!file) { res.status(404).json({ error: 'Arquivo de conhecimento não encontrado.' }); return; }
+
+    await qdrant.delete(QDRANT_COLLECTION, {
+      wait: true,
+      filter: { must: [{ key: 'knowledgeFileId', match: { value: file.id } }] },
+    }).catch(async () => {
+      await qdrant.delete(QDRANT_COLLECTION, {
+        wait: true,
+        filter: { must: [
+          { key: 'tenantId', match: { value: tenantId } },
+          { key: 'agentId', match: { value: file.agentId } },
+          { key: 'fileName', match: { value: file.fileName } },
+        ] },
+      });
+    });
+
+    await prisma.knowledgeFile.delete({ where: { id: file.id } });
+    await writeAuditLog({ tenantId, userId: req.user?.userId, action: 'KNOWLEDGE_FILE_DELETED', entity: 'KnowledgeFile', entityId: file.id, metadata: { fileName: file.fileName } });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Não foi possível remover a base de conhecimento.', message: error?.message });
+  }
+});
 
 export default router;
