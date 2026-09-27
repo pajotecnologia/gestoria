@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { apiRateLimiter } from './middlewares/rateLimit';
+import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
 
 import authRoutes from './routes/authRoutes';
 import agentRoutes from './routes/agentRoutes';
@@ -21,6 +23,7 @@ app.use(cors({ origin: (origin, callback) => {
   if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
   return callback(new Error('CORS origin não permitido.'));
 } }));
+app.use(apiRateLimiter);
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
@@ -38,10 +41,9 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/evolution', evolutionWebhookRoutes);
 
-// Tratamento 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not Found', message: `Rota ${req.method} ${req.url} inexistente.` });
-});
+// Tratamento centralizado de erros
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`🚀 [Backend SaaS Agentes IA] rodando na porta ${PORT}`);
