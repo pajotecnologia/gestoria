@@ -3,7 +3,7 @@ import axios from 'axios';
 import { env } from '../config/env';
 import { prisma } from '../routes/authRoutes';
 import { decryptCredential } from './aiCredentialCrypto';
-import { recordAiUsage } from './aiUsage';
+import { createAiRequest, finalizeAiRequest, recordAiUsage } from './aiUsage';
 import { writeAuditLog } from './auditLog';
 
 export type AiProvider = 'openai' | 'groq' | 'ollama';
@@ -99,6 +99,7 @@ async function callChat(provider: AiProvider, value: string, options: ChatOption
 
 export async function generateText(options: ChatOptions): Promise<{ text: string; provider: AiProvider }> {
   const errors: string[] = [];
+  const requestId = options.tenantId ? await createAiRequest(options.tenantId, options.taskType || 'chat') : null;
 
   if (options.tenantId) {
     const accounts = await prisma.aiProviderAccount.findMany({
@@ -113,9 +114,11 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
         if (!isAvailable(provider, `account:${account.id}`)) continue;
         const result = await callChat(provider, value, { ...options, model: account.model });
         if (!result.text.trim()) throw new Error('Provedor retornou resposta vazia.');
-        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, providerAccountId: account.id, provider, model: account.model, taskType: options.taskType || 'chat', inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens, success: true }).catch(() => undefined);
+        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, requestId, providerAccountId: account.id, provider, model: account.model, taskType: options.taskType || 'chat', inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens, success: true }).catch(() => undefined);
         await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastUsedAt: new Date(), lastError: null } });
         if (options.tenantId && errors.length > 0) await writeAuditLog({ tenantId: options.tenantId, action: 'AI_PROVIDER_FALLBACK', entity: 'AiProviderAccount', entityId: null, metadata: { provider, taskType: options.taskType || 'chat' } }).catch(() => undefined);
+        if (requestId) await finalizeAiRequest(requestId, { success: true, provider, model: account.model, totalTokens: result.totalTokens });
+        if (requestId) await finalizeAiRequest(requestId, { success: true, provider, model: options.model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o'), totalTokens: result.totalTokens });
         return { text: result.text, provider };
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity(provider, `account:${account.id}`);
@@ -134,7 +137,7 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
       try {
         const result = await callChat(provider, value, options);
         if (!result.text.trim()) throw new Error('Provedor retornou resposta vazia.');
-        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, provider, model: options.model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o'), taskType: options.taskType || 'chat', inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens, success: true }).catch(() => undefined);
+        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, requestId, provider, model: options.model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o'), taskType: options.taskType || 'chat', inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens, success: true }).catch(() => undefined);
         return { text: result.text, provider };
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity(provider, value);
@@ -143,11 +146,13 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
       }
     }
   }
+  if (requestId) await finalizeAiRequest(requestId, { success: false });
   throw new Error('Nenhum provedor de IA disponível. ' + errors.join(' | '));
 }
 
 export async function generateEmbeddings(input: string[], tenantId?: string): Promise<number[][]> {
   const errors: string[] = [];
+  const requestId = tenantId ? await createAiRequest(tenantId, 'rag') : null;
 
   if (tenantId) {
     const accounts = await prisma.aiProviderAccount.findMany({
@@ -163,8 +168,9 @@ export async function generateEmbeddings(input: string[], tenantId?: string): Pr
         await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastUsedAt: new Date(), lastError: null } });
         if (tenantId) {
           const inputTokens = Number(response.usage?.prompt_tokens || 0);
-          await recordAiUsage({ tenantId, providerAccountId: account.id, provider: 'openai', model: account.model || 'text-embedding-3-small', taskType: 'rag', inputTokens, totalTokens: inputTokens, success: true }).catch(() => undefined);
+          await recordAiUsage({ tenantId, requestId, providerAccountId: account.id, provider: 'openai', model: account.model || 'text-embedding-3-small', taskType: 'rag', inputTokens, totalTokens: inputTokens, success: true }).catch(() => undefined);
         }
+        if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'openai', model: account.model || 'text-embedding-3-small', totalTokens: inputTokens });
         return response.data.map((item) => item.embedding);
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity('openai', `account:${account.id}:embedding`);
@@ -188,6 +194,7 @@ export async function generateEmbeddings(input: string[], tenantId?: string): Pr
       errors.push(String(error?.message || error));
     }
   }
+  if (requestId) await finalizeAiRequest(requestId, { success: false });
   throw new Error('Nenhuma chave OpenAI disponível para embeddings. ' + errors.join(' | '));
 }
 
@@ -196,6 +203,7 @@ export async function generateImage(
   tenantId?: string
 ): Promise<{ url: string; provider: 'openai' }> {
   const errors: string[] = [];
+  const requestId = tenantId ? await createAiRequest(tenantId, 'image') : null;
 
   if (tenantId) {
     const accounts = await prisma.aiProviderAccount.findMany({
@@ -221,7 +229,8 @@ export async function generateImage(
           where: { id: account.id },
           data: { lastUsedAt: new Date(), lastError: null },
         });
-        if (tenantId) await recordAiUsage({ tenantId, providerAccountId: account.id, provider: 'openai', model: account.model || 'dall-e-3', taskType: 'image', success: true }).catch(() => undefined);
+        if (tenantId) await recordAiUsage({ tenantId, requestId, providerAccountId: account.id, provider: 'openai', model: account.model || 'dall-e-3', taskType: 'image', success: true }).catch(() => undefined);
+        if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'openai', model: account.model || 'dall-e-3' });
         return { url, provider: 'openai' };
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity('openai', `account:${account.id}:image`);
@@ -254,5 +263,6 @@ export async function generateImage(
     }
   }
 
+  if (requestId) await finalizeAiRequest(requestId, { success: false });
   throw new Error('Nenhum provedor OpenAI disponível para geração de imagem. ' + errors.join(' | '));
 }
