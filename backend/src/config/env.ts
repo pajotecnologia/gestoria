@@ -19,6 +19,7 @@ export const env = {
   qdrantUrl: process.env.QDRANT_URL?.trim() || 'http://localhost:6333',
   qdrantApiKey: process.env.QDRANT_API_KEY?.trim() || null,
   qdrantCollection: process.env.QDRANT_COLLECTION?.trim() || 'agency_saas_knowledge_base',
+  openaiEmbeddingModel: process.env.OPENAI_EMBEDDING_MODEL?.trim() || 'text-embedding-3-small',
 };
 
 if (env.jwtSecret.length < 32) {
