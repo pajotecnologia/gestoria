@@ -180,7 +180,7 @@ export const App: React.FC = () => {
           </div>
 
           {/* Navegação de Módulos */}
-          <nav className="hidden sm:flex items-center space-x-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+          <nav className="flex items-center space-x-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-[58vw] md:max-w-none">
             <button
               type="button"
               onClick={() => setCurrentView('agents')}
@@ -191,7 +191,7 @@ export const App: React.FC = () => {
               }`}
             >
               <Radio className="w-3.5 h-3.5" />
-              <span>Agentes WhatsApp</span>
+              <span className="hidden md:inline">Agentes WhatsApp</span>
             </button>
 
             <button
@@ -200,7 +200,7 @@ export const App: React.FC = () => {
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'ai' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
             >
               <Bot className="w-3.5 h-3.5" />
-              <span>Provedores IA</span>
+              <span className="hidden md:inline">Provedores IA</span>
             </button>
             <button
               type="button"
@@ -212,7 +212,7 @@ export const App: React.FC = () => {
               }`}
             >
               <Users className="w-3.5 h-3.5 text-purple-400" />
-              <span>Mesa Redonda (War Room)</span>
+              <span className="hidden md:inline">Mesa Redonda</span>
             </button>
           </nav>
         </div>
