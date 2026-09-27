@@ -1,6 +1,8 @@
 import OpenAI from 'openai';
 import axios from 'axios';
 import { env } from '../config/env';
+import { prisma } from '../routes/authRoutes';
+import { decryptCredential } from './aiCredentialCrypto';
 
 export type AiProvider = 'openai' | 'groq' | 'ollama';
 
@@ -14,6 +16,7 @@ export interface ChatOptions {
   model?: string | null;
   temperature?: number;
   messages: ChatMessage[];
+  tenantId?: string;
 }
 
 const cooldownUntil = new Map<string, number>();
@@ -83,6 +86,30 @@ async function callChat(provider: AiProvider, value: string, options: ChatOption
 
 export async function generateText(options: ChatOptions): Promise<{ text: string; provider: AiProvider }> {
   const errors: string[] = [];
+
+  if (options.tenantId) {
+    const accounts = await prisma.aiProviderAccount.findMany({
+      where: { tenantId: options.tenantId, enabled: true },
+      orderBy: [{ priority: 'asc' }, { createdAt: 'asc' }],
+    });
+    for (const account of accounts) {
+      const provider = account.provider as AiProvider;
+      if (!['openai', 'groq', 'ollama'].includes(provider)) continue;
+      try {
+        const value = decryptCredential(account.encryptedKey);
+        if (!isAvailable(provider, value)) continue;
+        const text = await callChat(provider, value, { ...options, model: account.model });
+        if (!text.trim()) throw new Error('Provedor retornou resposta vazia.');
+        await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastUsedAt: new Date(), lastError: null } });
+        return { text, provider };
+      } catch (error: any) {
+        if (isCapacityError(error)) markCapacity(provider, account.id);
+        await prisma.aiProviderAccount.update({ where: { id: account.id }, data: { lastError: String(error?.message || error).slice(0, 500) } }).catch(() => undefined);
+        errors.push(account.name + ': ' + String(error?.message || error));
+      }
+    }
+  }
+
   for (const provider of candidates(options.provider)) {
     const attempts = Math.max(1, keyList(provider).length);
     for (let attempt = 0; attempt < attempts; attempt++) {
