@@ -55,3 +55,16 @@ export const roomMessageSchema = z.object({
 export const debateRoundSchema = z.object({
   specificRole: z.enum(['STRATEGIST', 'COPYWRITER', 'DESIGNER', 'VIDEOMAKER', 'TRAFFIC_MANAGER']).optional(),
 });
+
+export const userCreateSchema = z.object({
+  name: text(2, 120),
+  email: z.string().trim().email().max(160).transform((value) => value.toLowerCase()),
+  password: z.string().min(8).max(128),
+  role: z.enum(['CLIENT_ADMIN', 'OPERATOR']).default('OPERATOR'),
+});
+
+export const userUpdateSchema = z.object({
+  name: text(2, 120).optional(),
+  password: z.string().min(8).max(128).optional(),
+  role: z.enum(['CLIENT_ADMIN', 'OPERATOR']).optional(),
+});
