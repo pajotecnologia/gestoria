@@ -3,6 +3,7 @@ import { Queue, Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
 import axios from 'axios';
 import { prisma } from '../routes/authRoutes';
+import { handleWhatsAppSquadCommand } from '../services/whatsappSquadService';
 
 const router = Router();
 
@@ -25,10 +26,11 @@ redisConnection.on('error', (err) => {
 
 export interface WebhookJobData {
   instanceName: string;
-  senderPhone: string;
+  senderRecipient: string; // Pode ser telefone ou ID de grupo (@g.us)
   messageText: string;
   messageId: string;
   pushName?: string;
+  isGroup: boolean;
   receivedAt: number;
 }
 
@@ -45,23 +47,42 @@ export const evolutionQueue = new Queue<WebhookJobData>('evolution-messages-queu
 export const evolutionWorker = new Worker<WebhookJobData>(
   'evolution-messages-queue',
   async (job: Job<WebhookJobData>) => {
-    const { instanceName, senderPhone, messageText, pushName } = job.data;
-    const sessionId = `${instanceName}_${senderPhone}`;
+    const { instanceName, senderRecipient, messageText, pushName, isGroup } = job.data;
+    const userName = pushName || 'Membro do Grupo';
 
     try {
-      // 1. Busca no PostgreSQL dados do agente associado à instância
+      // 1. Verifica se a mensagem é um comando do Squad de Marketing (!squad, @designer, @copywriter, etc.)
+      const commandResult = await handleWhatsAppSquadCommand(
+        instanceName,
+        senderRecipient,
+        messageText,
+        userName
+      );
+
+      // Se foi um comando executado pelo Squad, encerra o processamento
+      if (commandResult.handled) {
+        return { status: 'command_handled', type: 'squad_command', recipient: senderRecipient };
+      }
+
+      // Se for grupo e não foi um comando explícito, ignora para não floodar o grupo
+      if (isGroup) {
+        return { status: 'group_message_ignored', reason: 'Nenhum comando acionado no grupo' };
+      }
+
+      // 2. Fluxo Normal de Atendimento do Agente de Conversão / RAG (para Leads no WhatsApp)
+      const sessionId = `${instanceName}_${senderRecipient.replace('@s.whatsapp.net', '')}`;
+
       const agent = await prisma.agent.findFirst({
         where: { instanceName }
       });
 
-      // 2. Dispara requisição ao n8n
       const n8nResponse = await axios.post(
         N8N_WEBHOOK_URL,
         {
           sessionId,
           instanceName,
-          senderPhone,
-          userName: pushName || 'Cliente',
+          senderPhone: senderRecipient.replace('@s.whatsapp.net', ''),
+          userName,
           userMessage: messageText,
           tenantId: agent?.tenantId || 'global',
           agentId: agent?.id || 'default',
@@ -79,11 +100,11 @@ export const evolutionWorker = new Worker<WebhookJobData>(
         return { status: 'skipped', reason: 'Nenhuma resposta gerada pelo fluxo n8n.' };
       }
 
-      // 3. Devolve resposta via Evolution API
+      // Devolve a resposta via Evolution API
       await axios.post(
         `${EVOLUTION_API_URL}/message/sendText/${instanceName}`,
         {
-          number: senderPhone,
+          number: senderRecipient,
           text: aiReplyText,
           delay: 1200,
           linkPreview: false,
@@ -96,9 +117,9 @@ export const evolutionWorker = new Worker<WebhookJobData>(
         }
       );
 
-      return { status: 'success', recipient: senderPhone, reply: aiReplyText };
+      return { status: 'success', recipient: senderRecipient, reply: aiReplyText };
     } catch (err: any) {
-      console.error(`[Worker Error] Falha ao processar mensagem para ${senderPhone}:`, err.message);
+      console.error(`[Worker Error] Falha ao processar mensagem para ${senderRecipient}:`, err.message);
       throw err;
     }
   },
@@ -124,8 +145,8 @@ router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
     }
 
     const instanceName = body.instance;
-    const senderJid = key?.remoteJid || '';
-    const senderPhone = senderJid.replace('@s.whatsapp.net', '');
+    const remoteJid = key?.remoteJid || '';
+    const isGroup = remoteJid.endsWith('@g.us');
     const pushName = messageData?.pushName;
 
     const messageText =
@@ -138,14 +159,16 @@ router.post('/webhook', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Enfileira de forma assíncrona
     await evolutionQueue.add(
       'process-whatsapp-message',
       {
         instanceName,
-        senderPhone,
+        senderRecipient: remoteJid,
         messageText,
         messageId: key?.id || `${Date.now()}`,
         pushName,
+        isGroup,
         receivedAt: Date.now()
       },
       { jobId: key?.id }

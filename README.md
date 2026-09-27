@@ -1,6 +1,6 @@
 # 🚀 Gestor IA - Plataforma SaaS Multi-Tenant para Agências de IA
 
-Plataforma SaaS de nível de produção para agências de marketing gerenciarem múltiplos agentes de IA de conversão/atendimento e operarem uma **Mesa Redonda de Agentes Especialistas (AI War Room)** para criação colaborativa de campanhas, copys, artes com IA (DALL-E 3) e roteiros de vídeo.
+Plataforma SaaS de nível de produção para agências de marketing gerenciarem múltiplos agentes de IA de conversão/atendimento e operarem uma **Mesa Redonda de Agentes Especialistas (AI War Room)** para criação colaborativa de campanhas, copys, artes com IA (DALL-E 3) e roteiros de vídeo tanto pela **Aplicação Web** quanto pelo **WhatsApp**.
 
 ---
 
@@ -8,14 +8,29 @@ Plataforma SaaS de nível de produção para agências de marketing gerenciarem 
 - **Backend**: Node.js, TypeScript, Express, Prisma ORM, PostgreSQL, BullMQ, Redis, Multer, OpenAI SDK (Chat + Embeddings + DALL-E 3).
 - **Frontend**: React.js, TypeScript, Vite, Tailwind CSS, Lucide Icons.
 - **RAG & Vector Database**: Qdrant Vector DB com particionamento seguro por `tenantId` e `agentId`.
-- **WhatsApp Gateway**: Evolution API com retentativas assíncronas e leitura de QR Code.
+- **WhatsApp Gateway**: Evolution API com retentativas assíncronas, leitura de QR Code e suporte a Grupos.
 - **Multi-Agent War Room**: Mesa redonda com Estrategista (CMO), Copywriter Sênior, Designer (DALL-E 3), Roteirista de Vídeos Curtos e Gestora de Tráfego.
-- **Orquestração de IA**: n8n Workflow com memória de sessão e LLM Router.
 - **Deploy & Hospedagem**: 100% pronto para **Coolify** e Docker Compose.
 
 ---
 
-## 👥 Squad de Especialistas na Mesa Redonda (War Room)
+## 📱 Comandos do Squad no WhatsApp (Chat Privado ou Grupo da Agência)
+
+Você pode criar um **Grupo no WhatsApp da sua Agência** e adicionar o bot. Os seguintes comandos são processados em tempo real:
+
+| Comando no WhatsApp | O que o Squad faz |
+| :--- | :--- |
+| `!squad [seu briefing]` | Aciona a mesa redonda completa: **Estrategista**, **Copywriter**, **Designer (com imagem gerada)** e **Roteirista de Vídeo** criando em cadeia. |
+| `@designer [ideia]` ou `!arte [ideia]` | O Diretor de Arte cria o conceito visual e **renderiza a imagem via DALL-E 3 enviando a foto direto no WhatsApp**. |
+| `@copywriter [tema]` | A Copywriter cria 3 headlines magnéticas + 2 variações completas de copy (AIDA / PAS). |
+| `@estrategista [tema]` | O Estrategista define posicionamento, público-alvo e 3 teses de conversão. |
+| `@video [tema]` | O Roteirista cria roteiro de 30 a 45 segundos estruturado cena a cena para Reels / TikTok. |
+| `@trafego [tema]` | A Gestora de Tráfego define segmentação de públicos, orçamento de teste e KPIs. |
+| `!ajuda` | Exibe o menu com todos os comandos disponíveis no WhatsApp. |
+
+---
+
+## 👥 Squad de Especialistas na Mesa Redonda
 
 | Especialista | Papel & Atuação | Entregável |
 | :--- | :--- | :--- |
@@ -38,7 +53,8 @@ GestorIA/
 │       ├── index.ts          # Servidor Express
 │       ├── middlewares/      # Isolamento JWT Multi-Tenant
 │       ├── routes/           # Auth, Agents, RTCE Compiler, RAG, WhatsApp, Rooms (War Room)
-│       └── webhooks/         # Webhook assíncrono Evolution API
+│       ├── services/         # whatsappSquadService.ts (Comandos de Squad e DALL-E 3 no WhatsApp)
+│       └── webhooks/         # Webhook assíncrono Evolution API (Suporte a Grupos e Privado)
 ├── frontend/                 # Painel SPA React + Vite + Tailwind CSS
 │   ├── Dockerfile            # Multi-stage build com Nginx para SPA
 │   └── src/
@@ -81,29 +97,3 @@ GestorIA/
 3. Em **Environment Variables**:
    - `VITE_API_URL`: `https://api.seudominio.com`
 4. Clique em **Deploy**.
-
----
-
-## 💻 Como Rodar Localmente
-
-### 1. Iniciar containers da infraestrutura
-```bash
-docker compose up -d
-```
-
-### 2. Configurar o Backend
-```bash
-cd backend
-npm install
-cp ../.env.example .env
-npx prisma migrate dev --name init_warroom
-npm run dev
-```
-
-### 3. Configurar o Frontend
-```bash
-cd ../frontend
-npm install
-npm run dev
-```
-Acesse `http://localhost:5173` no navegador.
