@@ -49,13 +49,14 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         <div className="flex items-center gap-3"><BrainCircuit className="w-6 h-6 text-indigo-400" /><h2 className="text-xl font-bold text-white">Provedores de IA</h2></div>
         <p className="text-xs text-slate-400 mt-1">Cadastre várias contas. Se uma atingir quota, crédito ou rate limit, o sistema tenta automaticamente a próxima.</p>
       </div>
-      <form onSubmit={add} className="grid grid-cols-1 md:grid-cols-5 gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-4">
+      <form onSubmit={add} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <input required placeholder="Nome" value={form.name} onChange={e => setForm({...form,name:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
         <select value={form.provider} onChange={e => setForm({...form,provider:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
           <option value="openai">OpenAI</option><option value="groq">Groq</option><option value="ollama">Ollama</option>
         </select>
         <input required placeholder="Modelo" value={form.model} onChange={e => setForm({...form,model:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
         <input required type="password" placeholder="API Key / URL" value={form.apiKey} onChange={e => setForm({...form,apiKey:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
+        <input required type="number" min="1" max="1000" placeholder="Prioridade" value={form.priority} onChange={e => setForm({...form,priority:Number(e.target.value) || 100})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
         <button className="rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2">Cadastrar IA</button>
       </form>
       {message && <div className="text-xs text-slate-300 bg-slate-900 border border-slate-800 rounded-xl p-3">{message}</div>}
