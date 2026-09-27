@@ -1,5 +1,7 @@
 import { PlanType } from '@prisma/client';
 import { PLAN_LIMITS, PlanLimits } from '../config/planCatalog';
+
+const MB = 1024 * 1024;
 import { prisma } from '../routes/authRoutes';
 
 export type PlanLimitKey = 'agents' | 'users' | 'rooms' | 'knowledgeBytes';
