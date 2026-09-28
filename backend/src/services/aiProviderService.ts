@@ -72,16 +72,70 @@ function markCapacity(provider: AiProvider, identity: string): void {
 
 export async function callChat(provider: AiProvider, value: string, options: ChatOptions): Promise<{ text: string; inputTokens: number; outputTokens: number; totalTokens: number }> {
   if (provider === 'ollama') {
-    const response = await axios.post(value.replace(/\/$/, '') + '/api/chat', {
-      model: options.model || 'llama3.1',
-      messages: options.messages,
-      stream: false,
-      options: { temperature: options.temperature ?? 0.7 },
-    }, { timeout: 60_000 });
-    const text = response.data?.message?.content || response.data?.response || '';
-    const inputTokens = Number(response.data?.prompt_eval_count || 0);
-    const outputTokens = Number(response.data?.eval_count || 0);
-    return { text, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
+    let baseUrl = value.trim();
+    let authToken = '';
+
+    if (baseUrl.includes('|')) {
+      const parts = baseUrl.split('|');
+      baseUrl = parts[0].trim();
+      authToken = parts[1].trim();
+    } else if (baseUrl.includes('###')) {
+      const parts = baseUrl.split('###');
+      baseUrl = parts[0].trim();
+      authToken = parts[1].trim();
+    }
+
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    // Try standard Ollama path first, then OpenWebUI Ollama proxy, then OpenAI compatible v1
+    const candidateEndpoints = [
+      cleanBaseUrl.endsWith('/api/chat') ? cleanBaseUrl : `${cleanBaseUrl}/api/chat`,
+      `${cleanBaseUrl}/ollama/api/chat`,
+      `${cleanBaseUrl}/api/v1/chat/completions`
+    ];
+
+    let lastError: any = null;
+    for (const endpoint of candidateEndpoints) {
+      try {
+        if (endpoint.includes('/chat/completions')) {
+          // OpenAI compatible format
+          const response = await axios.post(endpoint, {
+            model: options.model || 'llama3.1',
+            messages: options.messages,
+            temperature: options.temperature ?? 0.7,
+          }, { headers, timeout: 60_000 });
+          const text = response.data?.choices?.[0]?.message?.content || '';
+          const inputTokens = Number(response.data?.usage?.prompt_tokens || 0);
+          const outputTokens = Number(response.data?.usage?.completion_tokens || 0);
+          return { text, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
+        } else {
+          // Ollama format
+          const response = await axios.post(endpoint, {
+            model: options.model || 'llama3.1',
+            messages: options.messages,
+            stream: false,
+            options: { temperature: options.temperature ?? 0.7 },
+          }, { headers, timeout: 60_000 });
+          const text = response.data?.message?.content || response.data?.response || '';
+          const inputTokens = Number(response.data?.prompt_eval_count || 0);
+          const outputTokens = Number(response.data?.eval_count || 0);
+          return { text, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
+        }
+      } catch (err: any) {
+        lastError = err;
+        // If it's a 404 or 405 or HTML response, try next candidate endpoint
+        if (err?.response?.status === 404 || err?.response?.status === 405 || typeof err?.response?.data === 'string') {
+          continue;
+        }
+        // If it's an auth error (401/403) or connection refused, throw immediately
+        throw err;
+      }
+    }
+    throw lastError || new Error('Não foi possível conectar ao endpoint Ollama/OpenWebUI especificado.');
   }
 
   const client = new OpenAI({

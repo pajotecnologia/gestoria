@@ -290,16 +290,21 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                {form.provider === 'ollama' ? 'URL do Ollama' : 'Chave de API (API Key)'}
+                {form.provider === 'ollama' ? 'URL do Ollama / Open WebUI' : 'Chave de API (API Key)'}
               </label>
               <input
                 required
-                type="password"
-                placeholder={form.provider === 'ollama' ? 'http://172.17.0.1:11434' : 'AIzaSy... ou sk-...'}
+                type="text"
+                placeholder={form.provider === 'ollama' ? 'http://ollama:11434 ou https://ollama.pajotech.com.br|sk-...' : 'AIzaSy... ou sk-...'}
                 value={form.apiKey}
                 onChange={e => setForm({ ...form, apiKey: e.target.value })}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
               />
+              {form.provider === 'ollama' && (
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Dica: use <strong className="text-cyan-400">http://ollama:11434</strong> para o Ollama local na VPS (modelos <code className="text-amber-300">hermes3:8b</code> ou <code className="text-amber-300">llama3.1</code>) ou informe <code className="text-cyan-300">URL|CHAVE_API</code> para Open WebUI.
+                </p>
+              )}
             </div>
 
             <div>
