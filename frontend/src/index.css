@@ -43,7 +43,19 @@
 
 @layer components {
   .premium-surface {
-    @apply border border-white/[0.07] bg-zinc-900/80 backdrop-blur-md;
+    @apply border border-white/[0.08] bg-zinc-900/70 backdrop-blur-xl shadow-xl shadow-black/20;
+  }
+
+  .shadcn-card {
+    @apply rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-5 shadow-sm transition-all duration-200 hover:border-zinc-700/80;
+  }
+
+  .shadcn-input {
+    @apply h-10 w-full rounded-xl border border-zinc-800 bg-zinc-950/80 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-500 outline-none transition-all duration-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30;
+  }
+
+  .shadcn-badge {
+    @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold transition-colors;
   }
 
   .premium-input {
@@ -57,12 +69,12 @@
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -74,7 +86,6 @@
   background: #3f3f46;
 }
 
-
 @media (max-width: 767px) {
   html,
   body {
@@ -82,13 +93,13 @@
   }
 
   button {
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 40px;
+    min-height: 40px;
   }
 
   input,
   select,
   textarea {
-    min-height: 44px;
+    min-height: 40px;
   }
 }
