@@ -3,12 +3,55 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    font-family: 'Inter', system-ui, sans-serif;
+  :root {
+    color-scheme: dark;
   }
-  
+
+  html {
+    background: #09090b;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    font-family: 'Inter', system-ui, sans-serif;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(99, 102, 241, 0.09), transparent 28rem),
+      radial-gradient(circle at 88% 8%, rgba(124, 58, 237, 0.08), transparent 30rem),
+      #09090b;
+    color: #f4f4f5;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  ::selection {
+    background: rgba(99, 102, 241, 0.35);
+    color: #fff;
+  }
+
   code, pre, .font-mono {
     font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  .premium-surface {
+    @apply border border-white/[0.07] bg-zinc-900/80 backdrop-blur-md;
+  }
+
+  .premium-input {
+    @apply border border-white/[0.08] bg-zinc-950/80 text-zinc-100 outline-none transition-all duration-200 ease-in-out placeholder:text-zinc-600 focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/10;
+  }
+
+  .premium-button {
+    @apply transition-all duration-200 ease-in-out;
   }
 }
 
@@ -19,14 +62,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #020617;
+  background: #09090b;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #27272a;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #3f3f46;
 }
