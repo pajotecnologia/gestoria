@@ -21,7 +21,7 @@ export function getCampaignLifecycleStatus(
   endDate: Date | null | undefined,
   now = new Date()
 ): CampaignLifecycleStatus {
-  if (!isActive) return 'PAUSADA';
+  if (!isActive) return startDate || endDate ? 'PAUSADA' : 'RASCUNHO';
   if (!startDate || !endDate) return 'RASCUNHO';
   if (now.getTime() < startDate.getTime()) return 'AGENDADA';
   if (now.getTime() > endDate.getTime()) return 'ENCERRADA';
