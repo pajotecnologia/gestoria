@@ -425,7 +425,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
             Nenhum provedor cadastrado. Cadastre acima sua chave do Gemini, OpenAI, Groq ou URL do Ollama.
           </div>
         ) : (
-          <div className="grid gap-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {accounts.map(account => {
               const testResult = testResults[account.id];
               const isTesting = testingId === account.id;
