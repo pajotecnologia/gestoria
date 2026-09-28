@@ -32,11 +32,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const now = new Date();
     const startDate = getStartDate(period, now);
 
-    const previousStart = new Date(startDate);
-    const periodMs = now.getTime() - startDate.getTime();
-    previousStart.setTime(startDate.getTime() - periodMs);
-
-    const [clients, campaigns, users, previousUsers, activeCampaigns, aiRequests, recentActivity, campaignStatus] = await prisma.$transaction([
+    const [clients, campaigns, users, previousUsers, activeCampaigns, aiRequests, recentActivity, campaignStatusRows] = await prisma.$transaction([
       prisma.client.findMany({ where: { tenantId, createdAt: { gte: startDate } }, select: { createdAt: true } }),
       prisma.campaign.findMany({ where: { tenantId, createdAt: { gte: startDate } }, select: { createdAt: true } }),
       prisma.user.count({ where: { tenantId } }),
@@ -49,14 +45,17 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         take: 5,
         select: { id: true, action: true, entity: true, entityId: true, metadata: true, createdAt: true, user: { select: { name: true } } },
       }),
-      prisma.campaign.groupBy({ by: ['status'], where: { tenantId }, _count: { _all: true } }),
+      prisma.campaign.findMany({
+        where: { tenantId },
+        select: { status: true },
+      }),
     ]);
 
     const buckets = new Map<string, { label: string; clients: number; campaigns: number; aiRequests: number }>();
-    const cursor = new Date(startDate);
     const bucketCount = period === '12m' ? 12 : period === '30d' ? 30 : 7;
+
     for (let i = 0; i < bucketCount; i += 1) {
-      const date = new Date(cursor);
+      const date = new Date(startDate);
       if (period === '12m') date.setMonth(startDate.getMonth() + i);
       else date.setDate(startDate.getDate() + i);
       const key = bucketKey(date, period);
@@ -67,13 +66,20 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       const bucket = buckets.get(bucketKey(item.createdAt, period));
       if (bucket) bucket.clients += 1;
     }
+
     for (const item of campaigns) {
       const bucket = buckets.get(bucketKey(item.createdAt, period));
       if (bucket) bucket.campaigns += 1;
     }
+
     for (const item of aiRequests) {
       const bucket = buckets.get(bucketKey(item.createdAt, period));
       if (bucket) bucket.aiRequests += 1;
+    }
+
+    const campaignDistribution = new Map<string, number>();
+    for (const item of campaignStatusRows) {
+      campaignDistribution.set(item.status, (campaignDistribution.get(item.status) || 0) + 1);
     }
 
     const activity = recentActivity.map((item) => ({
@@ -104,7 +110,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           activeCampaigns,
         },
         trend: Array.from(buckets.values()),
-        distribution: campaignStatus.map((item) => ({ category: item.status, value: item._count._all })),
+        distribution: Array.from(campaignDistribution.entries()).map(([category, value]) => ({ category, value })),
         activity,
         availability: {
           revenue: 'NOT_CONFIGURED',
