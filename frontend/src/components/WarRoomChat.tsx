@@ -951,7 +951,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">Público-Alvo</label>
                   <input
