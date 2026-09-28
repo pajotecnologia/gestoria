@@ -297,7 +297,7 @@ export const PromptGenerator: React.FC<PromptGeneratorProps> = ({
       </div>
 
       {/* Grade Principal: Inputs e Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
         {/* Painel Esquerdo: Estrutura RTCE e Variáveis */}
         <div className="space-y-5">
           <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
@@ -305,7 +305,7 @@ export const PromptGenerator: React.FC<PromptGeneratorProps> = ({
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Variáveis Dinâmicas do Cliente</span>
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
               {Object.keys(variables).map((varKey) => (
                 <div key={varKey}>
                   <label className="text-[11px] text-slate-400 font-mono block mb-1">
