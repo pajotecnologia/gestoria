@@ -32,7 +32,7 @@ export const UserManagement: React.FC<{ jwtToken: string }> = ({ jwtToken }) => 
 
   return <section className="space-y-5">
     <div><div className="flex items-center gap-3"><Users className="w-6 h-6 text-indigo-400"/><h2 className="text-xl font-bold text-white">Usuários da agência</h2></div><p className="text-xs text-slate-400 mt-1">Gerencie acesso e funções dentro do tenant.</p></div>
-    <form onSubmit={add} className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-4">
+    <form onSubmit={add} className="grid gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
       <input required placeholder="Nome" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"/>
       <input required type="email" placeholder="E-mail" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"/>
       <input required minLength={8} type="password" placeholder="Senha" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"/>
