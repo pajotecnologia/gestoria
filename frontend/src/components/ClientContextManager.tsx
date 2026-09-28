@@ -100,6 +100,7 @@ const statusLabel: Record<ClientStatus, string> = {
 export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [selected, setSelected] = useState<Client | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<ClientForm>(createEmptyForm);
   const [resource, setResource] = useState({ title: '', url: '', type: 'WEBSITE', notes: '' });
   const [file, setFile] = useState<File | null>(null);
@@ -112,6 +113,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
 
   const resetForm = () => {
     setSelected(null);
+    setShowForm(false);
     setForm(createEmptyForm());
     setResource({ title: '', url: '', type: 'WEBSITE', notes: '' });
     setFile(null);
@@ -142,6 +144,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
       if (!res.ok) throw new Error(data.error || 'Falha ao carregar empresa.');
       const client = data.data as Client;
       setSelected(client);
+      setShowForm(true);
       setForm({
         name: client.name || '',
         legalName: client.legalName || '',
@@ -207,7 +210,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         setFeedback({ type: 'success', message: 'Dados da empresa atualizados com sucesso.' });
       } else {
         resetForm();
-        setFeedback({ type: 'success', message: 'Empresa cadastrada. O formulário está pronto para a próxima empresa.' });
+        setFeedback({ type: 'success', message: 'Empresa cadastrada com sucesso.' });
       }
     } catch (error) {
       setFeedback({ type: 'error', message: error instanceof Error ? error.message : 'Falha ao salvar empresa.' });
@@ -314,8 +317,15 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         </div>
         <button
           type="button"
-          onClick={resetForm}
-          className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-indigo-500"
+          onClick={() => {
+            setSelected(null);
+            setForm(createEmptyForm());
+            setResource({ title: '', url: '', type: 'WEBSITE', notes: '' });
+            setFile(null);
+            setFeedback(null);
+            setShowForm(true);
+          }}
+          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all duration-200 hover:from-indigo-400 hover:to-violet-500"
         >
           <Plus className="h-4 w-4" /> Nova empresa
         </button>
@@ -340,6 +350,10 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
 
       <section className="space-y-4">
         <div className="flex flex-col gap-3 rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-4 lg:flex-row lg:items-center">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-bold text-zinc-100">Empresas cadastradas</h3>
+            <p className="mt-1 text-[11px] text-zinc-500">Selecione uma empresa para editar seus dados ou gerenciar referências e materiais.</p>
+          </div>
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
             <input
@@ -398,15 +412,18 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
                 ? 'Cadastre sua primeira empresa para começar a criar contextos, campanhas e estratégias.'
                 : 'Tente alterar os termos da pesquisa ou remover os filtros.'}
             </p>
-            {clients.length === 0 && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="mt-4 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-indigo-500"
-              >
-                <Plus className="mr-1 inline h-4 w-4" /> Nova empresa
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setSelected(null);
+                setForm(createEmptyForm());
+                setShowForm(true);
+                setFeedback(null);
+              }}
+              className="mx-auto mt-4 flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20"
+            >
+              <Plus className="mr-1 h-4 w-4" /> Nova empresa
+            </button>
           </div>
         ) : (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
@@ -476,8 +493,9 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         )}
       </section>
 
-      <section className="rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-5">
-        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      {showForm && (
+        <section className="rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-5">
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-base font-bold text-white">
               {selected ? 'Editar contexto da empresa' : 'Nova empresa'}
@@ -486,15 +504,13 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
               {selected ? 'Atualize os dados da empresa selecionada.' : 'Preencha os dados para cadastrar uma nova empresa.'}
             </p>
           </div>
-          {selected && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-white/[0.07] px-3 py-2 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-800/80"
-            >
-              <Plus className="h-3.5 w-3.5" /> Novo cadastro
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={resetForm}
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-white/[0.07] px-3 py-2 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-800/80"
+          >
+            <X className="h-3.5 w-3.5" /> Voltar para empresas
+          </button>
         </div>
 
         <form onSubmit={save} className="space-y-4">
@@ -634,7 +650,8 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
             </div>
           </div>
         )}
-      </section>
+        </section>
+      )}
     </div>
   );
 };
