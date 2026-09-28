@@ -297,7 +297,7 @@ export const PromptGenerator: React.FC<PromptGeneratorProps> = ({
       </div>
 
       {/* Grade Principal: Inputs e Preview */}
-      <div className="grid gap-6 mt-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-1">
+      <div className="grid gap-6 mt-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
         {/* Painel Esquerdo: Estrutura RTCE e Variáveis */}
         <div className="space-y-5">
           <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
