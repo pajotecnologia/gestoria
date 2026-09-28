@@ -64,6 +64,26 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/evolution', evolutionWebhookRoutes);
 
+import path from 'path';
+import fs from 'fs';
+
+// Frontend SPA static serving
+const publicDir = [
+  path.resolve(__dirname, '../public'),
+  path.resolve(__dirname, '../../frontend/dist'),
+  path.resolve(__dirname, '../frontend/dist'),
+].find((dir) => fs.existsSync(dir));
+
+if (publicDir) {
+  app.use(express.static(publicDir));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/ready') {
+      return next();
+    }
+    res.sendFile(path.join(publicDir, 'index.html'));
+  });
+}
+
 // Tratamento centralizado de erros
 app.use(notFoundHandler);
 app.use(errorHandler);

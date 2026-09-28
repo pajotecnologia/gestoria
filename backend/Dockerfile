@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci
+RUN npm install
 
 COPY tsconfig.json ./
 COPY src ./src/
@@ -29,7 +29,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Instala apenas dependências de produção
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Copia build compilado e client Prisma
 COPY --from=builder /app/dist ./dist

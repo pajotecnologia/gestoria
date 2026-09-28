@@ -435,8 +435,8 @@ router.post('/search', async (req: Request, res: Response): Promise<void> => {
       throw new Error('Dimensão do embedding da consulta incompatível.');
     }
 
-    const results = await qdrant.search(QDRANT_COLLECTION, {
-      vector: queryVector,
+    const response = await qdrant.query(QDRANT_COLLECTION, {
+      query: queryVector,
       limit,
       with_payload: true,
       filter: {
@@ -449,7 +449,7 @@ router.post('/search', async (req: Request, res: Response): Promise<void> => {
 
     res.json({
       success: true,
-      data: results.map((result) => ({
+      data: (response.points || []).map((result: any) => ({
         score: result.score,
         content: typeof result.payload?.content === 'string' ? result.payload.content : '',
         fileName: result.payload?.fileName || null,
