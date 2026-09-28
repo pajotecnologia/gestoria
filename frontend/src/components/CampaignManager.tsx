@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Megaphone, Plus, Sparkles, RefreshCw, Pencil, Power, X, Search, CalendarDays } from 'lucide-react';
+import { Megaphone, Plus, Sparkles, RefreshCw, Pencil, Power, Search, CalendarDays } from 'lucide-react';
 import { apiUrl } from '../api/client';
 
 export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
