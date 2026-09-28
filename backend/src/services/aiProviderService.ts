@@ -6,7 +6,7 @@ import { decryptCredential } from './aiCredentialCrypto';
 import { createAiRequest, finalizeAiRequest, recordAiUsage } from './aiUsage';
 import { writeAuditLog } from './auditLog';
 
-export type AiProvider = 'openai' | 'groq' | 'ollama';
+export type AiProvider = 'openai' | 'gemini' | 'groq' | 'ollama';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -33,16 +33,18 @@ function isCapacityError(error: any): boolean {
 }
 
 function candidates(preferred?: string | null): AiProvider[] {
-  const order = [...env.aiFallbackOrder, 'openai', 'groq', 'ollama']
+  const validProviders: AiProvider[] = ['openai', 'gemini', 'groq', 'ollama'];
+  const order = [...env.aiFallbackOrder, 'openai', 'gemini', 'groq', 'ollama']
     .filter((value, index, all) => all.indexOf(value) === index)
-    .filter((value): value is AiProvider => ['openai', 'groq', 'ollama'].includes(value));
-  return preferred && ['openai', 'groq', 'ollama'].includes(preferred)
+    .filter((value): value is AiProvider => validProviders.includes(value as AiProvider));
+  return preferred && validProviders.includes(preferred as AiProvider)
     ? [preferred as AiProvider, ...order.filter((p) => p !== preferred)]
     : order;
 }
 
 function keyList(provider: AiProvider): string[] {
   if (provider === 'openai') return env.openaiApiKeys;
+  if (provider === 'gemini') return env.geminiApiKeys;
   if (provider === 'groq') return env.groqApiKeys;
   return env.ollamaUrls;
 }
@@ -84,10 +86,20 @@ async function callChat(provider: AiProvider, value: string, options: ChatOption
 
   const client = new OpenAI({
     apiKey: value,
-    ...(provider === 'groq' ? { baseURL: 'https://api.groq.com/openai/v1' } : {}),
+    ...(provider === 'gemini'
+      ? { baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/' }
+      : provider === 'groq'
+      ? { baseURL: 'https://api.groq.com/openai/v1' }
+      : {}),
   });
+  const defaultModel =
+    provider === 'gemini'
+      ? 'gemini-2.5-flash'
+      : provider === 'groq'
+      ? 'llama-3.3-70b-versatile'
+      : 'gpt-4o';
   const completion = await client.chat.completions.create({
-    model: options.model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : 'gpt-4o'),
+    model: options.model || defaultModel,
     temperature: options.temperature ?? 0.7,
     messages: options.messages,
   });
@@ -108,7 +120,7 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
     });
     for (const account of accounts) {
       const provider = account.provider as AiProvider;
-      if (!['openai', 'groq', 'ollama'].includes(provider)) continue;
+      if (!['openai', 'gemini', 'groq', 'ollama'].includes(provider)) continue;
       try {
         const value = decryptCredential(account.encryptedKey);
         if (!isAvailable(provider, `account:${account.id}`)) continue;
@@ -136,8 +148,16 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
       try {
         const result = await callChat(provider, value, options);
         if (!result.text.trim()) throw new Error('Provedor retornou resposta vazia.');
-        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, requestId, provider, model: options.model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o'), taskType: options.taskType || 'chat', inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens, success: true }).catch(() => undefined);
-        if (requestId) await finalizeAiRequest(requestId, { success: true, provider, model: options.model || (provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o'), totalTokens: result.totalTokens });
+        const fallbackModel =
+          provider === 'gemini'
+            ? 'gemini-2.5-flash'
+            : provider === 'groq'
+            ? 'llama-3.3-70b-versatile'
+            : provider === 'ollama'
+            ? 'llama3.1'
+            : 'gpt-4o';
+        if (options.tenantId) await recordAiUsage({ tenantId: options.tenantId, requestId, provider, model: options.model || fallbackModel, taskType: options.taskType || 'chat', inputTokens: result.inputTokens, outputTokens: result.outputTokens, totalTokens: result.totalTokens, success: true }).catch(() => undefined);
+        if (requestId) await finalizeAiRequest(requestId, { success: true, provider, model: options.model || fallbackModel, totalTokens: result.totalTokens });
         return { text: result.text, provider };
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity(provider, value);

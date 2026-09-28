@@ -76,8 +76,19 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
       )}
       <form onSubmit={add} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <input required placeholder="Nome" value={form.name} onChange={e => setForm({...form,name:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
-        <select value={form.provider} onChange={e => setForm({...form,provider:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
-          <option value="openai">OpenAI</option><option value="groq">Groq</option><option value="ollama">Ollama</option>
+        <select
+          value={form.provider}
+          onChange={e => {
+            const provider = e.target.value;
+            const defaultModel = provider === 'gemini' ? 'gemini-2.5-flash' : provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o';
+            setForm({ ...form, provider, model: defaultModel });
+          }}
+          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+        >
+          <option value="openai">OpenAI</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="groq">Groq</option>
+          <option value="ollama">Ollama</option>
         </select>
         <input required placeholder="Modelo" value={form.model} onChange={e => setForm({...form,model:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />
         <input required type="password" placeholder={form.provider === "ollama" ? "URL do Ollama" : "API Key"} value={form.apiKey} onChange={e => setForm({...form,apiKey:e.target.value})} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white" />

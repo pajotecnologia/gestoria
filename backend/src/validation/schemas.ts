@@ -24,7 +24,7 @@ const structureSchema = z.object({
 export const agentCreateSchema = z.object({
   name: text(2, 120).optional(),
   niche: text(2, 120).optional(),
-  provider: z.enum(['openai', 'groq', 'ollama']).optional(),
+  provider: z.enum(['openai', 'gemini', 'groq', 'ollama']).optional(),
   model: text(1, 120).optional(),
   temperature: z.number().min(0).max(2).optional(),
   structure: structureSchema,

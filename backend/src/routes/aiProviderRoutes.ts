@@ -12,7 +12,7 @@ router.use(requireRoles('AGENCY_ADMIN'));
 
 const schema = z.object({
   name: z.string().trim().min(2).max(120),
-  provider: z.enum(['openai', 'groq', 'ollama']),
+  provider: z.enum(['openai', 'gemini', 'groq', 'ollama']),
   model: z.string().trim().min(1).max(120),
   apiKey: z.string().trim().min(1).max(500),
   priority: z.number().int().min(1).max(1000).default(100),

@@ -16,6 +16,13 @@ const PROVIDER_MODELS: Record<string, ModelOption[]> = {
     { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Ultra Rápido & Baixo Custo)' },
     { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' }
   ],
+  gemini: [
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Ultra Rápido & Inteligente)' },
+    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Alta Complexidade & Raciocínio)' },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' }
+  ],
   groq: [
     { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B (Groq LPU Speed)' },
     { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Sub-second Latency)' },
@@ -46,7 +53,7 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
   const [marketNiche, setMarketNiche] = useState(initialData?.niche || 'Tecnologia B2B');
 
   // Aba Motor de IA
-  const [provider, setProvider] = useState<'openai' | 'groq' | 'ollama'>(initialData?.provider || 'openai');
+  const [provider, setProvider] = useState<'openai' | 'gemini' | 'groq' | 'ollama'>(initialData?.provider || 'openai');
   const [selectedModel, setSelectedModel] = useState(initialData?.model || PROVIDER_MODELS.openai[0].id);
   const [temperature, setTemperature] = useState(initialData?.temperature ?? 0.4);
 
@@ -67,7 +74,7 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const handleProviderChange = (newProvider: 'openai' | 'groq' | 'ollama') => {
+  const handleProviderChange = (newProvider: 'openai' | 'gemini' | 'groq' | 'ollama') => {
     setProvider(newProvider);
     setSelectedModel(PROVIDER_MODELS[newProvider][0].id);
   };
@@ -222,6 +229,7 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
               >
                 <option value="openai">OpenAI (Oficial)</option>
+                <option value="gemini">Google Gemini (Oficial)</option>
                 <option value="groq">Groq (Incrível Velocidade LPU)</option>
                 <option value="ollama">Ollama (Self-Hosted / Local)</option>
               </select>
