@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, LogOut, ShieldCheck, Users, Radio, Sparkles } from 'lucide-react';
+import { Bot, LogOut, ShieldCheck, Users, Radio, Sparkles, Menu, X } from 'lucide-react';
 import { AgentsDashboard } from './components/AgentsDashboard';
 import { WarRoomChat } from './components/WarRoomChat';
 import { SpecialistManager } from './components/SpecialistManager';
@@ -23,6 +23,7 @@ export const App: React.FC = () => {
 
   // Navegação Principal
   const [currentView, setCurrentView] = useState<'agents' | 'clients' | 'campaigns' | 'specialists' | 'warroom' | 'ai' | 'users' | 'audit'>('clients');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Estados do Formulário de Auth
   const [isRegistering, setIsRegistering] = useState(false);
@@ -74,6 +75,11 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleViewChange = (view: typeof currentView) => {
+    setCurrentView(view);
+    setMobileMenuOpen(false);
+  };
+
   const handleLogout = () => {
     setToken('');
     setUser(null);
@@ -81,6 +87,7 @@ export const App: React.FC = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('tenant');
+    setMobileMenuOpen(false);
   };
 
   if (!token || !user || !tenant) {
@@ -181,10 +188,10 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col">
+    <div className="min-h-screen overflow-x-hidden bg-zinc-950 flex flex-col">
       {/* Navbar Superior */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-white/[0.07] bg-zinc-950/80 px-4 py-3 backdrop-blur-xl sm:px-6">
-        <div className="flex items-center space-x-6">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-white/[0.07] bg-zinc-950/90 px-3 py-3 backdrop-blur-xl sm:px-6">
+        <div className="flex min-w-0 items-center space-x-3 md:space-x-6">
           <div className="flex items-center space-x-3">
             <div className="rounded-xl border border-indigo-400/20 bg-gradient-to-br from-indigo-500/15 to-violet-600/15 p-2 text-indigo-300">
               <Bot className="w-5 h-5" />
@@ -198,10 +205,10 @@ export const App: React.FC = () => {
           </div>
 
           {/* Navegação de Módulos */}
-          <nav className="flex max-w-[58vw] items-center space-x-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-zinc-900/70 p-1 backdrop-blur-md md:max-w-none">
+          <nav className="hidden max-w-[58vw] items-center space-x-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-zinc-900/70 p-1 backdrop-blur-md md:flex md:max-w-none">
             <button
               type="button"
-              onClick={() => setCurrentView('clients')}
+              onClick={() => handleViewChange('clients')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'clients' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:text-zinc-100'}`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -210,7 +217,7 @@ export const App: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setCurrentView('campaigns')}
+              onClick={() => handleViewChange('campaigns')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'campaigns' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-slate-400 hover:text-white'}`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -219,7 +226,7 @@ export const App: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setCurrentView('agents')}
+              onClick={() => handleViewChange('agents')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 currentView === 'agents'
                   ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10'
@@ -232,7 +239,7 @@ export const App: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setCurrentView('ai')}
+              onClick={() => handleViewChange('ai')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'ai' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-slate-400 hover:text-white'}`}
             >
               <Bot className="w-3.5 h-3.5" />
@@ -240,7 +247,7 @@ export const App: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setCurrentView('specialists')}
+              onClick={() => handleViewChange('specialists')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 currentView === 'specialists'
                   ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10'
@@ -253,7 +260,7 @@ export const App: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setCurrentView('warroom')}
+              onClick={() => handleViewChange('warroom')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 currentView === 'warroom'
                   ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-sm'
@@ -263,12 +270,22 @@ export const App: React.FC = () => {
               <Users className="w-3.5 h-3.5 text-purple-400" />
               <span className="hidden md:inline">Mesa Redonda</span>
             </button>
-            {user?.role === 'AGENCY_ADMIN' && <button type="button" onClick={() => setCurrentView('users')} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'users' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}><Users className="w-3.5 h-3.5"/><span className="hidden md:inline">Usuários</span></button>}
-            {user?.role === 'AGENCY_ADMIN' && <button type="button" onClick={() => setCurrentView('audit')} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'audit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}><ShieldCheck className="w-3.5 h-3.5"/><span className="hidden md:inline">Auditoria</span></button>}
+            {user?.role === 'AGENCY_ADMIN' && <button type="button" onClick={() => handleViewChange('users')} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'users' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}><Users className="w-3.5 h-3.5"/><span className="hidden md:inline">Usuários</span></button>}
+            {user?.role === 'AGENCY_ADMIN' && <button type="button" onClick={() => handleViewChange('audit')} className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'audit' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}><ShieldCheck className="w-3.5 h-3.5"/><span className="hidden md:inline">Auditoria</span></button>}
           </nav>
+
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            className="md:hidden flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-white/[0.08] bg-zinc-900/80 text-zinc-200 transition-all duration-200 hover:bg-zinc-800"
+          >
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <div className="hidden sm:flex items-center space-x-2 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>{user?.email}</span>
@@ -280,13 +297,45 @@ export const App: React.FC = () => {
             className="premium-button flex items-center space-x-1 rounded-lg border border-white/[0.07] bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Sair</span>
+            <span className="hidden sm:inline">Sair</span>
           </button>
         </div>
       </header>
 
-      {/* Conteúdo Principal */}
-      <main className="mx-auto min-w-0 w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
+      {mobileMenuOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+          />
+          <aside className="fixed inset-y-0 right-0 z-50 w-[min(88vw,22rem)] border-l border-white/[0.08] bg-zinc-950/95 p-4 shadow-2xl shadow-black/50 backdrop-blur-xl md:hidden">
+            <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
+              <div>
+                <p className="text-sm font-semibold text-zinc-100">Navegação</p>
+                <p className="mt-1 text-[11px] text-zinc-500">{tenant?.name}</p>
+              </div>
+              <button type="button" aria-label="Fechar menu" onClick={() => setMobileMenuOpen(false)} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-zinc-900 text-zinc-300 hover:bg-zinc-800">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="mt-4 space-y-1">
+              <button type="button" onClick={() => handleViewChange('clients')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'clients' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Users className="h-4 w-4" /><span>Empresas</span></button>
+              <button type="button" onClick={() => handleViewChange('campaigns')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'campaigns' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Sparkles className="h-4 w-4" /><span>Campanhas</span></button>
+              <button type="button" onClick={() => handleViewChange('agents')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'agents' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Radio className="h-4 w-4" /><span>Agentes WhatsApp</span></button>
+              <button type="button" onClick={() => handleViewChange('ai')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'ai' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Bot className="h-4 w-4" /><span>Provedores IA</span></button>
+              <button type="button" onClick={() => handleViewChange('specialists')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'specialists' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Sparkles className="h-4 w-4" /><span>Especialistas Squad</span></button>
+              <button type="button" onClick={() => handleViewChange('warroom')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'warroom' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Users className="h-4 w-4" /><span>Mesa Redonda</span></button>
+              <button type="button" onClick={() => handleViewChange('users')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'users' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Users className="h-4 w-4" /><span>Usuários</span></button>
+              <button type="button" onClick={() => handleViewChange('audit')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'audit' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><ShieldCheck className="h-4 w-4" /><span>Auditoria</span></button>
+            </nav>
+          </aside>
+        </>
+      )}
+
+      {/* Conteúdo Principal */
+      <main className="mx-auto min-w-0 w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
         {currentView === 'clients' ? (
           <ClientContextManager jwtToken={token} />
         ) : currentView === 'campaigns' ? (
