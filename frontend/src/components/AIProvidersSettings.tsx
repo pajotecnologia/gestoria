@@ -278,7 +278,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         </h2>
 
         {showForm && (
-      <form onSubmit={add} className="space-y-4">
+      <form onSubmit={add} className="space-y-4 rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-5">\n        <div className="flex items-center justify-between border-b border-white/[0.07] pb-4"><div><h3 className="text-sm font-bold text-white">Novo provedor de IA</h3><p className="mt-1 text-[11px] text-zinc-500">Cadastre a conta e valide a conexão antes de salvar.</p></div><button type="button" onClick={() => setShowForm(false)} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-zinc-800 text-zinc-300"><X className="h-4 w-4" /></button></div>
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">Nome Identificador</label>
