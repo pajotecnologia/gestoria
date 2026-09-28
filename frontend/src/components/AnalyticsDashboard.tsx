@@ -9,7 +9,7 @@ const money = (v: number | null) => v === null ? '—' : new Intl.NumberFormat('
 const number = (v: number | null) => v === null ? '—' : new Intl.NumberFormat('pt-BR').format(v);
 const percent = (v: number | null) => v === null ? '—' : v.toFixed(1) + '%';
 const variation = (v: number | null) => v === null ? 'N/D' : (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
-const label = (v: string) => ({ CAMPAIGN_CREATED: 'Campanha criada', CAMPAIGN_UPDATED: 'Campanha atualizada', CAMPAIGN_ACTIVATED: 'Campanha ativada', CAMPAIGN_DEACTIVATED: 'Campanha pausada', CAMPAIGN_STRATEGY_GENERATED: 'Estratégia gerada', CLIENT_CREATED: 'Empresa cadastrada', CLIENT_UPDATED: 'Empresa atualizada', CLIENT_DELETED: 'Empresa excluída' } as Record<string,string>)[v] || v.replaceAll('_', ' ');
+const label = (v: string) => ({ CAMPAIGN_CREATED: 'Campanha criada', CAMPAIGN_UPDATED: 'Campanha atualizada', CAMPAIGN_ACTIVATED: 'Campanha ativada', CAMPAIGN_DEACTIVATED: 'Campanha pausada', CAMPAIGN_STRATEGY_GENERATED: 'Estratégia gerada', CLIENT_CREATED: 'Empresa cadastrada', CLIENT_UPDATED: 'Empresa atualizada', CLIENT_DELETED: 'Empresa excluída' } as Record<string,string>)[v] || v.replace(/_/g, ' ');
 
 const Skeleton = ({ className }: { className: string }) => <div className={'animate-pulse rounded-xl bg-zinc-800/70 ' + className} />;
 
