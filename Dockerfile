@@ -2,9 +2,10 @@
 # ESTÁGIO 1: Build do Frontend (React / Vite)
 # ==========================================
 FROM node:20-alpine AS frontend-builder
+ENV NODE_ENV=development
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm install --include=dev
 COPY frontend/ ./
 RUN npm run build
 
@@ -12,10 +13,11 @@ RUN npm run build
 # ESTÁGIO 2: Build do Backend (TypeScript + Prisma)
 # ==========================================
 FROM node:20-alpine AS backend-builder
+ENV NODE_ENV=development
 WORKDIR /app/backend
 COPY backend/package*.json ./
 COPY backend/prisma ./prisma/
-RUN npm install
+RUN npm install --include=dev
 COPY backend/ ./
 RUN npx prisma generate
 RUN npm run build
@@ -31,7 +33,7 @@ ENV NODE_ENV=production
 COPY backend/package*.json ./
 COPY backend/prisma ./prisma/
 
-RUN npm install --only=production
+RUN npm install --omit=dev
 
 COPY --from=backend-builder /app/backend/dist ./dist
 COPY --from=backend-builder /app/backend/node_modules/.prisma ./node_modules/.prisma
