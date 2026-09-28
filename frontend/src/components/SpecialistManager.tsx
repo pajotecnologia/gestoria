@@ -61,6 +61,20 @@ const COLOR_PRESETS = [
   { label: 'Violeta & Fúcsia', value: 'from-violet-600 to-fuchsia-600' }
 ];
 
+const ROLE_TRANSLATIONS: Record<string, string> = {
+  STRATEGIST: 'Estrategista',
+  COPYWRITER: 'Copywriter',
+  DESIGNER: 'Designer',
+  VIDEOMAKER: 'Roteirista',
+  TRAFFIC_MANAGER: 'Tráfego',
+  TAX_ADVISOR: 'Tributário',
+  TRIBUTARIO: 'Tributário',
+  FULLSTACK_DEV: 'Dev',
+  DEV: 'Dev',
+  SEO_SPECIALIST: 'SEO',
+  SEO: 'SEO',
+};
+
 const SPECIALIST_TEMPLATES = [
   {
     name: 'Dr. Roberto Mendes',
@@ -390,7 +404,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-950 text-indigo-400 border border-slate-800">
-                      @{spec.roleKey}
+                      @{ROLE_TRANSLATIONS[spec.roleKey] || spec.roleKey}
                     </span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${spec.isCustom ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-slate-800 text-slate-400'}`}>
                       {spec.isCustom ? 'Customizado' : 'Nativo do Squad'}
@@ -710,7 +724,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                   <h2 className="text-base font-bold text-white flex items-center space-x-2">
                     <span>Conversa Direta com {testingSpecialist.name}</span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-indigo-400">
-                      @{testingSpecialist.roleKey}
+                      @{ROLE_TRANSLATIONS[testingSpecialist.roleKey] || testingSpecialist.roleKey}
                     </span>
                   </h2>
                   <p className="text-xs text-slate-400">{testingSpecialist.title}</p>

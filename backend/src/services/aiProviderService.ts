@@ -368,9 +368,12 @@ export async function generateEmbeddings(input: string[], tenantId?: string): Pr
 export async function generateImage(
   prompt: string,
   tenantId?: string
-): Promise<{ url: string; provider: 'openai' }> {
+): Promise<{ url: string; provider: 'openai' | 'flux' }> {
   const errors: string[] = [];
   const requestId = tenantId ? await createAiRequest(tenantId, 'image') : null;
+
+  // Clean prompt for optimum generation
+  const cleanPrompt = prompt.replace(/^["'\s]+|["'\s]+$/g, '').trim();
 
   if (tenantId) {
     const accounts = await prisma.aiProviderAccount.findMany({
@@ -385,7 +388,7 @@ export async function generateImage(
         const client = new OpenAI({ apiKey: key });
         const response = await client.images.generate({
           model: account.model || 'dall-e-3',
-          prompt,
+          prompt: cleanPrompt,
           n: 1,
           size: '1024x1024',
           quality: 'standard',
@@ -398,8 +401,7 @@ export async function generateImage(
         });
         if (tenantId) await recordAiUsage({ tenantId, requestId, providerAccountId: account.id, provider: 'openai', model: account.model || 'dall-e-3', taskType: 'image', success: true }).catch(() => undefined);
         if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'openai', model: account.model || 'dall-e-3' });
-        if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'openai', model: 'dall-e-3' });
-      return { url, provider: 'openai' };
+        return { url, provider: 'openai' };
       } catch (error: any) {
         if (isCapacityError(error)) markCapacity('openai', `account:${account.id}:image`);
         errors.push(account.name + ': ' + String(error?.message || error));
@@ -417,7 +419,7 @@ export async function generateImage(
       const client = new OpenAI({ apiKey: key });
       const response = await client.images.generate({
         model: 'dall-e-3',
-        prompt,
+        prompt: cleanPrompt,
         n: 1,
         size: '1024x1024',
         quality: 'standard',
@@ -431,6 +433,14 @@ export async function generateImage(
     }
   }
 
-  if (requestId) await finalizeAiRequest(requestId, { success: false });
-  throw new Error('Nenhum provedor OpenAI disponível para geração de imagem. ' + errors.join(' | '));
+  // Fallback para geração instantânea FLUX em alta resolução
+  try {
+    const seed = Math.floor(Math.random() * 1000000);
+    const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=1024&height=1024&nologo=true&model=flux&seed=${seed}`;
+    if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'flux', model: 'flux.1-schnell' });
+    return { url: fluxUrl, provider: 'flux' };
+  } catch (fluxErr: any) {
+    if (requestId) await finalizeAiRequest(requestId, { success: false });
+    throw new Error('Falha ao gerar imagem. ' + errors.join(' | ') + ' | ' + fluxErr.message);
+  }
 }

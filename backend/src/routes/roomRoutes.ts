@@ -237,11 +237,12 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
     let targetSpecialists: SpecialistDefinition[] = [];
 
     if (specificRole) {
-      const match = specialistsMap.get(specificRole.toUpperCase());
+      const normalized = normalizeRole(specificRole);
+      const match = specialistsMap.get(specificRole.toUpperCase()) || specialistsMap.get(normalized);
       if (match) {
         targetSpecialists = [match];
       } else {
-        const defaultMatch = DEFAULT_SQUAD_PERSONAS.find(p => p.roleKey.toUpperCase() === specificRole.toUpperCase());
+        const defaultMatch = DEFAULT_SQUAD_PERSONAS.find(p => p.roleKey.toUpperCase() === specificRole.toUpperCase() || p.roleKey.toUpperCase() === normalized);
         if (defaultMatch) targetSpecialists = [defaultMatch];
       }
     } else {
@@ -266,7 +267,14 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
         model: persona.model || 'gpt-4o',
         temperature: persona.temperature ?? 0.7,
         messages: [
-          { role: 'system', content: persona.systemPrompt },
+          { 
+            role: 'system', 
+            content: `${persona.systemPrompt}
+Sua função neste debate: ${persona.name} (${persona.title}).
+Contribua de forma proativa para o objetivo do cliente e converse com as contribuições dos outros especialistas do squad.
+Quando sugerir uma imagem visual ou peça gráfica, descreva detalhadamente a composição e inclua ao final:
+[IMAGE_PROMPT: descrição detalhada em inglês da arte visual para geração gráfica]` 
+          },
           {
             role: 'user',
             content: `### BRIEFING DA SALA:
@@ -287,8 +295,9 @@ Agora é a sua vez de contribuir, ${persona.name} (${persona.title}). Construa s
       let generatedImageUrl: string | null = null;
 
       // Se o especialista tiver flag generateImage ativada ou for DESIGNER e tiver gerado prompt de imagem
-      if (persona.generateImage || persona.roleKey === 'DESIGNER') {
-        const promptMatch = content.match(/\[IMAGE_PROMPT:\s*([\s\S]*?)\]/i);
+      if (persona.generateImage || persona.roleKey === 'DESIGNER' || persona.roleKey === 'DESIGN') {
+        const promptMatch = content.match(/\[IMAGE_PROMPT:\s*([\s\S]*?)\]/i) || 
+                             content.match(/\*\*Prompt(?: DALL-E| de Imagem| para o Designer)?:\*\*\s*["']?([\s\S]*?)["']?(?:\n\n|\n[0-9]\.|\n\*|\n#|$)/i);
         if (promptMatch && promptMatch[1]) {
           const imagePrompt = promptMatch[1].trim();
           try {
@@ -326,6 +335,74 @@ Agora é a sua vez de contribuir, ${persona.name} (${persona.title}). Construa s
   } catch (error: any) {
     console.error('[War Room Error]:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Gerar imagem sob demanda a partir de um prompt no chat
+router.post('/:id/generate-image', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const { id } = req.params;
+    const { prompt, messageId } = req.body;
+
+    if (!prompt || typeof prompt !== 'string') {
+      res.status(400).json({ error: 'Prompt é obrigatório para geração de imagem.' });
+      return;
+    }
+
+    const imageResult = await generateImage(prompt.trim(), tenantId);
+
+    if (messageId) {
+      await prisma.roomMessage.updateMany({
+        where: { id: messageId, roomId: id },
+        data: { imageUrl: imageResult.url }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        imageUrl: imageResult.url,
+        provider: imageResult.provider
+      }
+    });
+  } catch (error: any) {
+    console.error('[Image Generation Error]:', error);
+    res.status(500).json({ error: error.message || 'Falha ao gerar imagem.' });
+  }
+});
+
+// Excluir sala/projeto do War Room
+router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const { id } = req.params;
+
+    const room = await prisma.room.findFirst({
+      where: { id, tenantId }
+    });
+
+    if (!room) {
+      res.status(404).json({ error: 'Projeto/sala não encontrado.' });
+      return;
+    }
+
+    await prisma.room.delete({
+      where: { id }
+    });
+
+    await writeAuditLog({
+      tenantId,
+      action: 'ROOM_DELETE',
+      entity: 'Room',
+      entityId: id,
+      metadata: { title: room.title }
+    }).catch(() => undefined);
+
+    res.json({ success: true, message: `Projeto '${room.title}' excluído com sucesso.` });
+  } catch (error: any) {
+    console.error('[Delete Room Error]:', error);
+    res.status(500).json({ error: error.message || 'Falha ao excluir projeto.' });
   }
 });
 
@@ -370,5 +447,15 @@ router.get('/:id/export', async (req: Request, res: Response): Promise<void> => 
     res.status(500).json({ error: error.message });
   }
 });
+
+function normalizeRole(r: string): string {
+  const upper = r.toUpperCase();
+  if (['ESTRATEGISTA', 'STRATEGIST', 'ESTRATEGIA', 'CMO'].includes(upper)) return 'STRATEGIST';
+  if (['COPYWRITER', 'REDATOR', 'COPY', 'REDATORA'].includes(upper)) return 'COPYWRITER';
+  if (['DESIGNER', 'DESIGN', 'ARTE'].includes(upper)) return 'DESIGNER';
+  if (['ROTEIRISTA', 'VIDEOMAKER', 'VIDEO', 'VIDEOS'].includes(upper)) return 'VIDEOMAKER';
+  if (['TRAFEGO', 'TRAFFIC_MANAGER', 'GESTORA_TRAFEGO', 'MIDIA'].includes(upper)) return 'TRAFFIC_MANAGER';
+  return upper;
+}
 
 export default router;

@@ -13,7 +13,10 @@ import {
   BrainCircuit, 
   Loader2,
   Image as ImageIcon,
-  MessageSquare
+  MessageSquare,
+  Trash2,
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
 
@@ -37,7 +40,7 @@ interface Pagination {
 interface RoomMessage {
   id: string;
   senderType: 'USER' | 'AGENT';
-  agentRole: 'STRATEGIST' | 'COPYWRITER' | 'DESIGNER' | 'VIDEOMAKER' | 'TRAFFIC_MANAGER' | 'HUMAN';
+  agentRole: 'STRATEGIST' | 'COPYWRITER' | 'DESIGNER' | 'VIDEOMAKER' | 'TRAFFIC_MANAGER' | 'HUMAN' | string;
   senderName: string;
   content: string;
   imageUrl?: string | null;
@@ -48,9 +51,32 @@ interface WarRoomChatProps {
   jwtToken: string;
 }
 
-const ROLE_BADGES: Record<string, { label: string; icon: any; gradient: string; textColor: string; borderColor: string }> = {
+const ROLE_TRANSLATIONS: Record<string, { label: string; shortRole: string; tag: string }> = {
+  STRATEGIST: { label: 'Estrategista & CMO', shortRole: 'Estrategista', tag: '@Estrategista' },
+  COPYWRITER: { label: 'Copywriter Sênior', shortRole: 'Copywriter', tag: '@Copywriter' },
+  DESIGNER: { label: 'Diretor de Arte & Design', shortRole: 'Designer', tag: '@Designer' },
+  VIDEOMAKER: { label: 'Roteirista de Vídeos', shortRole: 'Roteirista', tag: '@Roteirista' },
+  TRAFFIC_MANAGER: { label: 'Gestora de Tráfego', shortRole: 'Tráfego', tag: '@Tráfego' },
+  TAX_ADVISOR: { label: 'Consultor Tributário', shortRole: 'Tributário', tag: '@Tributário' },
+  TRIBUTARIO: { label: 'Consultor Tributário', shortRole: 'Tributário', tag: '@Tributário' },
+  FULLSTACK_DEV: { label: 'Engenheiro FullStack', shortRole: 'Desenvolvedor', tag: '@Dev' },
+  DEV: { label: 'Engenheiro FullStack', shortRole: 'Desenvolvedor', tag: '@Dev' },
+  SEO_SPECIALIST: { label: 'Especialista em SEO', shortRole: 'SEO', tag: '@SEO' },
+  SEO: { label: 'Especialista em SEO', shortRole: 'SEO', tag: '@SEO' },
+};
+
+const getSpecialistDisplay = (spec: { roleKey: string; name: string; title?: string }) => {
+  const trans = ROLE_TRANSLATIONS[spec.roleKey];
+  const shortRole = trans ? trans.shortRole : (spec.title ? spec.title.split(' ')[0] : spec.roleKey);
+  const displayName = spec.name.startsWith('Dr. ') ? spec.name.split(' ').slice(0, 2).join(' ') : spec.name.split(' ')[0];
+  const tag = trans ? trans.tag : `@${shortRole}`;
+  return { shortRole, displayName, tag, buttonLabel: `@${displayName} (${shortRole})` };
+};
+
+const ROLE_BADGES: Record<string, { label: string; tag: string; icon: any; gradient: string; textColor: string; borderColor: string }> = {
   STRATEGIST: {
     label: 'Estrategista & CMO',
+    tag: '@Estrategista',
     icon: BrainCircuit,
     gradient: 'from-blue-600 to-indigo-600',
     textColor: 'text-blue-400',
@@ -58,13 +84,15 @@ const ROLE_BADGES: Record<string, { label: string; icon: any; gradient: string; 
   },
   COPYWRITER: {
     label: 'Copywriter Sênior',
+    tag: '@Copywriter',
     icon: PenTool,
     gradient: 'from-emerald-500 to-teal-600',
     textColor: 'text-emerald-400',
     borderColor: 'border-emerald-500/30'
   },
   DESIGNER: {
-    label: 'Diretor de Arte & DALL-E',
+    label: 'Diretor de Arte & Design',
+    tag: '@Designer',
     icon: Palette,
     gradient: 'from-purple-600 to-pink-600',
     textColor: 'text-purple-400',
@@ -72,6 +100,7 @@ const ROLE_BADGES: Record<string, { label: string; icon: any; gradient: string; 
   },
   VIDEOMAKER: {
     label: 'Roteirista de Vídeos',
+    tag: '@Roteirista',
     icon: Video,
     gradient: 'from-amber-500 to-orange-600',
     textColor: 'text-amber-400',
@@ -79,6 +108,7 @@ const ROLE_BADGES: Record<string, { label: string; icon: any; gradient: string; 
   },
   TRAFFIC_MANAGER: {
     label: 'Gestora de Tráfego',
+    tag: '@Tráfego',
     icon: TrendingUp,
     gradient: 'from-cyan-500 to-blue-600',
     textColor: 'text-cyan-400',
@@ -86,6 +116,7 @@ const ROLE_BADGES: Record<string, { label: string; icon: any; gradient: string; 
   },
   HUMAN: {
     label: 'Gestor da Agência',
+    tag: '@Você',
     icon: User,
     gradient: 'from-slate-700 to-slate-800',
     textColor: 'text-slate-300',
@@ -106,6 +137,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isDebating, setIsDebating] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
+  const [generatingMessageId, setGeneratingMessageId] = useState<string | null>(null);
 
   // Modal de Criação de Nova Sala
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
@@ -237,8 +269,83 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
         setTimeout(scrollToBottom, 100);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Erro ao enviar mensagem:', err);
     }
+  };
+
+  const handleDeleteRoom = async (roomId: string, roomTitle: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Tem certeza que deseja excluir o projeto "${roomTitle}" e todo o histórico da mesa redonda?`)) return;
+    try {
+      const res = await fetch(apiUrl(`/api/rooms/${roomId}`), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${jwtToken}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (selectedRoom?.id === roomId) {
+          setSelectedRoom(null);
+          setMessages([]);
+        }
+        await fetchRooms();
+      } else {
+        alert(data.error || 'Erro ao excluir projeto.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Erro ao excluir projeto.');
+    }
+  };
+
+  const handleDownloadImage = async (imageUrl: string, filename = 'arte_campanha.jpg') => {
+    try {
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      window.open(imageUrl, '_blank');
+    }
+  };
+
+  const handleGenerateImageForMessage = async (messageId: string, promptText: string) => {
+    if (!selectedRoom || generatingMessageId) return;
+    setGeneratingMessageId(messageId);
+    try {
+      const res = await fetch(apiUrl(`/api/rooms/${selectedRoom.id}/generate-image`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${jwtToken}`
+        },
+        body: JSON.stringify({ prompt: promptText, messageId })
+      });
+      const data = await res.json();
+      if (data.success && data.data?.imageUrl) {
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, imageUrl: data.data.imageUrl } : m));
+      } else {
+        alert(data.error || 'Não foi possível gerar a imagem.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Falha ao gerar imagem.');
+    } finally {
+      setGeneratingMessageId(null);
+    }
+  };
+
+  const extractPrompt = (content: string): string => {
+    const bracketMatch = content.match(/\[IMAGE_PROMPT:\s*([\s\S]*?)\]/i);
+    if (bracketMatch && bracketMatch[1]) return bracketMatch[1].trim();
+    const boldMatch = content.match(/\*\*Prompt(?: DALL-E| de Imagem| para o Designer)?:\*\*\s*["']?([\s\S]*?)["']?(?:\n\n|\n[0-9]\.|\n\*|\n#|$)/i);
+    if (boldMatch && boldMatch[1]) return boldMatch[1].trim();
+    const simpleMatch = content.match(/Prompt:\s*["']?([\s\S]*?)["']?(?:\n\n|\n[0-9]\.|\n\*|\n#|$)/i);
+    if (simpleMatch && simpleMatch[1]) return simpleMatch[1].trim();
+    return content.slice(0, 300);
   };
 
   const handleTriggerDebateRound = async (specificRole?: string) => {
@@ -316,21 +423,33 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
               </span>
             </h1>
             <p className="text-xs text-slate-400">
-              Estrategista, Copywriter, Designer (DALL-E 3), Roteirista de Vídeo e Gestora de Tráfego criando juntos.
+              Estrategista, Copywriter, Designer, Roteirista de Vídeo e Gestora de Tráfego criando juntos.
             </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-3">
           {selectedRoom && (
-            <button
-              type="button"
-              onClick={handleExportPlan}
-              className="flex items-center space-x-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl border border-slate-700 transition"
-            >
-              <Download className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Exportar Plano (.md)</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleExportPlan}
+                className="flex items-center space-x-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl border border-slate-700 transition"
+              >
+                <Download className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Exportar Plano (.md)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => handleDeleteRoom(selectedRoom.id, selectedRoom.title, e)}
+                className="flex items-center space-x-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium rounded-xl border border-rose-500/30 transition"
+                title="Excluir este projeto"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                <span>Excluir Projeto</span>
+              </button>
+            </>
           )}
 
           <button
@@ -348,19 +467,28 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
       <div className="md:hidden border-b border-slate-800 bg-slate-950/80 p-3 overflow-x-auto">
         <div className="flex items-center gap-2 min-w-max">
           {rooms.map((room) => (
-            <button
-              type="button"
-              key={room.id}
-              onClick={() => loadRoom(room)}
-              className={`px-3 py-2 rounded-xl border text-left max-w-56 ${
-                selectedRoom?.id === room.id
-                  ? 'bg-indigo-600/15 border-indigo-500/40 text-white'
-                  : 'bg-slate-900 border-slate-800 text-slate-400'
-              }`}
-            >
-              <p className="text-xs font-semibold truncate">{room.title}</p>
-              <p className="text-[10px] text-slate-500 truncate">{room.topic}</p>
-            </button>
+            <div key={room.id} className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => loadRoom(room)}
+                className={`px-3 py-2 rounded-xl border text-left max-w-56 ${
+                  selectedRoom?.id === room.id
+                    ? 'bg-indigo-600/15 border-indigo-500/40 text-white'
+                    : 'bg-slate-900 border-slate-800 text-slate-400'
+                }`}
+              >
+                <p className="text-xs font-semibold truncate">{room.title}</p>
+                <p className="text-[10px] text-slate-500 truncate">{room.topic}</p>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleDeleteRoom(room.id, room.title, e)}
+                className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-rose-400 hover:bg-rose-500/20 transition"
+                title="Excluir projeto"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           ))}
         </div>
       </div>
@@ -391,22 +519,32 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                 <div className="text-xs text-slate-500 p-3 text-center">Nenhum projeto ativo.</div>
               ) : (
                 rooms.map((room) => (
-                  <button
-                    type="button"
+                  <div
                     key={room.id}
                     onClick={() => loadRoom(room)}
-                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-start space-x-2.5 ${
+                    className={`group w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
                       selectedRoom?.id === room.id
                         ? 'bg-indigo-600/15 border-indigo-500/40 text-white'
                         : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
                     }`}
                   >
-                    <MessageSquare className="w-4 h-4 shrink-0 text-indigo-400 mt-0.5" />
-                    <div className="truncate">
-                      <p className="text-xs font-semibold text-white truncate">{room.title}</p>
-                      <p className="text-[10px] text-slate-500 truncate mt-0.5">{room.topic}</p>
+                    <div className="flex items-start space-x-2.5 min-w-0 flex-1 pr-2">
+                      <MessageSquare className="w-4 h-4 shrink-0 text-indigo-400 mt-0.5" />
+                      <div className="truncate">
+                        <p className="text-xs font-semibold text-white truncate">{room.title}</p>
+                        <p className="text-[10px] text-slate-500 truncate mt-0.5">{room.topic}</p>
+                      </div>
                     </div>
-                  </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteRoom(room.id, room.title, e)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition shrink-0"
+                      title="Excluir projeto"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 ))
               )}
             </div>
@@ -454,11 +592,11 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                   </div>
                   <div className="flex items-center space-x-2 text-purple-400">
                     <Palette className="w-3.5 h-3.5" />
-                    <span>Lucas Viana (Design & DALL-E)</span>
+                    <span>Lucas Viana (Design & Arte)</span>
                   </div>
                   <div className="flex items-center space-x-2 text-amber-400">
                     <Video className="w-3.5 h-3.5" />
-                    <span>Gabriel Sato (Vídeos & Reels)</span>
+                    <span>Gabriel Sato (Roteiro de Vídeos)</span>
                   </div>
                   <div className="flex items-center space-x-2 text-cyan-400">
                     <TrendingUp className="w-3.5 h-3.5" />
@@ -466,21 +604,24 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                   </div>
                 </>
               ) : (
-                specialists.map((spec) => (
-                  <div
-                    key={spec.roleKey}
-                    onClick={() => handleTriggerDebateRound(spec.roleKey)}
-                    className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800/80 cursor-pointer transition text-slate-300 hover:text-white"
-                  >
-                    <div className="flex items-center space-x-2 truncate">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      <span className="truncate">{spec.name}</span>
+                specialists.map((spec) => {
+                  const display = getSpecialistDisplay(spec);
+                  return (
+                    <div
+                      key={spec.roleKey}
+                      onClick={() => handleTriggerDebateRound(spec.roleKey)}
+                      className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800/80 cursor-pointer transition text-slate-300 hover:text-white"
+                    >
+                      <div className="flex items-center space-x-2 truncate">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        <span className="truncate">{spec.name}</span>
+                      </div>
+                      <span className="text-[9px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                        {display.tag}
+                      </span>
                     </div>
-                    <span className="text-[9px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
-                      @{spec.roleKey}
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -491,63 +632,66 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
           {/* Barra de Ações Rápidas do Squad */}
           <div className="px-4 sm:px-6 py-2.5 bg-slate-950/40 border-b border-slate-800 flex items-center justify-between gap-3 overflow-x-auto min-w-0">
             <div className="flex items-center space-x-2 text-xs overflow-x-auto min-w-0 py-0.5">
-              <span className="text-slate-400 text-[11px] mr-1 shrink-0 hidden sm:inline">Conversar com Especialista:</span>
+              <span className="text-slate-400 text-[11px] mr-1 shrink-0 hidden sm:inline">Chamar Especialista:</span>
               {specialists.length === 0 ? (
                 <>
                   <button
                     type="button"
                     disabled={isDebating}
                     onClick={() => handleTriggerDebateRound('STRATEGIST')}
-                    className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[11px] transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[11px] transition cursor-pointer whitespace-nowrap"
                   >
-                    @Estrategista
+                    @Dr. Arthur (Estrategista)
                   </button>
                   <button
                     type="button"
                     disabled={isDebating}
                     onClick={() => handleTriggerDebateRound('COPYWRITER')}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] transition cursor-pointer whitespace-nowrap"
                   >
-                    @Copywriter
+                    @Camila (Copywriter)
                   </button>
                   <button
                     type="button"
                     disabled={isDebating}
                     onClick={() => handleTriggerDebateRound('DESIGNER')}
-                    className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[11px] transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[11px] transition cursor-pointer whitespace-nowrap"
                   >
-                    @Designer
+                    @Lucas (Designer)
                   </button>
                   <button
                     type="button"
                     disabled={isDebating}
                     onClick={() => handleTriggerDebateRound('VIDEOMAKER')}
-                    className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[11px] transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[11px] transition cursor-pointer whitespace-nowrap"
                   >
-                    @Vídeos
+                    @Gabriel (Roteirista)
                   </button>
                   <button
                     type="button"
                     disabled={isDebating}
                     onClick={() => handleTriggerDebateRound('TRAFFIC_MANAGER')}
-                    className="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] transition cursor-pointer whitespace-nowrap"
                   >
-                    @Tráfego
+                    @Renata (Tráfego)
                   </button>
                 </>
               ) : (
-                specialists.map((spec) => (
-                  <button
-                    key={spec.roleKey}
-                    type="button"
-                    disabled={isDebating}
-                    onClick={() => handleTriggerDebateRound(spec.roleKey)}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white border border-indigo-500/30 text-[11px] transition cursor-pointer whitespace-nowrap"
-                    title={spec.title}
-                  >
-                    @{spec.name.split(' ')[0]} ({spec.roleKey})
-                  </button>
-                ))
+                specialists.map((spec) => {
+                  const display = getSpecialistDisplay(spec);
+                  return (
+                    <button
+                      key={spec.roleKey}
+                      type="button"
+                      disabled={isDebating}
+                      onClick={() => handleTriggerDebateRound(spec.roleKey)}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white border border-indigo-500/30 text-[11px] transition cursor-pointer whitespace-nowrap"
+                      title={spec.title}
+                    >
+                      {display.buttonLabel}
+                    </button>
+                  );
+                })
               )}
             </div>
 
@@ -584,6 +728,8 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                 const badge = ROLE_BADGES[msg.agentRole] || ROLE_BADGES.HUMAN;
                 const IconComponent = badge.icon;
                 const isHuman = msg.senderType === 'USER';
+                const hasPrompt = msg.content.includes('Prompt') || msg.content.includes('IMAGE_PROMPT') || msg.agentRole === 'DESIGNER';
+                const isGeneratingThis = generatingMessageId === msg.id;
 
                 return (
                   <div
@@ -618,28 +764,84 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                         {msg.content}
                       </div>
 
-                      {/* Exibição de Imagem Gerada (DALL-E 3) */}
+                      {/* Botão de Gerar Imagem Sob Demanda se o Especialista sugeriu um Prompt */}
+                      {!msg.imageUrl && hasPrompt && !isHuman && (
+                        <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+                          <span className="text-[11px] text-purple-300 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                            <span>Prompt visual detectado nesta sugestão</span>
+                          </span>
+                          <button
+                            type="button"
+                            disabled={isGeneratingThis}
+                            onClick={() => handleGenerateImageForMessage(msg.id, extractPrompt(msg.content))}
+                            className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 text-white text-[11px] font-semibold rounded-xl shadow-md transition cursor-pointer"
+                          >
+                            {isGeneratingThis ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Renderizando Arte...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Palette className="w-3.5 h-3.5" />
+                                <span>🎨 Gerar Imagem Agora</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Exibição da Imagem Gerada com Botão de Download */}
                       {msg.imageUrl && (
-                        <div className="mt-4 p-2 bg-slate-900 rounded-xl border border-slate-800">
-                          <div className="flex items-center justify-between mb-2 px-1">
-                            <span className="text-[11px] font-semibold text-purple-400 flex items-center space-x-1">
-                              <ImageIcon className="w-3.5 h-3.5" />
-                              <span>Arte Gerada pela IA (DALL-E 3)</span>
+                        <div className="mt-4 p-3 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-3">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-semibold text-purple-400 flex items-center space-x-1.5">
+                              <ImageIcon className="w-4 h-4 text-pink-400" />
+                              <span>Arte Visual Gerada pela IA</span>
                             </span>
-                            <a
-                              href={msg.imageUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-[10px] text-indigo-400 hover:text-indigo-300 underline"
-                            >
-                              Abrir em Alta Resolução
-                            </a>
+
+                            <div className="flex items-center space-x-2">
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadImage(msg.imageUrl!, `Arte_Campanha_${msg.id.slice(0, 8)}.jpg`)}
+                                className="flex items-center space-x-1 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-medium transition cursor-pointer shadow"
+                                title="Baixar arquivo da imagem diretamente no computador"
+                              >
+                                <Download className="w-3 h-3" />
+                                <span>Baixar Imagem</span>
+                              </button>
+
+                              <a
+                                href={msg.imageUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center space-x-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] transition"
+                                title="Ver imagem em tamanho real"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                                <span>Abrir</span>
+                              </a>
+
+                              <button
+                                type="button"
+                                disabled={isGeneratingThis}
+                                onClick={() => handleGenerateImageForMessage(msg.id, extractPrompt(msg.content))}
+                                className="p-1 text-slate-400 hover:text-white rounded transition"
+                                title="Gerar outra versão desta arte"
+                              >
+                                <RefreshCw className={`w-3.5 h-3.5 ${isGeneratingThis ? 'animate-spin text-purple-400' : ''}`} />
+                              </button>
+                            </div>
                           </div>
-                          <img
-                            src={msg.imageUrl}
-                            alt="Arte da Campanha"
-                            className="w-full max-h-80 object-cover rounded-lg shadow-lg"
-                          />
+
+                          <div className="relative rounded-xl overflow-hidden border border-slate-800 group">
+                            <img
+                              src={msg.imageUrl}
+                              alt="Arte da Campanha"
+                              className="w-full max-h-96 object-contain bg-black/40 rounded-xl"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
