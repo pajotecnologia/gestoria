@@ -8,9 +8,15 @@ import { UserManagement } from './components/UserManagement';
 import { AuditLogViewer } from './components/AuditLogViewer';
 
 export const App: React.FC = () => {
-  const [token, setToken] = useState<string>(localStorage.getItem('token') || '');
-  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('user') || 'null'));
-  const [tenant, setTenant] = useState<any>(JSON.parse(localStorage.getItem('tenant') || 'null'));
+  const [token, setToken] = useState<string>(() => {
+    try { return localStorage.getItem('token') || ''; } catch { return ''; }
+  });
+  const [user, setUser] = useState<any>(() => {
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; }
+  });
+  const [tenant, setTenant] = useState<any>(() => {
+    try { return JSON.parse(localStorage.getItem('tenant') || 'null'); } catch { return null; }
+  });
 
   // Navegação Principal
   const [currentView, setCurrentView] = useState<'agents' | 'warroom' | 'ai' | 'users' | 'audit'>('agents');
@@ -70,7 +76,7 @@ export const App: React.FC = () => {
     localStorage.removeItem('tenant');
   };
 
-  if (!token) {
+  if (!token || !user || !tenant) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">

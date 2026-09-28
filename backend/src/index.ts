@@ -25,7 +25,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares Globais de Segurança e Parser
-app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: false }));
 const allowedOrigins = env.corsAllowedOrigins;
 app.use(cors({ origin: (origin, callback) => {
   if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
