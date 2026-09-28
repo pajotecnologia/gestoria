@@ -13,6 +13,7 @@ RUN npm run build
 # ESTÁGIO 2: Build do Backend (TypeScript + Prisma)
 # ==========================================
 FROM node:20-alpine AS backend-builder
+RUN apk add --no-cache openssl libc6-compat
 ENV NODE_ENV=development
 WORKDIR /app/backend
 COPY backend/package*.json ./
@@ -26,6 +27,7 @@ RUN npm run build
 # ESTÁGIO 3: Imagem Final de Produção (Full-Stack)
 # ==========================================
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 ENV NODE_ENV=production

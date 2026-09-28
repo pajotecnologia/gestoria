@@ -3,6 +3,8 @@
 # ==========================================
 FROM node:20-alpine AS builder
 
+RUN apk add --no-cache openssl libc6-compat
+
 ENV NODE_ENV=development
 
 WORKDIR /app
@@ -22,6 +24,8 @@ RUN npm run build
 # ESTÁGIO 2: Imagem Final de Produção
 # ==========================================
 FROM node:20-alpine AS runner
+
+RUN apk add --no-cache openssl libc6-compat
 
 WORKDIR /app
 
