@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.1.1';
 
 export type ReleaseItem = {
   version: string;
@@ -8,6 +8,18 @@ export type ReleaseItem = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: '1.1.1',
+    date: '28/09/2026',
+    title: 'Correção do fluxo de gerenciamento',
+    changes: [
+      'Formulários permanecem fechados ao entrar nos menus.',
+      'Novo e Editar controlam explicitamente a abertura dos formulários.',
+      'Após salvar empresa, a tela retorna para a listagem.',
+      'Exclusões e atualizações recebem validação de resposta e recarregam a listagem.',
+      'Cache do index.html do frontend configurado para evitar versão publicada desatualizada.',
+    ],
+  },
   {
     version: '1.1.0',
     date: '28/09/2026',
