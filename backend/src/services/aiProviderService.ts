@@ -70,7 +70,7 @@ function markCapacity(provider: AiProvider, identity: string): void {
   cooldownUntil.set(cooldownKey(provider, identity), Date.now() + 60_000);
 }
 
-async function callChat(provider: AiProvider, value: string, options: ChatOptions): Promise<{ text: string; inputTokens: number; outputTokens: number; totalTokens: number }> {
+export async function callChat(provider: AiProvider, value: string, options: ChatOptions): Promise<{ text: string; inputTokens: number; outputTokens: number; totalTokens: number }> {
   if (provider === 'ollama') {
     const response = await axios.post(value.replace(/\/$/, '') + '/api/chat', {
       model: options.model || 'llama3.1',
