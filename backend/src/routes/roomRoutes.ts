@@ -449,12 +449,16 @@ router.get('/:id/export', async (req: Request, res: Response): Promise<void> => 
 });
 
 function normalizeRole(r: string): string {
-  const upper = r.toUpperCase();
-  if (['ESTRATEGISTA', 'STRATEGIST', 'ESTRATEGIA', 'CMO'].includes(upper)) return 'STRATEGIST';
-  if (['COPYWRITER', 'REDATOR', 'COPY', 'REDATORA'].includes(upper)) return 'COPYWRITER';
-  if (['DESIGNER', 'DESIGN', 'ARTE'].includes(upper)) return 'DESIGNER';
-  if (['ROTEIRISTA', 'VIDEOMAKER', 'VIDEO', 'VIDEOS'].includes(upper)) return 'VIDEOMAKER';
-  if (['TRAFEGO', 'TRAFFIC_MANAGER', 'GESTORA_TRAFEGO', 'MIDIA'].includes(upper)) return 'TRAFFIC_MANAGER';
+  if (!r) return '';
+  const upper = r.toUpperCase().trim();
+  if (['ESTRATEGISTA', 'STRATEGIST', 'ESTRATEGIA', 'CMO', 'ARTHUR', 'DR. ARTHUR', 'DR ARTHUR', 'DR_ARTHUR'].includes(upper)) return 'STRATEGIST';
+  if (['COPYWRITER', 'REDATOR', 'COPY', 'REDATORA', 'CAMILA'].includes(upper)) return 'COPYWRITER';
+  if (['DESIGNER', 'DESIGN', 'ARTE', 'LUCAS'].includes(upper)) return 'DESIGNER';
+  if (['ROTEIRISTA', 'VIDEOMAKER', 'VIDEO', 'VIDEOS', 'GABRIEL'].includes(upper)) return 'VIDEOMAKER';
+  if (['TRAFEGO', 'TRAFFIC_MANAGER', 'GESTORA_TRAFEGO', 'MIDIA', 'RENATA'].includes(upper)) return 'TRAFFIC_MANAGER';
+  if (['TAX_ADVISOR', 'TRIBUTARIO', 'ROBERTO'].includes(upper)) return 'TAX_ADVISOR';
+  if (['FULLSTACK_DEV', 'DEV', 'DESENVOLVEDOR', 'ALEXANDRE'].includes(upper)) return 'FULLSTACK_DEV';
+  if (['SEO_SPECIALIST', 'SEO', 'MARIANA'].includes(upper)) return 'SEO_SPECIALIST';
   return upper;
 }
 
