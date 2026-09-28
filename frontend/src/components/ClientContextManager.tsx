@@ -409,7 +409,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
             )}
           </div>
         ) : (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
             {filteredClients.map((client) => (
               <article
                 key={client.id}
@@ -498,7 +498,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         </div>
 
         <form onSubmit={save} className="space-y-4">
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-1">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
             {[
               ['name', 'Nome da empresa *'],
               ['legalName', 'Razão social'],
@@ -568,7 +568,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
               <h3 className="flex items-center gap-2 text-sm font-bold text-white">
                 <Link2 className="h-4 w-4 text-cyan-400" /> Sites e referências
               </h3>
-              <form onSubmit={addResource} className="mt-3 grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-4">
+              <form onSubmit={addResource} className="mt-3 grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <input
                   required
                   placeholder="Título"
