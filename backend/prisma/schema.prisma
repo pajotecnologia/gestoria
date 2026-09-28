@@ -88,6 +88,7 @@ model Agent {
 
   tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   knowledgeFiles    KnowledgeFile[]
+  campaigns         Campaign[]
 
   @@index([tenantId])
   @@map("agents")
@@ -96,7 +97,8 @@ model Agent {
 model KnowledgeFile {
   id            String   @id @default(uuid())
   tenantId      String
-  agentId       String
+  agentId       String?
+  clientId      String?
   fileName      String
   fileSize      Int
   mimeType      String
@@ -110,9 +112,11 @@ model KnowledgeFile {
   updatedAt     DateTime @updatedAt
 
   tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  agent         Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agent         Agent?   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  client        Client?  @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, agentId])
+  @@index([tenantId, clientId])
   @@map("knowledge_files")
 }
 
@@ -182,6 +186,83 @@ model Specialist {
   @@map("specialists")
 }
 
+
+model Client {
+  id              String   @id @default(uuid())
+  tenantId        String
+  name            String
+  legalName       String?
+  document        String?
+  segment         String?
+  website         String?
+  instagram       String?
+  linkedin        String?
+  description     String?  @db.Text
+  targetAudience  String?  @db.Text
+  productsOffers  String?  @db.Text
+  brandVoice      String?  @db.Text
+  goals           String?  @db.Text
+  competitors     String?  @db.Text
+  restrictions    String?  @db.Text
+  notes           String?  @db.Text
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  knowledgeFiles  KnowledgeFile[]
+  campaigns       Campaign[]
+  resources       ClientResource[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, name])
+  @@map("clients")
+}
+
+model ClientResource {
+  id          String   @id @default(uuid())
+  tenantId    String
+  clientId    String
+  title       String
+  url         String   @db.Text
+  type        String   @default("WEBSITE")
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, clientId])
+  @@map("client_resources")
+}
+
+model Campaign {
+  id           String   @id @default(uuid())
+  tenantId     String
+  clientId     String
+  agentId      String?
+  name         String
+  objective    String   @db.Text
+  offer        String?  @db.Text
+  audience     String?  @db.Text
+  channels     String?  @db.Text
+  budget       String?
+  period       String?
+  brief        String?  @db.Text
+  strategy     String?  @db.Text
+  status       String   @default("DRAFT")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  agent        Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, clientId, status])
+  @@index([tenantId, createdAt])
+  @@map("campaigns")
+}
 
 model AuditLog {
   id        String   @id @default(uuid())
