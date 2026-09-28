@@ -290,7 +290,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         'inline-flex items-center rounded-full px-2 py-1 text-[10px] font-semibold ' +
         (status === 'ACTIVE'
           ? 'bg-emerald-500/10 text-emerald-400'
-          : 'bg-slate-700 text-slate-300')
+          : 'bg-slate-700 text-zinc-300')
       }
     >
       {statusLabel[status]}
@@ -299,15 +299,15 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-bold text-white">
             <Building2 className="h-5 w-5 text-indigo-400" /> Contexto das Empresas
           </h2>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-zinc-400">
             Cadastre empresas, organize contexto, referências e materiais para alimentar campanhas e estratégias.
           </p>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-zinc-500">
             {clients.length} {clients.length === 1 ? 'empresa cadastrada' : 'empresas cadastradas'}
             {search || statusFilter !== 'ALL' ? ' • ' + filteredClients.length + ' encontradas' : ''}
           </p>
@@ -339,21 +339,21 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
       )}
 
       <section className="space-y-4">
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-4 lg:flex-row lg:items-center">
+        <div className="flex flex-col gap-3 rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-4 lg:flex-row lg:items-center">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Pesquisar por empresa, razão social, documento ou segmento..."
-              className="w-full rounded-xl border border-slate-800 bg-slate-950 py-2.5 pl-9 pr-9 text-xs text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-xl border border-white/[0.07] bg-zinc-950 py-2.5 pl-9 pr-9 text-xs text-white outline-none focus:border-indigo-500"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
                 aria-label="Limpar pesquisa"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -361,11 +361,11 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
           </div>
 
           <div className="flex items-center gap-2 lg:w-48">
-            <Filter className="h-4 w-4 text-slate-500" />
+            <Filter className="h-4 w-4 text-zinc-500" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | ClientStatus)}
-              className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-xl border border-white/[0.07] bg-zinc-950 px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500"
             >
               <option value="ALL">Todos os status</option>
               <option value="ACTIVE">Ativas</option>
@@ -377,23 +377,23 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.07] bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-800/80 disabled:opacity-50"
           >
             <RefreshCw className={'h-3.5 w-3.5 ' + (loading ? 'animate-spin' : '')} /> Atualizar
           </button>
         </div>
 
         {loading ? (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center text-xs text-slate-500">
+          <div className="rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-8 text-center text-xs text-zinc-500">
             Carregando empresas...
           </div>
         ) : filteredClients.length === 0 ? (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
-            <Building2 className="mx-auto h-8 w-8 text-slate-600" />
+          <div className="rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-10 text-center">
+            <Building2 className="mx-auto h-8 w-8 text-zinc-600" />
             <p className="mt-3 text-sm font-semibold text-white">
               {clients.length === 0 ? 'Nenhuma empresa cadastrada.' : 'Nenhuma empresa encontrada.'}
             </p>
-            <p className="mx-auto mt-1 max-w-md text-xs text-slate-500">
+            <p className="mx-auto mt-1 max-w-md text-xs text-zinc-500">
               {clients.length === 0
                 ? 'Cadastre sua primeira empresa para começar a criar contextos, campanhas e estratégias.'
                 : 'Tente alterar os termos da pesquisa ou remover os filtros.'}
@@ -414,23 +414,23 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
               <article
                 key={client.id}
                 className={
-                  'rounded-2xl border bg-slate-900 p-5 transition ' +
+                  'rounded-2xl border bg-zinc-900/80 p-5 transition-all duration-200 ease-in-out ' +
                   (selected?.id === client.id
                     ? 'border-indigo-500/50 ring-1 ring-indigo-500/20'
-                    : 'border-slate-800 hover:border-slate-700')
+                    : 'border-white/[0.07] hover:border-white/[0.10]')
                 }
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-white">{client.name}</h3>
-                    <p className="mt-1 truncate text-[11px] text-slate-500">
+                    <p className="mt-1 truncate text-[11px] text-zinc-500">
                       {client.legalName || client.segment || 'Empresa'}
                     </p>
                   </div>
                   {renderStatus(client.status || 'ACTIVE')}
                 </div>
 
-                <div className="mt-4 space-y-1.5 text-[11px] text-slate-400">
+                <div className="mt-4 space-y-1.5 text-[11px] text-zinc-400">
                   {client.document && <p className="truncate">Documento: {client.document}</p>}
                   {client.segment && <p className="truncate">Segmento: {client.segment}</p>}
                   {client.updatedAt && (
@@ -439,17 +439,17 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
                 </div>
 
                 <div className="mt-4 grid grid-cols-3 gap-2">
-                  <div className="rounded-lg bg-slate-950 p-2 text-center">
+                  <div className="rounded-lg bg-zinc-950 p-2 text-center">
                     <p className="text-sm font-bold text-white">{client._count?.knowledgeFiles || 0}</p>
-                    <p className="text-[9px] text-slate-500">Materiais</p>
+                    <p className="text-[9px] text-zinc-500">Materiais</p>
                   </div>
-                  <div className="rounded-lg bg-slate-950 p-2 text-center">
+                  <div className="rounded-lg bg-zinc-950 p-2 text-center">
                     <p className="text-sm font-bold text-white">{client._count?.resources || 0}</p>
-                    <p className="text-[9px] text-slate-500">Referências</p>
+                    <p className="text-[9px] text-zinc-500">Referências</p>
                   </div>
-                  <div className="rounded-lg bg-slate-950 p-2 text-center">
+                  <div className="rounded-lg bg-zinc-950 p-2 text-center">
                     <p className="text-sm font-bold text-white">{client._count?.campaigns || 0}</p>
-                    <p className="text-[9px] text-slate-500">Campanhas</p>
+                    <p className="text-[9px] text-zinc-500">Campanhas</p>
                   </div>
                 </div>
 
@@ -476,13 +476,13 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+      <section className="rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-5">
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-base font-bold text-white">
               {selected ? 'Editar contexto da empresa' : 'Nova empresa'}
             </h3>
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-[11px] text-zinc-500">
               {selected ? 'Atualize os dados da empresa selecionada.' : 'Preencha os dados para cadastrar uma nova empresa.'}
             </p>
           </div>
@@ -490,7 +490,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
             <button
               type="button"
               onClick={resetForm}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-800 px-3 py-2 text-[11px] font-semibold text-slate-300 hover:bg-slate-800"
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-white/[0.07] px-3 py-2 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-800/80"
             >
               <Plus className="h-3.5 w-3.5" /> Novo cadastro
             </button>
@@ -509,12 +509,12 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
               ['linkedin', 'LinkedIn'],
             ].map(([key, label]) => (
               <div key={key} className={key === 'name' ? 'md:col-span-2' : ''}>
-                <label className="text-[11px] font-semibold text-slate-300">{label}</label>
+                <label className="text-[11px] font-semibold text-zinc-300">{label}</label>
                 <input
                   required={key === 'name'}
                   value={form[key as keyof ClientForm] || ''}
                   onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500"
+                  className="mt-1 w-full rounded-xl border border-white/[0.07] bg-zinc-950 px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500"
                 />
               </div>
             ))}
@@ -531,17 +531,17 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
             ['notes', 'Observações internas da agência'],
           ].map(([key, label]) => (
             <div key={key}>
-              <label className="text-[11px] font-semibold text-slate-300">{label}</label>
+              <label className="text-[11px] font-semibold text-zinc-300">{label}</label>
               <textarea
                 rows={3}
                 value={form[key as keyof ClientForm] || ''}
                 onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500"
+                className="mt-1 w-full rounded-xl border border-white/[0.07] bg-zinc-950 px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500"
               />
             </div>
           ))}
 
-          <div className="flex flex-col-reverse gap-2 border-t border-slate-800 pt-4 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-white/[0.07] pt-4 sm:flex-row sm:justify-end">
             {selected && (
               <button
                 type="button"
@@ -563,7 +563,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         </form>
 
         {selected && (
-          <div className="mt-7 space-y-5 border-t border-slate-800 pt-6">
+          <div className="mt-7 space-y-5 border-t border-white/[0.07] pt-6">
             <div>
               <h3 className="flex items-center gap-2 text-sm font-bold text-white">
                 <Link2 className="h-4 w-4 text-cyan-400" /> Sites e referências
@@ -574,7 +574,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
                   placeholder="Título"
                   value={resource.title}
                   onChange={(e) => setResource({ ...resource, title: e.target.value })}
-                  className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white"
+                  className="rounded-lg border border-white/[0.07] bg-zinc-950 px-3 py-2 text-xs text-white"
                 />
                 <input
                   required
@@ -582,16 +582,16 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
                   placeholder="https://..."
                   value={resource.url}
                   onChange={(e) => setResource({ ...resource, url: e.target.value })}
-                  className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-white md:col-span-2"
+                  className="rounded-lg border border-white/[0.07] bg-zinc-950 px-3 py-2 text-xs text-white md:col-span-2"
                 />
                 <button className="rounded-lg bg-cyan-600 text-xs font-semibold text-white hover:bg-cyan-500">Adicionar</button>
               </form>
               <div className="mt-3 space-y-2">
                 {(selected.resources || []).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-800 bg-slate-950 p-2.5">
+                  <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.07] bg-zinc-950 p-2.5">
                     <div className="min-w-0">
                       <p className="truncate text-xs text-white">{item.title}</p>
-                      <p className="truncate text-[10px] text-slate-500">{item.url}</p>
+                      <p className="truncate text-[10px] text-zinc-500">{item.url}</p>
                     </div>
                     <a href={item.url} target="_blank" rel="noreferrer" className="text-cyan-400" aria-label={'Abrir ' + item.title}>
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -605,13 +605,13 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
               <h3 className="flex items-center gap-2 text-sm font-bold text-white">
                 <FileText className="h-4 w-4 text-indigo-400" /> Materiais da empresa
               </h3>
-              <p className="mt-1 text-[11px] text-slate-500">PDF/TXT ficam vinculados à empresa e podem alimentar a estratégia.</p>
+              <p className="mt-1 text-[11px] text-zinc-500">PDF/TXT ficam vinculados à empresa e podem alimentar a estratégia.</p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <input
                   type="file"
                   accept=".pdf,.txt,application/pdf,text/plain"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="flex-1 text-xs text-slate-400"
+                  className="flex-1 text-xs text-zinc-400"
                 />
                 <button
                   type="button"
@@ -624,9 +624,9 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
               </div>
               <div className="mt-3 space-y-2">
                 {(selected.knowledgeFiles || []).map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 p-2.5">
+                  <div key={item.id} className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-zinc-950 p-2.5">
                     <FileText className="h-3.5 w-3.5 text-indigo-400" />
-                    <span className="truncate text-xs text-slate-300">{item.fileName}</span>
+                    <span className="truncate text-xs text-zinc-300">{item.fileName}</span>
                     <span className="ml-auto text-[10px] text-emerald-400">{item.status}</span>
                   </div>
                 ))}
