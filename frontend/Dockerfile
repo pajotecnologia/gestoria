@@ -21,6 +21,14 @@ FROM nginx:alpine
 # Configura Nginx para Single Page Application
 RUN echo 'server { \
     listen 80; \
+    location = /index.html { \
+        root /usr/share/nginx/html; \
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always; \
+    } \
+    location /assets/ { \
+        root /usr/share/nginx/html; \
+        add_header Cache-Control "public, max-age=31536000, immutable" always; \
+    } \
     location / { \
         root /usr/share/nginx/html; \
         index index.html index.htm; \
