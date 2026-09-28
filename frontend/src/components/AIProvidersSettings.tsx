@@ -64,6 +64,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
   const [editCustomModelMode, setEditCustomModelMode] = useState(false);
   const [message, setMessage] = useState('');
   const [usage, setUsage] = useState<UsageSummary | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   // Estados de Teste de Conexão Live
   const [testingId, setTestingId] = useState<string | null>(null);
@@ -117,6 +118,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
       return;
     }
     setForm({ name: '', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: '', priority: 100 });
+    setShowForm(false);
     setMessage(`Provedor '${data.data?.name}' cadastrado com sucesso!`);
     await load();
     await loadUsage();
@@ -275,7 +277,8 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
           <span>Cadastrar Nova Chave / Servidor de IA</span>
         </h2>
 
-        <form onSubmit={add} className="space-y-4">
+        {showForm && (
+      <form onSubmit={add} className="space-y-4">
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">Nome Identificador</label>
@@ -401,6 +404,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
             </div>
           )}
         </form>
+      )}
       </div>
 
       {message && (
