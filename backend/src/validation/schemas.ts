@@ -53,7 +53,7 @@ export const roomMessageSchema = z.object({
 });
 
 export const debateRoundSchema = z.object({
-  specificRole: z.enum(['STRATEGIST', 'COPYWRITER', 'DESIGNER', 'VIDEOMAKER', 'TRAFFIC_MANAGER']).optional(),
+  specificRole: z.string().trim().min(1).max(60).optional(),
 });
 
 export const userCreateSchema = z.object({

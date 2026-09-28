@@ -32,6 +32,7 @@ model Tenant {
 
   users       User[]
   agents      Agent[]
+  specialists Specialist[]
   knowledge   KnowledgeFile[]
   rooms       Room[]
   auditLogs   AuditLog[]
@@ -151,6 +152,34 @@ model RoomMessage {
 
   @@index([roomId])
   @@map("room_messages")
+}
+
+// ==========================================
+// ESPECIALISTAS DO SQUAD / WAR ROOM
+// ==========================================
+model Specialist {
+  id            String   @id @default(uuid())
+  tenantId      String
+  name          String
+  roleKey       String   // Identificador único no tenant (ex: STRATEGIST, DEV, TRIBUTARIO, etc.)
+  title         String   // Cargo / Especialidade
+  avatarColor   String   @default("from-indigo-600 to-violet-600")
+  iconName      String   @default("BrainCircuit")
+  provider      String   @default("openai") // openai, gemini, groq, ollama
+  model         String   @default("gpt-4o")
+  temperature   Float    @default(0.7)
+  systemPrompt  String   @db.Text
+  generateImage Boolean  @default(false)
+  isCustom      Boolean  @default(true)
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, roleKey])
+  @@index([tenantId, enabled])
+  @@map("specialists")
 }
 
 

@@ -93,10 +93,13 @@ const ROLE_BADGES: Record<string, { label: string; icon: any; gradient: string; 
   }
 };
 
+import { Specialist } from './SpecialistManager';
+
 export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<RoomMessage[]>([]);
+  const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [roomsPagination, setRoomsPagination] = useState<Pagination>({ page: 1, pageSize: 50, total: 0, totalPages: 0 });
   const [roomError, setRoomError] = useState('');
@@ -116,6 +119,20 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const fetchSpecialists = async () => {
+    try {
+      const res = await fetch(apiUrl('/api/specialists'), {
+        headers: { Authorization: `Bearer ${jwtToken}` }
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setSpecialists(data.data.filter((s: Specialist) => s.enabled !== false));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const fetchRooms = async (page = 1) => {
@@ -276,6 +293,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
 
   useEffect(() => {
     fetchRooms();
+    fetchSpecialists();
   }, [jwtToken]);
 
   useEffect(() => {
@@ -422,27 +440,48 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
               Squad de Especialistas Convocados
             </span>
-            <div className="space-y-1.5 text-[11px]">
-              <div className="flex items-center space-x-2 text-blue-400">
-                <BrainCircuit className="w-3.5 h-3.5" />
-                <span>Dr. Arthur (Estratégia)</span>
-              </div>
-              <div className="flex items-center space-x-2 text-emerald-400">
-                <PenTool className="w-3.5 h-3.5" />
-                <span>Camila Rocha (Copywriting)</span>
-              </div>
-              <div className="flex items-center space-x-2 text-purple-400">
-                <Palette className="w-3.5 h-3.5" />
-                <span>Lucas Viana (Design & DALL-E)</span>
-              </div>
-              <div className="flex items-center space-x-2 text-amber-400">
-                <Video className="w-3.5 h-3.5" />
-                <span>Gabriel Sato (Vídeos & Reels)</span>
-              </div>
-              <div className="flex items-center space-x-2 text-cyan-400">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>Renata Dias (Tráfego Pago)</span>
-              </div>
+            {/* Lista dos Especialistas na Sidebar */}
+            <div className="space-y-1.5 text-[11px] max-h-48 overflow-y-auto pr-1">
+              {specialists.length === 0 ? (
+                <>
+                  <div className="flex items-center space-x-2 text-blue-400">
+                    <BrainCircuit className="w-3.5 h-3.5" />
+                    <span>Dr. Arthur (Estratégia)</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-emerald-400">
+                    <PenTool className="w-3.5 h-3.5" />
+                    <span>Camila Rocha (Copywriting)</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-purple-400">
+                    <Palette className="w-3.5 h-3.5" />
+                    <span>Lucas Viana (Design & DALL-E)</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-amber-400">
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Gabriel Sato (Vídeos & Reels)</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-cyan-400">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>Renata Dias (Tráfego Pago)</span>
+                  </div>
+                </>
+              ) : (
+                specialists.map((spec) => (
+                  <div
+                    key={spec.roleKey}
+                    onClick={() => handleTriggerDebateRound(spec.roleKey)}
+                    className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800/80 cursor-pointer transition text-slate-300 hover:text-white"
+                  >
+                    <div className="flex items-center space-x-2 truncate">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="truncate">{spec.name}</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                      @{spec.roleKey}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -451,48 +490,65 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
         <div className="flex-1 flex flex-col bg-slate-900/30">
           {/* Barra de Ações Rápidas do Squad */}
           <div className="px-6 py-2.5 bg-slate-950/40 border-b border-slate-800 flex items-center justify-between overflow-x-auto">
-            <div className="flex items-center space-x-2 text-xs">
-              <span className="text-slate-400 text-[11px] mr-1 hidden sm:inline">Acionar Especialista:</span>
-              <button
-                type="button"
-                disabled={isDebating}
-                onClick={() => handleTriggerDebateRound('STRATEGIST')}
-                className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[11px] transition"
-              >
-                @Estrategista
-              </button>
-              <button
-                type="button"
-                disabled={isDebating}
-                onClick={() => handleTriggerDebateRound('COPYWRITER')}
-                className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] transition"
-              >
-                @Copywriter
-              </button>
-              <button
-                type="button"
-                disabled={isDebating}
-                onClick={() => handleTriggerDebateRound('DESIGNER')}
-                className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[11px] transition"
-              >
-                @Designer (Artes)
-              </button>
-              <button
-                type="button"
-                disabled={isDebating}
-                onClick={() => handleTriggerDebateRound('VIDEOMAKER')}
-                className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[11px] transition"
-              >
-                @Vídeos
-              </button>
-              <button
-                type="button"
-                disabled={isDebating}
-                onClick={() => handleTriggerDebateRound('TRAFFIC_MANAGER')}
-                className="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] transition"
-              >
-                @Tráfego
-              </button>
+            <div className="flex items-center space-x-2 text-xs min-w-max">
+              <span className="text-slate-400 text-[11px] mr-1 hidden sm:inline">Conversar com Especialista:</span>
+              {specialists.length === 0 ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={isDebating}
+                    onClick={() => handleTriggerDebateRound('STRATEGIST')}
+                    className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[11px] transition cursor-pointer"
+                  >
+                    @Estrategista
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDebating}
+                    onClick={() => handleTriggerDebateRound('COPYWRITER')}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] transition cursor-pointer"
+                  >
+                    @Copywriter
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDebating}
+                    onClick={() => handleTriggerDebateRound('DESIGNER')}
+                    className="px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 text-[11px] transition cursor-pointer"
+                  >
+                    @Designer
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDebating}
+                    onClick={() => handleTriggerDebateRound('VIDEOMAKER')}
+                    className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[11px] transition cursor-pointer"
+                  >
+                    @Vídeos
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDebating}
+                    onClick={() => handleTriggerDebateRound('TRAFFIC_MANAGER')}
+                    className="px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-[11px] transition cursor-pointer"
+                  >
+                    @Tráfego
+                  </button>
+                </>
+              ) : (
+                specialists.map((spec) => (
+                  <button
+                    key={spec.roleKey}
+                    type="button"
+                    disabled={isDebating}
+                    onClick={() => handleTriggerDebateRound(spec.roleKey)}
+                    className="px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white border border-indigo-500/30 text-[11px] transition cursor-pointer whitespace-nowrap"
+                    title={spec.title}
+                  >
+                    @{spec.name.split(' ')[0]} ({spec.roleKey})
+                  </button>
+                ))
+              )}
             </div>
 
             <button

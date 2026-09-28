@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Bot, LogOut, ShieldCheck, Users, Radio } from 'lucide-react';
+import { Bot, LogOut, ShieldCheck, Users, Radio, Sparkles } from 'lucide-react';
 import { AgentsDashboard } from './components/AgentsDashboard';
 import { WarRoomChat } from './components/WarRoomChat';
+import { SpecialistManager } from './components/SpecialistManager';
 import { apiUrl } from './api/client';
 import { AIProvidersSettings } from './components/AIProvidersSettings';
 import { UserManagement } from './components/UserManagement';
@@ -19,7 +20,7 @@ export const App: React.FC = () => {
   });
 
   // Navegação Principal
-  const [currentView, setCurrentView] = useState<'agents' | 'warroom' | 'ai' | 'users' | 'audit'>('agents');
+  const [currentView, setCurrentView] = useState<'agents' | 'specialists' | 'warroom' | 'ai' | 'users' | 'audit'>('agents');
 
   // Estados do Formulário de Auth
   const [isRegistering, setIsRegistering] = useState(false);
@@ -219,6 +220,19 @@ export const App: React.FC = () => {
             </button>
             <button
               type="button"
+              onClick={() => setCurrentView('specialists')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                currentView === 'specialists'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden md:inline">Especialistas Squad</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setCurrentView('warroom')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 currentView === 'warroom'
@@ -255,6 +269,8 @@ export const App: React.FC = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto p-6">
         {currentView === 'agents' ? (
           <AgentsDashboard jwtToken={token} />
+        ) : currentView === 'specialists' ? (
+          <SpecialistManager jwtToken={token} />
         ) : currentView === 'warroom' ? (
           <WarRoomChat jwtToken={token} />
         ) : currentView === 'ai' && user?.role === 'AGENCY_ADMIN' ? (

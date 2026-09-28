@@ -7,6 +7,7 @@ import { roomCreateSchema, roomMessageSchema, debateRoundSchema } from '../valid
 import { parsePagination } from '../utils/pagination';
 import { assertPlanCapacity, PlanLimitError } from '../services/planLimits';
 import { writeAuditLog } from '../services/auditLog';
+import { getActiveSpecialistsForTenant, DEFAULT_SQUAD_PERSONAS, SpecialistDefinition } from './specialistRoutes';
 
 const router = Router();
 router.use(tenantMiddleware);
@@ -225,26 +226,45 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
 
     room.messages.reverse();
 
-    // Papéis a serem executados na rodada
-    const rolesToExecute: Array<keyof typeof SQUAD_PERSONAS> = specificRole
-      ? [specificRole]
-      : ['STRATEGIST', 'COPYWRITER', 'DESIGNER', 'VIDEOMAKER', 'TRAFFIC_MANAGER'];
+    // Carrega todos os especialistas ativos para este tenant (padrões + customizados)
+    const availableSpecialists = await getActiveSpecialistsForTenant(tenantId);
+    const specialistsMap = new Map<string, SpecialistDefinition>();
+    for (const s of availableSpecialists) {
+      specialistsMap.set(s.roleKey.toUpperCase(), s);
+    }
+
+    // Especialistas a serem executados na rodada
+    let targetSpecialists: SpecialistDefinition[] = [];
+
+    if (specificRole) {
+      const match = specialistsMap.get(specificRole.toUpperCase());
+      if (match) {
+        targetSpecialists = [match];
+      } else {
+        const defaultMatch = DEFAULT_SQUAD_PERSONAS.find(p => p.roleKey.toUpperCase() === specificRole.toUpperCase());
+        if (defaultMatch) targetSpecialists = [defaultMatch];
+      }
+    } else {
+      targetSpecialists = availableSpecialists.filter(s => s.enabled);
+    }
+
+    if (!targetSpecialists.length) {
+      res.status(400).json({ error: 'Nenhum especialista disponível para esta rodada.' });
+      return;
+    }
 
     const newMessages = [];
 
     // Carrega histórico para contexto da conversa
     let conversationHistory = room.messages.map(m => `[${m.senderName} (${m.agentRole})]:\n${m.content}`).join('\n\n');
 
-    for (const roleKey of rolesToExecute) {
-      const persona = SQUAD_PERSONAS[roleKey];
-      if (!persona) continue;
-
+    for (const persona of targetSpecialists) {
       const completion = await generateText({
-        provider: 'openai',
+        provider: persona.provider || 'openai',
         tenantId,
         taskType: 'war_room',
-        model: 'gpt-4o',
-        temperature: 0.7,
+        model: persona.model || 'gpt-4o',
+        temperature: persona.temperature ?? 0.7,
         messages: [
           { role: 'system', content: persona.systemPrompt },
           {
@@ -258,7 +278,7 @@ Objetivo: ${room.objective || 'Geral'}
 ### HISTÓRICO DA DISCUSSÃO ATÉ AGORA:
 ${conversationHistory}
 
-Agora é a sua vez de contribuir, ${persona.name}. Construa suas ideias integrando o que seus colegas especialistas acima já propuseram.`
+Agora é a sua vez de contribuir, ${persona.name} (${persona.title}). Construa suas ideias integrando o que seus colegas especialistas acima já propuseram.`
           }
         ]
       });
@@ -266,8 +286,8 @@ Agora é a sua vez de contribuir, ${persona.name}. Construa suas ideias integran
       let content = completion.text || '';
       let generatedImageUrl: string | null = null;
 
-      // Se for o Designer e tiver gerado prompt de imagem, chama DALL-E 3
-      if (roleKey === 'DESIGNER') {
+      // Se o especialista tiver flag generateImage ativada ou for DESIGNER e tiver gerado prompt de imagem
+      if (persona.generateImage || persona.roleKey === 'DESIGNER') {
         const promptMatch = content.match(/\[IMAGE_PROMPT:\s*([\s\S]*?)\]/i);
         if (promptMatch && promptMatch[1]) {
           const imagePrompt = promptMatch[1].trim();

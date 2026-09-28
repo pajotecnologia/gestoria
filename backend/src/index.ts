@@ -20,6 +20,7 @@ import auditRoutes from './routes/auditRoutes';
 import tenantRoutes from './routes/tenantRoutes';
 import aiProviderRoutes from './routes/aiProviderRoutes';
 import aiUsageRoutes from './routes/aiUsageRoutes';
+import specialistRoutes from './routes/specialistRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +59,7 @@ app.use('/api/tenant', tenantRoutes);
 app.use('/api/ai-providers', aiProviderRoutes);
 app.use('/api/ai-usage', aiUsageRoutes);
 app.use('/api/agents', agentRoutes);
+app.use('/api/specialists', specialistRoutes);
 app.use('/api/prompts', promptCompilerRoutes);
 app.use('/api/rag', ragServiceRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
