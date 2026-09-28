@@ -79,7 +79,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
     const campaignDistribution = new Map<string, number>();
     for (const item of campaignStatusRows) {
-      campaignDistribution.set(item.status, (campaignDistribution.get(item.status) || 0) + 1);
+      const status = item.status || 'SEM_STATUS';
+      campaignDistribution.set(status, (campaignDistribution.get(status) || 0) + 1);
     }
 
     const activity = recentActivity.map((item) => ({
