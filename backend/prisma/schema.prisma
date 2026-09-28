@@ -254,6 +254,9 @@ model Campaign {
   period       String?
   brief        String?  @db.Text
   strategy     String?  @db.Text
+  isActive     Boolean  @default(false)
+  startDate    DateTime?
+  endDate      DateTime?
   status       String   @default("DRAFT")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -263,6 +266,8 @@ model Campaign {
   agent        Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, clientId, status])
+  @@index([tenantId, clientId, isActive])
+  @@index([tenantId, startDate, endDate])
   @@index([tenantId, createdAt])
   @@map("campaigns")
 }
