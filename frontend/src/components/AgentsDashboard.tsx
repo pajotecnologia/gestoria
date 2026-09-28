@@ -102,10 +102,10 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
   return (
     <div className="space-y-6">
       {/* Header com Estatísticas */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-zinc-900/80 border border-white/[0.07] p-6 rounded-2xl">
         <div>
           <h2 className="text-xl font-bold text-white">Central de Agentes de IA</h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-zinc-400 mt-1">
             Gerencie instâncias de WhatsApp, prompts RTCE e bases de conhecimento para seus clientes.
           </p>
         </div>
@@ -113,7 +113,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
         <button
           type="button"
           onClick={() => setEditingAgent('new')}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition"
+          className="flex items-center space-x-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all duration-200 ease-in-out"
         >
           <Plus className="w-4 h-4" />
           <span>Criar Novo Agente</span>
@@ -122,18 +122,18 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
 
       {/* Grid de Agentes */}
       {loading ? (
-        <div className="text-center py-20 text-slate-400 text-sm">Carregando agentes...</div>
+        <div className="text-center py-20 text-zinc-400 text-sm">Carregando agentes...</div>
       ) : agents.length === 0 ? (
-        <div className="text-center py-16 bg-slate-900/50 border border-slate-800 rounded-2xl space-y-4">
-          <Bot className="w-12 h-12 text-slate-600 mx-auto" />
+        <div className="text-center py-16 bg-zinc-900/80/50 border border-white/[0.07] rounded-2xl space-y-4">
+          <Bot className="w-12 h-12 text-zinc-600 mx-auto" />
           <div>
-            <p className="text-sm font-semibold text-slate-300">Nenhum agente configurado</p>
-            <p className="text-xs text-slate-500">Crie seu primeiro agente de IA para conectar ao WhatsApp.</p>
+            <p className="text-sm font-semibold text-zinc-300">Nenhum agente configurado</p>
+            <p className="text-xs text-zinc-500">Crie seu primeiro agente de IA para conectar ao WhatsApp.</p>
           </div>
           <button
             type="button"
             onClick={() => setEditingAgent('new')}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-all duration-200 ease-in-out"
           >
             Criar Primeiro Agente
           </button>
@@ -147,11 +147,11 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
             return (
               <div
                 key={agent.id}
-                className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-xl transition"
+                className="bg-zinc-900/80 border border-white/[0.07] hover:border-white/[0.10] rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-xl transition-all duration-200 ease-in-out"
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-zinc-800/80 text-zinc-400 border border-white/[0.10]">
                       {agent.niche}
                     </span>
 
@@ -178,11 +178,11 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-white">{agent.name}</h3>
-                      <p className="text-[11px] text-slate-400 font-mono">{agent.provider} &bull; {agent.model}</p>
+                      <p className="text-[11px] text-zinc-400 font-mono">{agent.provider} &bull; {agent.model}</p>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                  <div className="mt-4 pt-3 border-t border-white/[0.07]/80 flex items-center justify-between text-[11px] text-zinc-400">
                     <span className="flex items-center space-x-1">
                       <Database className="w-3.5 h-3.5 text-indigo-400" />
                       <span>{agent._count?.knowledgeFiles || 0} arquivos RAG</span>
@@ -191,11 +191,11 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                 </div>
 
                 {/* Ações Rápidas */}
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800">
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.07]">
                   <button
                     type="button"
                     onClick={() => setSelectedAgentForQR(agent)}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-[10px] font-medium transition"
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
                   >
                     <QrCode className="w-4 h-4 text-emerald-400 mb-1" />
                     <span>WhatsApp</span>
@@ -204,7 +204,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                   <button
                     type="button"
                     onClick={() => setSelectedAgentForRAG(agent)}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-[10px] font-medium transition"
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
                   >
                     <FileUp className="w-4 h-4 text-indigo-400 mb-1" />
                     <span>Base RAG</span>
@@ -213,7 +213,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                   <button
                     type="button"
                     onClick={() => setEditingAgent(agent)}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-slate-200 text-[10px] font-medium transition"
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
                   >
                     <Settings className="w-4 h-4 text-amber-400 mb-1" />
                     <span>Ajustar</span>
@@ -237,8 +237,8 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
       )}
 
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between gap-3 bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3">
-          <span className="text-[11px] text-slate-400">
+        <div className="flex items-center justify-between gap-3 bg-zinc-900/80 border border-white/[0.07] rounded-2xl px-4 py-3">
+          <span className="text-[11px] text-zinc-400">
             {pagination.total} agentes • Página {pagination.page} de {pagination.totalPages}
           </span>
           <div className="flex items-center gap-2">
@@ -246,7 +246,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
               type="button"
               disabled={pagination.page <= 1 || loading}
               onClick={() => fetchAgents(pagination.page - 1)}
-              className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs text-slate-300 disabled:opacity-40"
+              className="px-3 py-1.5 rounded-lg border border-white/[0.10] bg-zinc-800/80 text-xs text-zinc-300 disabled:opacity-40"
             >
               Anterior
             </button>
@@ -254,7 +254,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
               type="button"
               disabled={pagination.page >= pagination.totalPages || loading}
               onClick={() => fetchAgents(pagination.page + 1)}
-              className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-xs text-slate-300 disabled:opacity-40"
+              className="px-3 py-1.5 rounded-lg border border-white/[0.10] bg-zinc-800/80 text-xs text-zinc-300 disabled:opacity-40"
             >
               Próxima
             </button>
@@ -286,7 +286,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                 setSelectedAgentForRAG(null);
                 fetchAgents();
               }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white z-10"
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white z-10"
             >
               Fechar &times;
             </button>
