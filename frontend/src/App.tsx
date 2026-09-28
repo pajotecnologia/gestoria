@@ -85,10 +85,10 @@ export const App: React.FC = () => {
 
   if (!token || !user || !tenant) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl">
+      <div className="relative min-h-screen overflow-hidden bg-zinc-950 flex flex-col items-center justify-center p-4">
+        <div className="relative w-full max-w-md rounded-3xl border border-white/[0.08] bg-zinc-900/80 p-8 shadow-2xl shadow-black/40 backdrop-blur-xl">
           <div className="text-center mb-8">
-            <div className="inline-flex p-3 bg-indigo-600/20 text-indigo-400 rounded-2xl border border-indigo-500/30 mb-3">
+            <div className="inline-flex p-3 rounded-2xl border border-indigo-400/20 bg-gradient-to-br from-indigo-500/15 to-violet-600/15 text-indigo-300 shadow-lg shadow-indigo-500/10 mb-3">
               <Bot className="w-8 h-8" />
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight">Gestor IA SaaS</h1>
@@ -105,7 +105,7 @@ export const App: React.FC = () => {
                     required
                     value={agencyName}
                     onChange={(e) => setAgencyName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="w-full rounded-xl border border-white/[0.08] bg-zinc-950/80 px-4 py-2.5 text-xs text-zinc-100 outline-none transition-all duration-200 focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/10"
                     placeholder="Ex: Agência Nexus Marketing"
                   />
                 </div>
@@ -157,7 +157,7 @@ export const App: React.FC = () => {
             <button
               type="submit"
               disabled={authLoading}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition cursor-pointer"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-xs font-semibold shadow-lg shadow-indigo-500/20 transition-all duration-200 hover:from-indigo-400 hover:to-violet-500 disabled:opacity-50 cursor-pointer"
             >
               {authLoading ? 'Processando...' : isRegistering ? 'Criar Conta da Agência' : 'Acessar Painel'}
             </button>
@@ -181,28 +181,28 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
+    <div className="min-h-screen bg-zinc-950 flex flex-col">
       {/* Navbar Superior */}
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-white/[0.07] bg-zinc-950/80 px-4 py-3 backdrop-blur-xl sm:px-6">
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+            <div className="rounded-xl border border-indigo-400/20 bg-gradient-to-br from-indigo-500/15 to-violet-600/15 p-2 text-indigo-300">
               <Bot className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-bold text-sm text-white tracking-wide">Gestor IA SaaS</span>
-              <span className="text-[10px] text-slate-400 ml-2 px-2 py-0.5 bg-slate-800 rounded-full border border-slate-700">
+              <span className="font-bold text-sm tracking-wide text-zinc-100">Gestor IA SaaS</span>
+              <span className="ml-2 rounded-full border border-white/[0.07] bg-zinc-900 px-2 py-0.5 text-[10px] text-zinc-400">
                 {tenant?.name}
               </span>
             </div>
           </div>
 
           {/* Navegação de Módulos */}
-          <nav className="flex items-center space-x-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-[58vw] md:max-w-none">
+          <nav className="flex max-w-[58vw] items-center space-x-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-zinc-900/70 p-1 backdrop-blur-md md:max-w-none">
             <button
               type="button"
               onClick={() => setCurrentView('clients')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'clients' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'clients' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:text-zinc-100'}`}
             >
               <Users className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Empresas</span>
@@ -211,7 +211,7 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setCurrentView('campaigns')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'campaigns' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'campaigns' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-slate-400 hover:text-white'}`}
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Campanhas</span>
@@ -222,7 +222,7 @@ export const App: React.FC = () => {
               onClick={() => setCurrentView('agents')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 currentView === 'agents'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -233,7 +233,7 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setCurrentView('ai')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'ai' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'ai' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-slate-400 hover:text-white'}`}
             >
               <Bot className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Provedores IA</span>
@@ -243,7 +243,7 @@ export const App: React.FC = () => {
               onClick={() => setCurrentView('specialists')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 currentView === 'specialists'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -277,7 +277,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs transition cursor-pointer"
+            className="premium-button flex items-center space-x-1 rounded-lg border border-white/[0.07] bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sair</span>
@@ -286,7 +286,7 @@ export const App: React.FC = () => {
       </header>
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 min-w-0">
+      <main className="mx-auto min-w-0 w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
         {currentView === 'clients' ? (
           <ClientContextManager jwtToken={token} />
         ) : currentView === 'campaigns' ? (
@@ -304,12 +304,12 @@ export const App: React.FC = () => {
         ) : currentView === 'audit' && user?.role === 'AGENCY_ADMIN' ? (
           <AuditLogViewer jwtToken={token} />
         ) : (
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl text-sm text-slate-400">A configuração de provedores de IA está disponível apenas para administradores da agência.</div>
+          <div className="premium-surface rounded-2xl p-6 text-sm text-zinc-400">A configuração de provedores de IA está disponível apenas para administradores da agência.</div>
         )}
       </main>
 
       {/* Footer */}
-      <footer className="py-4 border-t border-slate-900 text-center text-xs text-slate-600">
+      <footer className="border-t border-white/[0.05] py-5 text-center text-xs text-zinc-600">
         Gestor IA &bull; Plataforma Multi-Tenant com RAG Qdrant, Evolution API e AI War Room
       </footer>
     </div>
