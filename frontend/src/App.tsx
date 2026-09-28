@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, LogOut, ShieldCheck, Users, Radio, Sparkles, Menu, X, BarChart3 } from 'lucide-react';
+import { Bot, LogOut, ShieldCheck, Users, Radio, Sparkles, Menu, X, BarChart3, History } from 'lucide-react';
 import { AgentsDashboard } from './components/AgentsDashboard';
 import { WarRoomChat } from './components/WarRoomChat';
 import { SpecialistManager } from './components/SpecialistManager';
@@ -10,6 +10,7 @@ import { AuditLogViewer } from './components/AuditLogViewer';
 import { ClientContextManager } from './components/ClientContextManager';
 import { CampaignManager } from './components/CampaignManager';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { APP_VERSION, RELEASE_HISTORY } from './version';
 
 export const App: React.FC = () => {
   const [token, setToken] = useState<string>(() => {
@@ -25,6 +26,7 @@ export const App: React.FC = () => {
   // Navegação Principal
   const [currentView, setCurrentView] = useState<'analytics' | 'agents' | 'clients' | 'campaigns' | 'specialists' | 'warroom' | 'ai' | 'users' | 'audit'>('clients');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [releaseModalOpen, setReleaseModalOpen] = useState(false);
 
   // Estados do Formulário de Auth
   const [isRegistering, setIsRegistering] = useState(false);
@@ -303,6 +305,17 @@ export const App: React.FC = () => {
 
           <button
             type="button"
+            onClick={() => setReleaseModalOpen(true)}
+            className="hidden sm:flex min-h-9 items-center gap-2 rounded-lg border border-indigo-400/20 bg-indigo-500/10 px-2.5 py-1.5 text-xs font-semibold text-indigo-300 transition-all duration-200 hover:border-indigo-400/40 hover:bg-indigo-500/15 hover:text-indigo-200"
+            title="Ver atualizações do sistema"
+          >
+            <History className="h-3.5 w-3.5" />
+            <span>v{APP_VERSION}</span>
+            <span className="text-indigo-400/70">Atualizações</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleLogout}
             className="premium-button flex items-center space-x-1 rounded-lg border border-white/[0.07] bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white cursor-pointer"
           >
@@ -345,7 +358,51 @@ export const App: React.FC = () => {
         </>
       )}
 
-      {/* Conteúdo Principal */
+      {releaseModalOpen && (
+        <>
+          <button type="button" aria-label="Fechar atualizações" onClick={() => setReleaseModalOpen(false)} className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" />
+          <section role="dialog" aria-modal="true" aria-labelledby="release-history-title" className="fixed left-1/2 top-1/2 z-[60] w-[min(92vw,42rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-950 shadow-2xl shadow-black/60">
+            <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-indigo-300" />
+                  <h2 id="release-history-title" className="text-sm font-semibold text-zinc-100">Atualizações do sistema</h2>
+                </div>
+                <p className="mt-1 text-[11px] text-zinc-500">Versão atual: v{APP_VERSION}</p>
+              </div>
+              <button type="button" onClick={() => setReleaseModalOpen(false)} aria-label="Fechar atualizações" className="flex min-h-10 min-w-10 items-center justify-center rounded-xl bg-zinc-900 text-zinc-400 transition hover:bg-zinc-800 hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] space-y-3 overflow-y-auto p-5">
+              {RELEASE_HISTORY.map((release) => (
+                <article key={release.version} className="rounded-xl border border-white/[0.07] bg-zinc-900/70 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="text-sm font-semibold text-zinc-100">{release.title}</span>
+                      {release.version === APP_VERSION && <span className="ml-2 rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">Atual</span>}
+                    </div>
+                    <div className="text-right text-[10px] text-zinc-500">
+                      <div className="font-mono text-indigo-300">v{release.version}</div>
+                      <div>{release.date}</div>
+                    </div>
+                  </div>
+                  <ul className="mt-3 space-y-2">
+                    {release.changes.map((change) => (
+                      <li key={change} className="flex gap-2 text-xs leading-relaxed text-zinc-400">
+                        <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-indigo-400" />
+                        <span>{change}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* Conteúdo Principal */}
       <main className="mx-auto min-w-0 w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
         {currentView === 'analytics' ? (
           <AnalyticsDashboard jwtToken={token} />
