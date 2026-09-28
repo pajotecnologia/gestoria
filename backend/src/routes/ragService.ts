@@ -303,6 +303,7 @@ router.get('/knowledge', async (req: Request, res: Response): Promise<void> => {
       select: {
         id: true,
         agentId: true,
+        clientId: true,
         fileName: true,
         fileSize: true,
         mimeType: true,
