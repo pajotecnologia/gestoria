@@ -16,6 +16,7 @@ RUN npm install --include=dev
 
 COPY tsconfig.json ./
 COPY src ./src/
+COPY public ./public/
 
 RUN npx prisma generate
 RUN npm run build
@@ -37,10 +38,11 @@ COPY prisma ./prisma/
 # Instala apenas dependências de produção
 RUN npm install --omit=dev
 
-# Copia build compilado e client Prisma
+# Copia build compilado, client Prisma e Frontend integrado
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/public ./public
 
 EXPOSE 3000
 EXPOSE 3014
