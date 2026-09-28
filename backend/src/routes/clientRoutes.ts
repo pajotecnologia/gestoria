@@ -7,12 +7,20 @@ import { writeAuditLog } from '../services/auditLog';
 const router = Router();
 router.use(tenantMiddleware);
 
+const optionalUrl = z.preprocess(
+  (value) => {
+    if (typeof value === 'string' && value.trim() === '') return null;
+    return value;
+  },
+  z.string().trim().url().max(500).nullable().optional(),
+);
+
 const clientSchema = z.object({
   name: z.string().trim().min(2).max(160),
   legalName: z.string().trim().max(200).optional().nullable(),
   document: z.string().trim().max(40).optional().nullable(),
   segment: z.string().trim().max(120).optional().nullable(),
-  website: z.string().trim().url().max(500).optional().nullable(),
+  website: optionalUrl,
   instagram: z.string().trim().max(200).optional().nullable(),
   linkedin: z.string().trim().max(300).optional().nullable(),
   description: z.string().trim().max(12000).optional().nullable(),
