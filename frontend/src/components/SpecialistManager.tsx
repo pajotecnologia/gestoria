@@ -393,7 +393,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
       {loading ? (
         <div className="text-center py-20 text-slate-400 text-sm">Carregando especialistas...</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-3">
           {specialists.map((spec) => {
             const IconComponent = ICON_MAP[spec.iconName] || BrainCircuit;
             return (
@@ -504,7 +504,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                 <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
                   Modelos Prontos de Especialistas (Clique para Carregar):
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {SPECIALIST_TEMPLATES.map((tpl) => (
                     <button
                       key={tpl.roleKey}
@@ -521,7 +521,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
             )}
 
             <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nome do Especialista</label>
                   <input
@@ -562,7 +562,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Provedor de IA</label>
                   <select
@@ -631,7 +631,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Cor do Avatar</label>
                   <select
