@@ -7,6 +7,8 @@ import { apiUrl } from './api/client';
 import { AIProvidersSettings } from './components/AIProvidersSettings';
 import { UserManagement } from './components/UserManagement';
 import { AuditLogViewer } from './components/AuditLogViewer';
+import { ClientContextManager } from './components/ClientContextManager';
+import { CampaignManager } from './components/CampaignManager';
 
 export const App: React.FC = () => {
   const [token, setToken] = useState<string>(() => {
@@ -20,7 +22,7 @@ export const App: React.FC = () => {
   });
 
   // Navegação Principal
-  const [currentView, setCurrentView] = useState<'agents' | 'specialists' | 'warroom' | 'ai' | 'users' | 'audit'>('agents');
+  const [currentView, setCurrentView] = useState<'agents' | 'clients' | 'campaigns' | 'specialists' | 'warroom' | 'ai' | 'users' | 'audit'>('clients');
 
   // Estados do Formulário de Auth
   const [isRegistering, setIsRegistering] = useState(false);
@@ -199,6 +201,24 @@ export const App: React.FC = () => {
           <nav className="flex items-center space-x-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-[58vw] md:max-w-none">
             <button
               type="button"
+              onClick={() => setCurrentView('clients')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'clients' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Empresas</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCurrentView('campaigns')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'campaigns' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Campanhas</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setCurrentView('agents')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                 currentView === 'agents'
@@ -267,7 +287,11 @@ export const App: React.FC = () => {
 
       {/* Conteúdo Principal */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 min-w-0">
-        {currentView === 'agents' ? (
+        {currentView === 'clients' ? (
+          <ClientContextManager jwtToken={token} />
+        ) : currentView === 'campaigns' ? (
+          <CampaignManager jwtToken={token} />
+        ) : currentView === 'agents' ? (
           <AgentsDashboard jwtToken={token} />
         ) : currentView === 'specialists' ? (
           <SpecialistManager jwtToken={token} />
