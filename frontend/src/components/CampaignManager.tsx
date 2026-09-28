@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Megaphone, Plus, Sparkles, RefreshCw, Pencil, Power, Search, CalendarDays } from 'lucide-react';
+import { Megaphone, Plus, Sparkles, RefreshCw, Pencil, Power, Search, CalendarDays, Trash2, X } from 'lucide-react';
 import { apiUrl } from '../api/client';
 
 export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
@@ -14,6 +14,7 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
   const [filterClient, setFilterClient] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -31,6 +32,7 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
 
   const openEdit = (campaign: any) => {
     setEditing(campaign);
+    setShowForm(true);
     setForm({
       clientId: campaign.clientId, name: campaign.name, objective: campaign.objective,
       offer: campaign.offer || '', audience: campaign.audience || '', channels: campaign.channels || '',
@@ -54,8 +56,18 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
       if (!res.ok) { window.alert(data.error || 'Falha ao salvar campanha.'); return; }
       setEditing(null);
       setForm(emptyForm);
+      setShowForm(false);
       await load();
     } finally { setSaving(false); }
+  };
+
+  const removeCampaign = async (campaign: any) => {
+    if (!window.confirm(`Excluir a campanha "${campaign.name}"? Esta ação não poderá ser desfeita.`)) return;
+    const res = await fetch(apiUrl('/api/campaigns/' + campaign.id), { method: 'DELETE', headers: { Authorization: 'Bearer ' + jwtToken } });
+    const data = await res.json();
+    if (!res.ok) { window.alert(data.error || 'Falha ao excluir campanha.'); return; }
+    if (editing?.id === campaign.id) { setEditing(null); setForm(emptyForm); setShowForm(false); }
+    await load();
   };
 
   const toggleActivation = async (campaign: any) => {
@@ -89,17 +101,17 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
   return (
     <div className="space-y-6">
       <div className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2"><Megaphone className="w-5 h-5 text-indigo-400" /> Campanhas</h2>
             <p className="text-xs text-zinc-400 mt-1">Crie o briefing e gere uma estratégia usando o contexto cadastrado da empresa e os materiais indexados.</p>
           </div>
-          <button type="button" onClick={load} className="p-2 rounded-lg bg-zinc-800/80 text-zinc-300"><RefreshCw className="w-4 h-4" /></button>
+          <div className="flex items-center gap-2"><button type="button" onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }} className="flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20"><Plus className="h-4 w-4" /> Nova campanha</button><button type="button" onClick={load} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-white/[0.07] bg-zinc-800/80 text-zinc-300"><RefreshCw className="w-4 h-4" /></button></div>
         </div>
       </div>
 
-      <form onSubmit={save} className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-bold text-white">{editing ? 'Ajustar campanha específica' : 'Nova campanha'}</h3>{editing && <button type="button" onClick={() => { setEditing(null); setForm(emptyForm); }} className="text-xs text-zinc-400 hover:text-white">Cancelar edição</button>}</div>
+      {showForm && <form onSubmit={save} className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-5 space-y-4">
+        <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-bold text-white">{editing ? 'Editar campanha' : 'Nova campanha'}</h3><button type="button" onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(false); }} className="flex min-h-11 items-center gap-1.5 rounded-xl border border-white/[0.07] bg-zinc-950 px-3 text-xs text-zinc-300 hover:bg-zinc-800"><X className="h-3.5 w-3.5" /> Voltar para campanhas</button></div>
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
           <select required value={form.clientId} onChange={e => setForm({ ...form, clientId: e.target.value })} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white">
             <option value="">Selecione a empresa *</option>
@@ -119,7 +131,7 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
         </div>
         <div className="flex items-center justify-between border border-white/[0.07] rounded-xl p-3"><div><p className="text-xs font-semibold text-white">ATIVADA</p><p className="text-[11px] text-zinc-500">S/N. Ativação exige período completo.</p></div><button type="button" onClick={() => setForm({ ...form, isActive: !form.isActive })} aria-pressed={form.isActive} className={`relative inline-flex h-7 w-14 items-center rounded-full border transition-all duration-200 ease-in-out ${form.isActive ? 'bg-emerald-600 border-emerald-500' : 'bg-zinc-800/80 border-white/[0.10]'}`}><span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${form.isActive ? 'translate-x-8' : 'translate-x-1'}`} /></button></div>
         <button disabled={saving} type="submit" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-2">{editing ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {saving ? 'Salvando...' : editing ? 'Salvar ajustes da campanha' : 'Criar campanha'}</button>
-      </form>
+      </form>}
 
       <div className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-4">
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -131,14 +143,14 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
 
       <div className="space-y-3">
         {loading ? <p className="text-xs text-zinc-500">Carregando...</p> : campaigns.map(c => (
-          <div key={c.id} className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-5">
+          <div key={c.id} className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-5 transition hover:border-white/[0.12]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-bold text-white">{c.name}</p>
                 <div className="flex flex-wrap items-center gap-2 mt-1"><span className="text-[11px] text-indigo-400">{c.client?.name}</span><span className="text-[10px] px-2 py-1 rounded-full bg-zinc-800/80 text-zinc-300">{c.lifecycleStatus || c.status}</span></div>
                 <p className="text-xs text-zinc-400 mt-2">{c.objective}</p><p className="text-[11px] text-zinc-500 mt-2"><CalendarDays className="inline w-3.5 h-3.5 mr-1" />{c.startDate ? new Date(c.startDate).toLocaleDateString('pt-BR') : 'Sem início'} — {c.endDate ? new Date(c.endDate).toLocaleDateString('pt-BR') : 'Sem fim'} • ATIVADA: {c.isActive ? 'S' : 'N'}</p>
               </div>
-              <button type="button" onClick={() => openEdit(c)} className="px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs mr-2"><Pencil className="inline w-3.5 h-3.5 mr-1" />Ajustar</button><button type="button" onClick={() => toggleActivation(c)} className="px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs mr-2"><Power className="inline w-3.5 h-3.5 mr-1" />{c.isActive ? 'Desativar' : 'Ativar'}</button><button type="button" onClick={() => generate(c.id)} className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 rounded-xl text-xs font-semibold flex items-center gap-2"><Sparkles className="w-3.5 h-3.5" /> Gerar estratégia</button>
+              <div className="flex flex-wrap gap-2 sm:justify-end"><button type="button" onClick={() => openEdit(c)} className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs"><Pencil className="w-3.5 h-3.5" />Editar</button><button type="button" onClick={() => toggleActivation(c)} className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs"><Power className="inline w-3.5 h-3.5 mr-1" />{c.isActive ? 'Desativar' : 'Ativar'}</button><button type="button" onClick={() => generate(c.id) className="px-4 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 rounded-xl text-xs font-semibold flex items-center gap-2"><Sparkles className="w-3.5 h-3.5" /> Gerar estratégia</button><button type="button" onClick={() => void removeCampaign(c)} className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 rounded-xl text-xs"><Trash2 className="w-3.5 h-3.5" />Excluir</button></div>
             </div>
             {c.strategy && <details className="mt-4 border-t border-white/[0.07] pt-3"><summary className="text-xs text-zinc-300 cursor-pointer">Ver estratégia gerada</summary><pre className="mt-3 whitespace-pre-wrap text-xs text-zinc-300 leading-relaxed font-sans">{c.strategy}</pre></details>}
           </div>
