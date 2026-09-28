@@ -141,7 +141,7 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {loading ? <p className="text-xs text-zinc-500">Carregando...</p> : campaigns.map(c => (
           <div key={c.id} className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-5 transition hover:border-white/[0.12]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
