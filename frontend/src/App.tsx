@@ -23,7 +23,7 @@ export const App: React.FC = () => {
   });
 
   // Navegação Principal
-  const [currentView, setCurrentView] = useState<'analytics' | 'agents' | 'clients' | 'campaigns' | 'specialists' | 'warroom' | 'ai' | 'users' | 'audit'>('analytics');
+  const [currentView, setCurrentView] = useState<'analytics' | 'agents' | 'clients' | 'campaigns' | 'specialists' | 'warroom' | 'ai' | 'users' | 'audit'>('clients');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Estados do Formulário de Auth
