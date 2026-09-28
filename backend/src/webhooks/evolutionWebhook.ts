@@ -15,9 +15,12 @@ const EVOLUTION_WEBHOOK_SECRET = process.env.EVOLUTION_WEBHOOK_SECRET || '';
 if (process.env.NODE_ENV === 'production' && !EVOLUTION_WEBHOOK_SECRET) throw new Error('EVOLUTION_WEBHOOK_SECRET é obrigatório em produção.');
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/ai-agent';
 
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
+
 const redisConnection = new IORedis({
   host: REDIS_HOST,
   port: REDIS_PORT,
+  password: REDIS_PASSWORD,
   maxRetriesPerRequest: null,
   lazyConnect: true,
 });
