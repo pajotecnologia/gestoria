@@ -58,11 +58,15 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este agente?')) return;
     try {
-      await fetch(apiUrl(`/api/agents/${id}`), {
+      const res = await fetch(apiUrl(`/api/agents/${id}`), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
-      fetchAgents(pagination.page);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Falha ao excluir agente.');
+      }
+      await fetchAgents(pagination.page);
     } catch (err) {
       console.error(err);
     }
