@@ -100,7 +100,7 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
 
       <form onSubmit={save} className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-bold text-white">{editing ? 'Ajustar campanha específica' : 'Nova campanha'}</h3>{editing && <button type="button" onClick={() => { setEditing(null); setForm(emptyForm); }} className="text-xs text-zinc-400 hover:text-white">Cancelar edição</button>}</div>
-        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-1">
           <select required value={form.clientId} onChange={e => setForm({ ...form, clientId: e.target.value })} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white">
             <option value="">Selecione a empresa *</option>
             {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -108,12 +108,12 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
           <input required placeholder="Nome da campanha *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" />
         </div>
         <textarea required rows={3} placeholder="Objetivo da campanha * — ex.: gerar leads qualificados para..." value={form.objective} onChange={e => setForm({ ...form, objective: e.target.value })} className="w-full bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" />
-        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-1">
           {[
             ['offer','Oferta / produto'],['audience','Público que você imagina'],['channels','Canais desejados'],['budget','Orçamento'],['period','Período textual / observações'],['brief','Briefing adicional']
           ].map(([k,p]) => <textarea key={k} rows={2} placeholder={p} value={(form as any)[k]} onChange={e => setForm({ ...form, [k]: e.target.value })} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" />)}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
           <label className="text-xs text-zinc-400">Início da campanha<input type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} className="mt-1 w-full bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" /></label>
           <label className="text-xs text-zinc-400">Fim da campanha<input type="date" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} className="mt-1 w-full bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" /></label>
         </div>
@@ -122,7 +122,7 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
       </form>
 
       <div className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-4">
-        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-3">
           <div className="relative"><Search className="absolute left-3 top-2.5 w-4 h-4 text-zinc-600" /><input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') load(); }} placeholder="Pesquisar campanha..." className="w-full bg-zinc-950 border border-white/[0.07] rounded-xl pl-9 pr-3 py-2.5 text-xs text-white" /></div>
           <select value={filterClient} onChange={e => setFilterClient(e.target.value)} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white"><option value="">Todas as empresas</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white"><option value="">Todos os status</option><option value="RASCUNHO">Rascunho</option><option value="AGENDADA">Agendada</option><option value="ATIVA">Ativa</option><option value="PAUSADA">Pausada</option><option value="ENCERRADA">Encerrada</option></select>
