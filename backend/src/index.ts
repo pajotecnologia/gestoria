@@ -23,6 +23,7 @@ import aiUsageRoutes from './routes/aiUsageRoutes';
 import specialistRoutes from './routes/specialistRoutes';
 import clientRoutes from './routes/clientRoutes';
 import campaignRoutes from './routes/campaignRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -64,6 +65,7 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/specialists', specialistRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/campaigns', campaignRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/prompts', promptCompilerRoutes);
 app.use('/api/rag', ragServiceRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
