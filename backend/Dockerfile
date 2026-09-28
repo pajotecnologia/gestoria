@@ -3,12 +3,14 @@
 # ==========================================
 FROM node:20-alpine AS builder
 
+ENV NODE_ENV=development
+
 WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm install
+RUN npm install --include=dev
 
 COPY tsconfig.json ./
 COPY src ./src/
@@ -29,7 +31,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Instala apenas dependências de produção
-RUN npm install --only=production
+RUN npm install --omit=dev
 
 # Copia build compilado e client Prisma
 COPY --from=builder /app/dist ./dist
@@ -37,6 +39,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 EXPOSE 3000
+EXPOSE 3014
 
 # Executa migrações automáticas e inicia o servidor
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
