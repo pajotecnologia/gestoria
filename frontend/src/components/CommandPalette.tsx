@@ -7,14 +7,17 @@ import {
   History, 
   LogOut, 
   MessageSquare, 
+  Moon,
   Radio, 
   Search, 
   ShieldCheck, 
   Sparkles, 
+  Sun,
   Users, 
   X,
   LucideIcon
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 interface PaletteAction {
   id: string;
@@ -47,6 +50,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onLogout,
   userRole
 }) => {
+  const { theme, toggleTheme } = useTheme();
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -97,6 +101,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     {
       category: 'Sistema',
       actions: [
+        { 
+          id: 'theme', 
+          label: theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro', 
+          desc: 'Alternar entre visual escuro moderno e visual claro limpo', 
+          icon: theme === 'dark' ? Sun : Moon, 
+          custom: toggleTheme 
+        },
         { id: 'releases', label: 'Notas de Atualização', desc: 'Ver novidades e melhorias da versão atual', icon: History, custom: onOpenReleases },
         { id: 'logout', label: 'Encerrar Sessão', desc: 'Sair da conta da agência', icon: LogOut, custom: onLogout },
       ]

@@ -10,14 +10,17 @@ import {
   LogOut, 
   Menu, 
   MessageSquare, 
+  Moon,
   Radio, 
   Search, 
   ShieldCheck, 
   Sparkles, 
+  Sun,
   Users, 
   X
 } from 'lucide-react';
 
+import { useTheme } from './context/ThemeContext';
 import { AgentsDashboard } from './components/AgentsDashboard';
 import { WarRoomChat } from './components/WarRoomChat';
 import { SpecialistManager } from './components/SpecialistManager';
@@ -32,6 +35,8 @@ import { CommandPalette } from './components/CommandPalette';
 import { APP_VERSION, RELEASE_HISTORY } from './version';
 
 export const App: React.FC = () => {
+  const { theme, toggleTheme } = useTheme();
+
   const [token, setToken] = useState<string>(() => {
     try { return localStorage.getItem('token') || ''; } catch { return ''; }
   });
@@ -155,102 +160,145 @@ export const App: React.FC = () => {
     ] : [])
   ];
 
-  // Tela de Login/Registro Estilo Shadcn UI Dark
+  // Tela de Login/Registro Estilo Apex / Shadcn UI Dark
   if (!token || !user || !tenant) {
     return (
-      <div className="relative min-h-screen flex items-center justify-center bg-zinc-950 p-4 selection:bg-indigo-500/30">
-        {/* Background glow accents */}
-        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-violet-600/10 blur-3xl pointer-events-none" />
+      <div className="relative min-h-screen flex items-center justify-center bg-zinc-950 p-4 selection:bg-indigo-500/30 overflow-hidden">
+        {/* Background glow accents & grid */}
+        <div className="absolute top-1/4 -left-32 h-96 w-96 rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 -right-32 h-96 w-96 rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:24px_24px] opacity-25 pointer-events-none" />
 
-        <div className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/80 p-8 shadow-2xl shadow-black/80 backdrop-blur-xl">
+        <div className="relative w-full max-w-md rounded-3xl border border-zinc-800/90 bg-zinc-900/80 p-8 shadow-2xl shadow-black/80 backdrop-blur-2xl">
+          {/* Theme Toggle in Login */}
+          <div className="absolute right-6 top-6">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-8 w-8 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white hover:border-zinc-700 transition"
+              title={theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-indigo-400" />}
+            </button>
+          </div>
+
+          {/* Header Brand */}
           <div className="text-center mb-8">
-            <div className="inline-flex p-3 rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/15 to-violet-600/15 text-indigo-400 shadow-lg shadow-indigo-500/10 mb-3">
-              <Bot className="w-7 h-7" />
+            <div className="inline-flex p-3 rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/20 to-violet-600/20 text-indigo-400 shadow-xl shadow-indigo-500/10 mb-3.5">
+              <Bot className="w-8 h-8" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-white">Gestor IA SaaS</h1>
-            <p className="text-xs text-zinc-400 mt-1">Plataforma Multi-Tenant de Inteligência Artificial para Agências</p>
+            <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+              {isRegistering 
+                ? 'Cadastre sua agência e monte sua equipe de agentes inteligentes'
+                : 'Acesse o workspace da sua agência com IA e automação WhatsApp'}
+            </p>
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
             {isRegistering && (
               <>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">Nome da Agência / Empresa</label>
-                  <input
-                    type="text"
-                    required
-                    value={agencyName}
-                    onChange={(e) => setAgencyName(e.target.value)}
-                    className="shadcn-input"
-                    placeholder="Ex: Agência Nexus Marketing"
-                  />
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Nome da Agência / Empresa</label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <input
+                      type="text"
+                      required
+                      value={agencyName}
+                      onChange={(e) => setAgencyName(e.target.value)}
+                      className="shadcn-input pl-10"
+                      placeholder="Ex: Agência Nexus Marketing"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-300 mb-1.5">Seu Nome Completo</label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="shadcn-input"
-                    placeholder="Ex: Carlos Silva"
-                  />
+                  <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Seu Nome Completo</label>
+                  <div className="relative">
+                    <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                    <input
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="shadcn-input pl-10"
+                      placeholder="Ex: Carlos Silva"
+                    />
+                  </div>
                 </div>
               </>
             )}
 
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Email Profissional</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="shadcn-input"
-                placeholder="seu.email@agencia.com.br"
-              />
+              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Email Profissional</label>
+              <div className="relative">
+                <Search className="hidden" />
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">@</div>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="shadcn-input pl-10"
+                  placeholder="seu.email@agencia.com.br"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1.5">Senha de Acesso</label>
-              <input
-                type="password"
-                required
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="shadcn-input"
-                placeholder="Mínimo 8 caracteres"
-              />
+              <label className="block text-xs font-semibold text-zinc-300 mb-1.5">Senha de Acesso</label>
+              <div className="relative">
+                <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="shadcn-input pl-10"
+                  placeholder="Mínimo 8 caracteres"
+                />
+              </div>
             </div>
 
             {authError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs">
-                {authError}
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-rose-400 shrink-0" />
+                <span>{authError}</span>
               </div>
             )}
 
             <button
               type="submit"
               disabled={authLoading}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-xs font-semibold shadow-lg shadow-indigo-500/20 transition-all duration-200 hover:from-indigo-400 hover:to-violet-500 disabled:opacity-50 cursor-pointer"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-violet-600 text-white text-xs font-semibold shadow-xl shadow-indigo-500/25 transition-all duration-200 hover:from-indigo-400 hover:to-violet-500 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
             >
-              {authLoading ? 'Processando autenticação...' : isRegistering ? 'Criar Conta da Agência' : 'Acessar Workspace'}
+              {authLoading 
+                ? 'Processando autenticação...' 
+                : isRegistering 
+                  ? 'Criar Conta da Agência' 
+                  : 'Acessar Workspace'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          {/* Toggle between Login and Register */}
+          <div className="mt-6 pt-5 border-t border-zinc-800/80 text-center">
             <button
               type="button"
               onClick={() => {
                 setIsRegistering(!isRegistering);
                 setAuthError('');
               }}
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
+              className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer"
             >
-              {isRegistering ? 'Já possui conta? Faça login' : 'Não tem conta? Cadastre sua agência'}
+              {isRegistering ? 'Já possui uma conta? Faça login' : 'Não tem conta? Cadastre sua agência'}
             </button>
+          </div>
+
+          {/* Security badge footer */}
+          <div className="mt-5 flex items-center justify-center gap-1.5 text-[10px] text-zinc-500">
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+            <span>Ambiente seguro • Criptografia Multi-Tenant</span>
           </div>
         </div>
       </div>
@@ -463,6 +511,16 @@ export const App: React.FC = () => {
             >
               <History className="h-3.5 w-3.5" />
               <span>v{APP_VERSION}</span>
+            </button>
+
+            {/* Theme Toggle Button (Light / Dark) */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80 text-zinc-300 hover:text-white hover:border-zinc-700 transition cursor-pointer"
+              title={theme === 'dark' ? 'Alternar para Tema Claro' : 'Alternar para Tema Escuro'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-indigo-400" />}
             </button>
 
             {/* Tenant Status Indicator */}

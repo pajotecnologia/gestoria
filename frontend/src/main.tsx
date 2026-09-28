@@ -1,6 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
+import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
 
 interface ErrorBoundaryProps {
@@ -60,8 +61,11 @@ if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       <ErrorBoundary>
-        <App />
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
       </ErrorBoundary>
     </React.StrictMode>,
   );
 }
+
