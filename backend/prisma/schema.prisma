@@ -39,6 +39,9 @@ model Tenant {
   aiProviders AiProviderAccount[]
   aiUsage     AiUsage[]
   aiRequests  AiRequest[]
+  clients     Client[]
+  campaigns   Campaign[]
+  resources   ClientResource[]
 
   @@map("tenants")
 }
