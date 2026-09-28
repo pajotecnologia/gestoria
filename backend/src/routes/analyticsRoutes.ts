@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from './authRoutes';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
-import { parsePagination } from '../utils/pagination';
 
 const router = Router();
 router.use(tenantMiddleware);
@@ -33,10 +32,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const now = new Date();
     const startDate = getStartDate(period, now);
 
-    const [clients, campaigns, users, activeCampaigns, aiRequests, recentActivity, campaignStatus] = await prisma.$transaction([
+    const previousStart = new Date(startDate);
+    const periodMs = now.getTime() - startDate.getTime();
+    previousStart.setTime(startDate.getTime() - periodMs);
+
+    const [clients, campaigns, users, previousUsers, activeCampaigns, aiRequests, recentActivity, campaignStatus] = await prisma.$transaction([
       prisma.client.findMany({ where: { tenantId, createdAt: { gte: startDate } }, select: { createdAt: true } }),
       prisma.campaign.findMany({ where: { tenantId, createdAt: { gte: startDate } }, select: { createdAt: true } }),
       prisma.user.count({ where: { tenantId } }),
+      prisma.user.count({ where: { tenantId, createdAt: { lt: startDate } } }),
       prisma.campaign.count({ where: { tenantId, isActive: true } }),
       prisma.aiRequest.findMany({ where: { tenantId, createdAt: { gte: startDate } }, select: { createdAt: true } }),
       prisma.auditLog.findMany({
@@ -91,8 +95,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         kpis: {
           revenue: null,
           activeUsers: users,
+          activeUsersVariation: previousUsers > 0 ? ((users - previousUsers) / previousUsers) * 100 : null,
           conversions: null,
+          conversionsVariation: null,
           retention: null,
+          retentionVariation: null,
+          revenueVariation: null,
           activeCampaigns,
         },
         trend: Array.from(buckets.values()),
