@@ -206,7 +206,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
       await load();
 
       if (selected) {
-        await open(data.data.id);
+        resetForm();
         setFeedback({ type: 'success', message: 'Dados da empresa atualizados com sucesso.' });
       } else {
         resetForm();
