@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, LogOut, ShieldCheck, Users, Radio, Sparkles, Menu, X } from 'lucide-react';
+import { Bot, LogOut, ShieldCheck, Users, Radio, Sparkles, Menu, X, BarChart3 } from 'lucide-react';
 import { AgentsDashboard } from './components/AgentsDashboard';
 import { WarRoomChat } from './components/WarRoomChat';
 import { SpecialistManager } from './components/SpecialistManager';
@@ -9,6 +9,7 @@ import { UserManagement } from './components/UserManagement';
 import { AuditLogViewer } from './components/AuditLogViewer';
 import { ClientContextManager } from './components/ClientContextManager';
 import { CampaignManager } from './components/CampaignManager';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 
 export const App: React.FC = () => {
   const [token, setToken] = useState<string>(() => {
@@ -22,7 +23,7 @@ export const App: React.FC = () => {
   });
 
   // Navegação Principal
-  const [currentView, setCurrentView] = useState<'agents' | 'clients' | 'campaigns' | 'specialists' | 'warroom' | 'ai' | 'users' | 'audit'>('clients');
+  const [currentView, setCurrentView] = useState<'analytics' | 'agents' | 'clients' | 'campaigns' | 'specialists' | 'warroom' | 'ai' | 'users' | 'audit'>('analytics');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Estados do Formulário de Auth
@@ -208,6 +209,15 @@ export const App: React.FC = () => {
           <nav className="hidden max-w-[58vw] items-center space-x-1 overflow-x-auto rounded-xl border border-white/[0.07] bg-zinc-900/70 p-1 backdrop-blur-md md:flex md:max-w-none">
             <button
               type="button"
+              onClick={() => handleViewChange('analytics')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'analytics' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:text-zinc-100'}`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Analytics</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => handleViewChange('clients')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${currentView === 'clients' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:text-zinc-100'}`}
             >
@@ -321,6 +331,7 @@ export const App: React.FC = () => {
               </button>
             </div>
             <nav className="mt-4 space-y-1">
+              <button type="button" onClick={() => handleViewChange('analytics')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'analytics' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><BarChart3 className="h-4 w-4" /><span>Analytics</span></button>
               <button type="button" onClick={() => handleViewChange('clients')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'clients' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Users className="h-4 w-4" /><span>Empresas</span></button>
               <button type="button" onClick={() => handleViewChange('campaigns')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'campaigns' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Sparkles className="h-4 w-4" /><span>Campanhas</span></button>
               <button type="button" onClick={() => handleViewChange('agents')} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-all duration-200 ${currentView === 'agents' ? 'bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'}`}><Radio className="h-4 w-4" /><span>Agentes WhatsApp</span></button>
@@ -336,7 +347,9 @@ export const App: React.FC = () => {
 
       {/* Conteúdo Principal */
       <main className="mx-auto min-w-0 w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
-        {currentView === 'clients' ? (
+        {currentView === 'analytics' ? (
+          <AnalyticsDashboard jwtToken={token} />
+        ) : currentView === 'clients' ? (
           <ClientContextManager jwtToken={token} />
         ) : currentView === 'campaigns' ? (
           <CampaignManager jwtToken={token} />
