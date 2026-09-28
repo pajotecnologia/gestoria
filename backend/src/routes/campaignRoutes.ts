@@ -168,6 +168,29 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const campaign = await prisma.campaign.findFirst({ where: { id: req.params.id, tenantId }, select: { id: true, clientId: true, name: true } });
+    if (!campaign) {
+      res.status(404).json({ error: 'Campanha não encontrada.' });
+      return;
+    }
+    await prisma.campaign.delete({ where: { id: campaign.id } });
+    await writeAuditLog({
+      tenantId,
+      userId: req.user?.userId,
+      action: 'CAMPAIGN_DELETED',
+      entity: 'Campaign',
+      entityId: campaign.id,
+      metadata: { clientId: campaign.clientId, name: campaign.name },
+    });
+    res.json({ success: true, data: { id: campaign.id } });
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message || 'Falha ao excluir campanha.' });
+  }
+});
+
 router.patch('/:id/activation', async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
