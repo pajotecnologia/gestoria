@@ -409,7 +409,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1">
             {filteredClients.map((client) => (
               <article
                 key={client.id}
@@ -438,7 +438,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
                   )}
                 </div>
 
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <div className="mt-4 grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="rounded-lg bg-zinc-950 p-2 text-center">
                     <p className="text-sm font-bold text-white">{client._count?.knowledgeFiles || 0}</p>
                     <p className="text-[9px] text-zinc-500">Materiais</p>
@@ -498,7 +498,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         </div>
 
         <form onSubmit={save} className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-1 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-1">
             {[
               ['name', 'Nome da empresa *'],
               ['legalName', 'Razão social'],
@@ -568,7 +568,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
               <h3 className="flex items-center gap-2 text-sm font-bold text-white">
                 <Link2 className="h-4 w-4 text-cyan-400" /> Sites e referências
               </h3>
-              <form onSubmit={addResource} className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              <form onSubmit={addResource} className="mt-3 grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-4">
                 <input
                   required
                   placeholder="Título"
