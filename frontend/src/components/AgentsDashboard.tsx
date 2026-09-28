@@ -124,7 +124,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
       {loading ? (
         <div className="text-center py-20 text-zinc-400 text-sm">Carregando agentes...</div>
       ) : agents.length === 0 ? (
-        <div className="text-center py-16 bg-zinc-900/80/50 border border-white/[0.07] rounded-2xl space-y-4">
+        <div className="text-center py-16 bg-zinc-900/50 border border-white/[0.07] rounded-2xl space-y-4">
           <Bot className="w-12 h-12 text-zinc-600 mx-auto" />
           <div>
             <p className="text-sm font-semibold text-zinc-300">Nenhum agente configurado</p>
@@ -182,7 +182,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-white/[0.07]/80 flex items-center justify-between text-[11px] text-zinc-400">
+                  <div className="mt-4 pt-3 border-t border-white/[0.07] flex items-center justify-between text-[11px] text-zinc-400">
                     <span className="flex items-center space-x-1">
                       <Database className="w-3.5 h-3.5 text-indigo-400" />
                       <span>{agent._count?.knowledgeFiles || 0} arquivos RAG</span>
@@ -195,7 +195,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                   <button
                     type="button"
                     onClick={() => setSelectedAgentForQR(agent)}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
                   >
                     <QrCode className="w-4 h-4 text-emerald-400 mb-1" />
                     <span>WhatsApp</span>
@@ -204,7 +204,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                   <button
                     type="button"
                     onClick={() => setSelectedAgentForRAG(agent)}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
                   >
                     <FileUp className="w-4 h-4 text-indigo-400 mb-1" />
                     <span>Base RAG</span>
@@ -213,7 +213,7 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                   <button
                     type="button"
                     onClick={() => setEditingAgent(agent)}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
+                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
                   >
                     <Settings className="w-4 h-4 text-amber-400 mb-1" />
                     <span>Ajustar</span>
