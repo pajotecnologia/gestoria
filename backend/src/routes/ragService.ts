@@ -96,11 +96,12 @@ router.post(
 
     try {
       const tenantId = req.tenantId!;
-      const agentId = String(req.body.agentId || '');
+      const agentId = String(req.body.agentId || '').trim() || null;
+      const clientId = String(req.body.clientId || '').trim() || null;
       const file = req.file;
 
-      if (!agentId) {
-        res.status(400).json({ error: 'Bad Request', message: 'agentId é obrigatório.' });
+      if (!agentId && !clientId) {
+        res.status(400).json({ error: 'Bad Request', message: 'agentId ou clientId é obrigatório.' });
         return;
       }
 
@@ -109,17 +110,26 @@ router.post(
         return;
       }
 
-      const agent = await prisma.agent.findFirst({
-        where: { id: agentId, tenantId },
-        select: { id: true },
-      });
-
-      if (!agent) {
-        res.status(404).json({
-          error: 'Not Found',
-          message: 'Agente não encontrado ou não pertence a este tenant.',
+      if (agentId) {
+        const agent = await prisma.agent.findFirst({
+          where: { id: agentId, tenantId },
+          select: { id: true },
         });
-        return;
+        if (!agent) {
+          res.status(404).json({ error: 'Not Found', message: 'Agente não encontrado ou não pertence a este tenant.' });
+          return;
+        }
+      }
+
+      if (clientId) {
+        const client = await prisma.client.findFirst({
+          where: { id: clientId, tenantId },
+          select: { id: true },
+        });
+        if (!client) {
+          res.status(404).json({ error: 'Not Found', message: 'Cliente/empresa não encontrado ou não pertence a este tenant.' });
+          return;
+        }
       }
 
       if (!['application/pdf', 'text/plain'].includes(file.mimetype)) {
@@ -137,6 +147,7 @@ router.post(
         where: {
           tenantId,
           agentId,
+          clientId,
           contentHash,
           status: 'READY',
         },
@@ -181,6 +192,7 @@ router.post(
         data: {
           tenantId,
           agentId,
+          clientId,
           fileName: file.originalname,
           fileSize: file.size,
           mimeType: file.mimetype,
@@ -206,6 +218,7 @@ router.post(
         payload: {
           tenantId,
           agentId,
+          clientId,
           knowledgeFileId: knowledgeFile.id,
           fileName: file.originalname,
           chunkIndex: index,
@@ -358,6 +371,7 @@ router.post('/knowledge/:id/reprocess', async (req: Request, res: Response): Pro
       payload: {
         tenantId,
         agentId: file.agentId,
+        clientId: file.clientId,
         knowledgeFileId: file.id,
         fileName: file.fileName,
         chunkIndex: index,
@@ -405,27 +419,34 @@ router.post('/knowledge/:id/reprocess', async (req: Request, res: Response): Pro
 router.post('/search', async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
-    const agentId = String(req.body.agentId || '');
+    const agentId = String(req.body.agentId || '').trim() || null;
+    const clientId = String(req.body.clientId || '').trim() || null;
     const query = String(req.body.query || '').trim();
     const requestedLimit = Number(req.body.limit || 5);
     const limit = Math.min(Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 5, 1), 10);
 
-    if (!agentId || !query) {
+    if ((!agentId && !clientId) || !query) {
       res.status(400).json({
         error: 'Bad Request',
-        message: 'agentId e query são obrigatórios.',
+        message: 'Informe agentId ou clientId, além da consulta.',
       });
       return;
     }
 
-    const agent = await prisma.agent.findFirst({
-      where: { id: agentId, tenantId },
-      select: { id: true },
-    });
+    if (agentId) {
+      const agent = await prisma.agent.findFirst({ where: { id: agentId, tenantId }, select: { id: true } });
+      if (!agent) {
+        res.status(404).json({ error: 'Agente não encontrado.' });
+        return;
+      }
+    }
 
-    if (!agent) {
-      res.status(404).json({ error: 'Agente não encontrado.' });
-      return;
+    if (clientId) {
+      const client = await prisma.client.findFirst({ where: { id: clientId, tenantId }, select: { id: true } });
+      if (!client) {
+        res.status(404).json({ error: 'Cliente/empresa não encontrado.' });
+        return;
+      }
     }
 
     await ensureCollection();
@@ -442,7 +463,8 @@ router.post('/search', async (req: Request, res: Response): Promise<void> => {
       filter: {
         must: [
           { key: 'tenantId', match: { value: tenantId } },
-          { key: 'agentId', match: { value: agentId } },
+          ...(agentId ? [{ key: 'agentId', match: { value: agentId } }] : []),
+          ...(clientId ? [{ key: 'clientId', match: { value: clientId } }] : []),
         ],
       },
     });
@@ -454,6 +476,7 @@ router.post('/search', async (req: Request, res: Response): Promise<void> => {
         content: typeof result.payload?.content === 'string' ? result.payload.content : '',
         fileName: result.payload?.fileName || null,
         knowledgeFileId: result.payload?.knowledgeFileId || null,
+        clientId: result.payload?.clientId || null,
         chunkIndex: result.payload?.chunkIndex ?? null,
       })),
     });
