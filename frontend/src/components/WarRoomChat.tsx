@@ -366,9 +366,9 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
       </div>
 
       {/* Main Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-w-0">
         {/* Sidebar Esquerda: Lista de Salas */}
-        <div className="w-72 bg-slate-950/60 border-r border-slate-800 p-4 flex flex-col justify-between hidden md:flex">
+        <div className="w-72 shrink-0 bg-slate-950/60 border-r border-slate-800 p-4 flex flex-col justify-between hidden md:flex">
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
@@ -487,11 +487,11 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
         </div>
 
         {/* Chat / Feed Principal */}
-        <div className="flex-1 flex flex-col bg-slate-900/30">
+        <div className="flex-1 flex flex-col min-w-0 bg-slate-900/30">
           {/* Barra de Ações Rápidas do Squad */}
-          <div className="px-6 py-2.5 bg-slate-950/40 border-b border-slate-800 flex items-center justify-between overflow-x-auto">
-            <div className="flex items-center space-x-2 text-xs min-w-max">
-              <span className="text-slate-400 text-[11px] mr-1 hidden sm:inline">Conversar com Especialista:</span>
+          <div className="px-4 sm:px-6 py-2.5 bg-slate-950/40 border-b border-slate-800 flex items-center justify-between gap-3 overflow-x-auto min-w-0">
+            <div className="flex items-center space-x-2 text-xs overflow-x-auto min-w-0 py-0.5">
+              <span className="text-slate-400 text-[11px] mr-1 shrink-0 hidden sm:inline">Conversar com Especialista:</span>
               {specialists.length === 0 ? (
                 <>
                   <button

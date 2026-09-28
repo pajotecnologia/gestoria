@@ -266,7 +266,7 @@ export const App: React.FC = () => {
       </header>
 
       {/* Conteúdo Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 min-w-0">
         {currentView === 'agents' ? (
           <AgentsDashboard jwtToken={token} />
         ) : currentView === 'specialists' ? (
