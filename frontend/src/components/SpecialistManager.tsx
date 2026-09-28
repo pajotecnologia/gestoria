@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
+import { PROVIDER_MODELS } from './AIProvidersSettings';
 
 export interface Specialist {
   id?: string;
@@ -121,6 +122,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
   // Modal de Criação/Edição
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSpecialist, setEditingSpecialist] = useState<Specialist | null>(null);
+  const [customModelMode, setCustomModelMode] = useState(false);
   const [form, setForm] = useState<Partial<Specialist>>({
     name: '',
     roleKey: '',
@@ -553,8 +555,9 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                     value={form.provider || 'gemini'}
                     onChange={(e) => {
                       const p = e.target.value;
-                      const defaultModel = p === 'gemini' ? 'gemini-3.8-flash' : p === 'groq' ? 'llama-3.3-70b-versatile' : p === 'ollama' ? 'llama3.1' : 'gpt-4o';
+                      const defaultModel = (PROVIDER_MODELS[p] && PROVIDER_MODELS[p][0]?.id) || 'gpt-4o';
                       setForm({ ...form, provider: p, model: defaultModel });
+                      setCustomModelMode(false);
                     }}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
                   >
@@ -566,15 +569,36 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Modelo</label>
-                  <input
-                    required
-                    type="text"
-                    value={form.model || ''}
-                    onChange={(e) => setForm({ ...form, model: e.target.value })}
-                    placeholder="gemini-3.8-flash"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-300">Modelo</label>
+                    <button
+                      type="button"
+                      onClick={() => setCustomModelMode(!customModelMode)}
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 underline"
+                    >
+                      {customModelMode ? 'Ver Lista Padrão' : 'Digitar Outro'}
+                    </button>
+                  </div>
+                  {customModelMode ? (
+                    <input
+                      required
+                      type="text"
+                      value={form.model || ''}
+                      onChange={(e) => setForm({ ...form, model: e.target.value })}
+                      placeholder="gemini-3.8-flash"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  ) : (
+                    <select
+                      value={form.model || ''}
+                      onChange={(e) => setForm({ ...form, model: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    >
+                      {(PROVIDER_MODELS[form.provider || 'gemini'] || []).map((m) => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div>

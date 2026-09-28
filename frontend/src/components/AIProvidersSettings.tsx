@@ -30,9 +30,38 @@ type ProviderAccount = {
   createdAt?: string;
 };
 
+export const PROVIDER_MODELS: Record<string, Array<{ id: string; name: string }>> = {
+  gemini: [
+    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Recomendado - Mais Recente)' },
+    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash (Estável & Rápido)' },
+    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite (Ultra Rápido & Econômico)' },
+    { id: 'gemini-flash-lite-latest', name: 'Gemini Flash Lite (Mais Recente)' },
+  ],
+  openai: [
+    { id: 'gpt-4o', name: 'GPT-4o (Recomendado para Produção)' },
+    { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Ultra Rápido & Baixo Custo)' },
+    { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
+    { id: 'o1-mini', name: 'o1-mini (Raciocínio Rápido)' },
+    { id: 'o1-preview', name: 'o1-preview (Raciocínio Avançado)' },
+  ],
+  groq: [
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Groq LPU Speed)' },
+    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Sub-second Latency)' },
+    { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
+  ],
+  ollama: [
+    { id: 'hermes3:8b', name: 'Hermes 3 (8B - Ideal para Especialistas & Debates)' },
+    { id: 'llama3.1:latest', name: 'Llama 3.1 (8B - Instruções & Raciocínio)' },
+    { id: 'qwen2.5:latest', name: 'Qwen 2.5 (Local)' },
+    { id: 'mistral:latest', name: 'Mistral 7B (Local)' },
+  ],
+};
+
 export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   const [accounts, setAccounts] = useState<ProviderAccount[]>([]);
   const [form, setForm] = useState({ name: '', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: '', priority: 100 });
+  const [customModelMode, setCustomModelMode] = useState(false);
+  const [editCustomModelMode, setEditCustomModelMode] = useState(false);
   const [message, setMessage] = useState('');
   const [usage, setUsage] = useState<UsageSummary | null>(null);
 
@@ -265,8 +294,9 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                 value={form.provider}
                 onChange={e => {
                   const provider = e.target.value;
-                  const defaultModel = provider === 'gemini' ? 'gemini-3.8-flash' : provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o';
+                  const defaultModel = (PROVIDER_MODELS[provider] && PROVIDER_MODELS[provider][0]?.id) || 'gpt-4o';
                   setForm({ ...form, provider, model: defaultModel });
+                  setCustomModelMode(false);
                 }}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
               >
@@ -278,14 +308,35 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1">Modelo Padrão</label>
-              <input
-                required
-                placeholder="Ex: gemini-3.8-flash, gemini-3.6-flash, gemini-flash-lite-latest"
-                value={form.model}
-                onChange={e => setForm({ ...form, model: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-semibold text-slate-300">Modelo Padrão</label>
+                <button
+                  type="button"
+                  onClick={() => setCustomModelMode(!customModelMode)}
+                  className="text-[10px] text-indigo-400 hover:text-indigo-300 underline"
+                >
+                  {customModelMode ? 'Ver Lista Padrão' : 'Digitar Outro'}
+                </button>
+              </div>
+              {customModelMode ? (
+                <input
+                  required
+                  placeholder="Digite o ID do modelo (ex: gemini-3.8-flash)"
+                  value={form.model}
+                  onChange={e => setForm({ ...form, model: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                />
+              ) : (
+                <select
+                  value={form.model}
+                  onChange={e => setForm({ ...form, model: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                >
+                  {(PROVIDER_MODELS[form.provider] || []).map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div>
@@ -516,7 +567,12 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                   <label className="block text-xs font-semibold text-slate-300 mb-1">Provedor</label>
                   <select
                     value={editForm.provider}
-                    onChange={e => setEditForm({ ...editForm, provider: e.target.value })}
+                    onChange={e => {
+                      const provider = e.target.value;
+                      const defaultModel = (PROVIDER_MODELS[provider] && PROVIDER_MODELS[provider][0]?.id) || 'gpt-4o';
+                      setEditForm({ ...editForm, provider, model: defaultModel });
+                      setEditCustomModelMode(false);
+                    }}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
                   >
                     <option value="gemini">Google Gemini</option>
@@ -527,14 +583,36 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Modelo</label>
-                  <input
-                    required
-                    type="text"
-                    value={editForm.model}
-                    onChange={e => setEditForm({ ...editForm, model: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">Modelo</label>
+                    <button
+                      type="button"
+                      onClick={() => setEditCustomModelMode(!editCustomModelMode)}
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 underline"
+                    >
+                      {editCustomModelMode ? 'Ver Lista Padrão' : 'Digitar Outro'}
+                    </button>
+                  </div>
+                  {editCustomModelMode ? (
+                    <input
+                      required
+                      type="text"
+                      placeholder="Digite o ID do modelo (ex: gemini-3.8-flash)"
+                      value={editForm.model}
+                      onChange={e => setEditForm({ ...editForm, model: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    />
+                  ) : (
+                    <select
+                      value={editForm.model}
+                      onChange={e => setEditForm({ ...editForm, model: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    >
+                      {(PROVIDER_MODELS[editForm.provider] || []).map(m => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 
