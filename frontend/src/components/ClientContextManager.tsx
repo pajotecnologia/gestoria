@@ -327,7 +327,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
           }}
           className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all duration-200 hover:from-indigo-400 hover:to-violet-500"
         >
-          <Plus className="h-4 w-4" /> Nova empresa
+          <Plus className="h-4 w-4" /> Criar Nova Empresa
         </button>
       </div>
 
@@ -422,7 +422,7 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
               }}
               className="mx-auto mt-4 flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20"
             >
-              <Plus className="mr-1 h-4 w-4" /> Nova empresa
+              <Plus className="mr-1 h-4 w-4" /> Criar Nova Empresa
             </button>
           </div>
         ) : (
