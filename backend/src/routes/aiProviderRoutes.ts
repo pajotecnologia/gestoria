@@ -170,7 +170,7 @@ router.post('/test-unsaved', async (req: Request, res: Response): Promise<void> 
   const startTime = Date.now();
   try {
     const result = await callChat(provider as AiProvider, apiKey.trim(), {
-      model: model || (provider === 'gemini' ? 'gemini-2.5-flash' : provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o'),
+      model: model || (provider === 'gemini' ? 'gemini-3.8-flash' : provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o'),
       temperature: 0.1,
       messages: [{ role: 'user', content: 'Diga apenas: Conexão bem-sucedida.' }]
     });

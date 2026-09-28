@@ -32,7 +32,7 @@ type ProviderAccount = {
 
 export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   const [accounts, setAccounts] = useState<ProviderAccount[]>([]);
-  const [form, setForm] = useState({ name: '', provider: 'gemini', model: 'gemini-2.5-flash', apiKey: '', priority: 100 });
+  const [form, setForm] = useState({ name: '', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: '', priority: 100 });
   const [message, setMessage] = useState('');
   const [usage, setUsage] = useState<UsageSummary | null>(null);
 
@@ -87,7 +87,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
       setMessage(data.error || 'Falha ao cadastrar IA.');
       return;
     }
-    setForm({ name: '', provider: 'gemini', model: 'gemini-2.5-flash', apiKey: '', priority: 100 });
+    setForm({ name: '', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: '', priority: 100 });
     setMessage(`Provedor '${data.data?.name}' cadastrado com sucesso!`);
     await load();
     await loadUsage();
@@ -265,7 +265,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                 value={form.provider}
                 onChange={e => {
                   const provider = e.target.value;
-                  const defaultModel = provider === 'gemini' ? 'gemini-2.5-flash' : provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o';
+                  const defaultModel = provider === 'gemini' ? 'gemini-3.8-flash' : provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o';
                   setForm({ ...form, provider, model: defaultModel });
                 }}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
@@ -281,7 +281,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">Modelo Padrão</label>
               <input
                 required
-                placeholder="Ex: gemini-2.5-flash"
+                placeholder="Ex: gemini-3.8-flash, gemini-3.6-flash, gemini-flash-lite-latest"
                 value={form.model}
                 onChange={e => setForm({ ...form, model: e.target.value })}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"

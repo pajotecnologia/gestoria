@@ -146,14 +146,52 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
       ? { baseURL: 'https://api.groq.com/openai/v1' }
       : {}),
   });
+
   const defaultModel =
     provider === 'gemini'
-      ? 'gemini-2.5-flash'
+      ? 'gemini-3.8-flash'
       : provider === 'groq'
       ? 'llama-3.3-70b-versatile'
       : 'gpt-4o';
+
+  const modelToUse = options.model || defaultModel;
+
+  // Handle Gemini model candidates if deprecated model name is passed
+  const geminiCandidates = [
+    modelToUse,
+    'gemini-3.8-flash',
+    'gemini-3.6-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-lite-latest'
+  ];
+
+  if (provider === 'gemini') {
+    let lastErr: any = null;
+    for (const m of geminiCandidates) {
+      try {
+        const completion = await client.chat.completions.create({
+          model: m,
+          temperature: options.temperature ?? 0.7,
+          messages: options.messages,
+        });
+        const text = completion.choices[0]?.message?.content || '';
+        const inputTokens = completion.usage?.prompt_tokens || 0;
+        const outputTokens = completion.usage?.completion_tokens || 0;
+        return { text, inputTokens, outputTokens, totalTokens: completion.usage?.total_tokens || inputTokens + outputTokens };
+      } catch (err: any) {
+        lastErr = err;
+        // If 404 (model not found/deprecated) or 503 (demand spike), try next candidate
+        if (err?.status === 404 || err?.status === 503) {
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastErr;
+  }
+
   const completion = await client.chat.completions.create({
-    model: options.model || defaultModel,
+    model: modelToUse,
     temperature: options.temperature ?? 0.7,
     messages: options.messages,
   });

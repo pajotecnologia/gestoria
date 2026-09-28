@@ -68,7 +68,7 @@ const SPECIALIST_TEMPLATES = [
     avatarColor: 'from-emerald-500 to-teal-600',
     iconName: 'Scale',
     provider: 'gemini',
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.8-flash',
     temperature: 0.2,
     systemPrompt: `Você é o Dr. Roberto Mendes, Consultor Tributário Sênior e Especialista em Planejamento Fiscal para Empresas.
 Sua missão: Analisar o contexto do cliente/projeto e estruturar soluções fiscais, elisão tributária e conformidade com a legislação vigente.
@@ -85,7 +85,7 @@ Estruture suas respostas em:
     avatarColor: 'from-blue-600 to-indigo-600',
     iconName: 'Code',
     provider: 'gemini',
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.8-flash',
     temperature: 0.3,
     systemPrompt: `Você é Alexandre Torres, Arquiteto de Software e Engenheiro FullStack Sênior.
 Sua missão: Avaliar viabilidade técnica, arquitetura de sistemas, APIs, integrações e modelagem de dados para os projetos da agência.
@@ -102,7 +102,7 @@ Estruture suas respostas em:
     avatarColor: 'from-purple-600 to-pink-600',
     iconName: 'TrendingUp',
     provider: 'gemini',
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.8-flash',
     temperature: 0.5,
     systemPrompt: `Você é Mariana Duarte, Especialista em SEO e Estratégia de Posicionamento Orgânico no Google.
 Sua missão: Desenvolver clusters de palavras-chave, intenção de busca, arquitetura de links e otimização on-page/off-page.
@@ -128,7 +128,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
     avatarColor: COLOR_PRESETS[0].value,
     iconName: 'BrainCircuit',
     provider: 'gemini',
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.8-flash',
     temperature: 0.7,
     systemPrompt: '',
     generateImage: false,
@@ -553,7 +553,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                     value={form.provider || 'gemini'}
                     onChange={(e) => {
                       const p = e.target.value;
-                      const defaultModel = p === 'gemini' ? 'gemini-2.5-flash' : p === 'groq' ? 'llama-3.3-70b-versatile' : p === 'ollama' ? 'llama3.1' : 'gpt-4o';
+                      const defaultModel = p === 'gemini' ? 'gemini-3.8-flash' : p === 'groq' ? 'llama-3.3-70b-versatile' : p === 'ollama' ? 'llama3.1' : 'gpt-4o';
                       setForm({ ...form, provider: p, model: defaultModel });
                     }}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
@@ -572,7 +572,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                     type="text"
                     value={form.model || ''}
                     onChange={(e) => setForm({ ...form, model: e.target.value })}
-                    placeholder="gemini-2.5-flash"
+                    placeholder="gemini-3.8-flash"
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
                   />
                 </div>
