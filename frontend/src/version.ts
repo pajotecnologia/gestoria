@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.4.0';
+export const APP_VERSION = '1.5.0';
 
 export type ReleaseItem = {
   version: string;
@@ -8,6 +8,18 @@ export type ReleaseItem = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: '1.5.0',
+    date: '29/09/2026',
+    title: 'Central de Relatórios Executivos em PDF & Foco Estratégico da Agência',
+    changes: [
+      'Novo Módulo de Relatórios Executivos: 4 modalidades de relatórios com prévia em tempo real (Performance & ROI, Plano Tático AIDA, Dossiê de Criativos/Copies e Benchmarking Geral).',
+      'Exportação em 1 Clique em PDF Corporativo e Cópia Formatada para WhatsApp/E-mail.',
+      'Personalização de Parecer da Agência: Inclusão de observações estratégicas do consultor e assinatura da empresa.',
+      'Remoção definitiva do módulo legado de WhatsApp para garantir posicionamento 100% focado em Gestão Estratégica de Marketing, Ad Creative Studio e Performance de Tráfego.',
+      'Integração total do Command Palette (Ctrl+K) e Central de Ajuda com navegação direta para os novos relatórios.',
+    ],
+  },
   {
     version: '1.4.0',
     date: '29/09/2026',

@@ -6,6 +6,7 @@ import {
   Building2, 
   ChevronLeft, 
   ChevronRight, 
+  FileText,
   FolderKanban, 
   HelpCircle,
   History, 
@@ -13,7 +14,6 @@ import {
   Menu, 
   MessageSquare, 
   Moon,
-  Radio, 
   Search, 
   ShieldCheck, 
   Sparkles, 
@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 
 import { useTheme } from './context/ThemeContext';
-import { AgentsDashboard } from './components/AgentsDashboard';
 import { WarRoomChat } from './components/WarRoomChat';
 import { SpecialistManager } from './components/SpecialistManager';
 import { apiUrl } from './api/client';
@@ -35,6 +34,7 @@ import { ClientContextManager } from './components/ClientContextManager';
 import { CampaignManager } from './components/CampaignManager';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { AdStudio } from './components/AdStudio';
+import { ExecutiveReports } from './components/ExecutiveReports';
 import { HelpGuideModal } from './components/HelpGuideModal';
 import { CommandPalette } from './components/CommandPalette';
 import { APP_VERSION, RELEASE_HISTORY } from './version';
@@ -66,7 +66,7 @@ export const App: React.FC = () => {
   });
 
   // Navegação Principal (Padrão: Analytics no estilo Apex)
-  const [currentView, setCurrentView] = useState<'analytics' | 'clients' | 'campaigns' | 'adstudio' | 'warroom' | 'agents' | 'specialists' | 'ai' | 'users' | 'audit'>('analytics');
+  const [currentView, setCurrentView] = useState<'analytics' | 'clients' | 'campaigns' | 'adstudio' | 'reports' | 'warroom' | 'specialists' | 'ai' | 'users' | 'audit'>('analytics');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [releaseModalOpen, setReleaseModalOpen] = useState(false);
@@ -170,7 +170,8 @@ export const App: React.FC = () => {
       items: [
         { id: 'analytics', label: 'Painel & Métricas', icon: BarChart3, badge: 'Tempo Real' },
         { id: 'campaigns', label: 'Campanhas & Estratégias', icon: FolderKanban },
-        { id: 'adstudio', label: 'Ad Creative Studio', icon: Wand2, badge: 'Novo' },
+        { id: 'adstudio', label: 'Ad Creative Studio', icon: Wand2, badge: 'IA' },
+        { id: 'reports', label: 'Relatórios Executivos', icon: FileText, badge: 'PDF' },
         { id: 'clients', label: 'Context Hub & Clientes', icon: Building2 },
       ]
     },
@@ -179,7 +180,6 @@ export const App: React.FC = () => {
       items: [
         { id: 'warroom', label: 'Mesa Redonda Multi-IA', icon: MessageSquare, badge: 'Ctrl+M' },
         { id: 'specialists', label: 'Equipe de Especialistas', icon: Sparkles },
-        { id: 'agents', label: 'Canais WhatsApp', icon: Radio },
       ]
     },
     ...(user?.role === 'AGENCY_ADMIN' ? [
@@ -224,8 +224,8 @@ export const App: React.FC = () => {
             <h1 className="text-2xl font-bold tracking-tight text-white">Gestor IA SaaS</h1>
             <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
               {isRegistering 
-                ? 'Cadastre sua agência e monte sua equipe de agentes inteligentes'
-                : 'Acesse o workspace da sua agência com IA e automação WhatsApp'}
+                ? 'Cadastre sua agência e monte sua equipe de marketing com inteligência artificial'
+                : 'Acesse o workspace da sua agência com IA Generativa e Gestão Estratégica de Tráfego'}
             </p>
           </div>
 
@@ -770,10 +770,10 @@ export const App: React.FC = () => {
                   <CampaignManager jwtToken={token} />
                 ) : currentView === 'adstudio' ? (
                   <AdStudio jwtToken={token} />
+                ) : currentView === 'reports' ? (
+                  <ExecutiveReports jwtToken={token} />
                 ) : currentView === 'warroom' ? (
                   <WarRoomChat jwtToken={token} />
-                ) : currentView === 'agents' ? (
-                  <AgentsDashboard jwtToken={token} />
                 ) : currentView === 'specialists' ? (
                   <SpecialistManager jwtToken={token} />
                 ) : currentView === 'ai' && user?.role === 'AGENCY_ADMIN' ? (
@@ -793,7 +793,7 @@ export const App: React.FC = () => {
 
           {/* Footer */}
           <footer className="border-t border-slate-200/80 dark:border-zinc-800/60 py-4 px-6 text-center text-xs text-slate-400 dark:text-zinc-500">
-            Gestor IA SaaS &bull; Plataforma Multi-Tenant com RAG Qdrant, Evolution API e War Room Multi-Agente
+            Gestor IA SaaS &bull; Plataforma de Inteligência de Marketing, Ad Creative Studio & Performance de Mídia Paga
           </footer>
         </div>
 

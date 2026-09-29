@@ -3,12 +3,12 @@ import {
   BarChart3, 
   Bot, 
   Building2, 
+  FileText,
   FolderKanban, 
   History, 
   LogOut, 
   MessageSquare, 
   Moon, 
-  Radio, 
   Search, 
   ShieldCheck, 
   Sparkles, 
@@ -65,6 +65,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         { id: 'analytics', label: 'Painel & Métricas', desc: 'Métricas, KPIs, Benchmarking e evolução operacional em tempo real', icon: BarChart3, view: 'analytics' },
         { id: 'campaigns', label: 'Campanhas & Estratégias', desc: 'Ciclo de vida, briefings e estratégias compiladas de campanhas', icon: FolderKanban, view: 'campaigns' },
         { id: 'adstudio', label: 'Ad Creative Studio', desc: 'Gerador de Hooks, Copies (AIDA/PAS), Roteiros e Imagens de Anúncios com IA', icon: Wand2, view: 'adstudio' },
+        { id: 'reports', label: 'Relatórios Executivos', desc: 'Dossiês em PDF com ROI, estratégias, criativos e benchmarking para clientes', icon: FileText, view: 'reports' },
         { id: 'clients', label: 'Context Hub & Clientes', desc: 'Gestão de empresas e base de conhecimento contextual RAG', icon: Building2, view: 'clients' },
       ]
     },
@@ -73,7 +74,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       actions: [
         { id: 'warroom', label: 'Mesa Redonda Multi-IA', desc: 'Brainstorming e debate multi-agente em tela cheia', icon: MessageSquare, view: 'warroom', shortcut: 'Ctrl+M' },
         { id: 'specialists', label: 'Equipe de Especialistas', desc: 'Personas, diretrizes e tom de voz dos agentes', icon: Sparkles, view: 'specialists' },
-        { id: 'agents', label: 'Canais WhatsApp', desc: 'Gatilhos Evolution API e automações de atendimento', icon: Radio, view: 'agents' },
       ]
     },
     ...(userRole === 'AGENCY_ADMIN' ? [
