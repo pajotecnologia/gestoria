@@ -829,7 +829,7 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
     const requestedFormat: '1:1' | '9:16' | '16:9' = ['1:1', '9:16', '16:9'].includes(format) ? format : '1:1';
     const count = Math.min(Math.max(Number(quantity) || 1, 1), 4);
 
-    // Otimiza o prompt para inglês com foco em fotografia publicitária de alto padrão
+    // Otimiza o prompt para inglês com foco em fotografia publicitária brasileira e pessoas reais
     let visualPromptInEnglish = prompt.trim();
     try {
       const translationRes = await generateText({
@@ -841,11 +841,11 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
         messages: [
           {
             role: 'system',
-            content: 'You are an award-winning advertising art director and DALL-E/Midjourney/Flux prompt engineer. Convert the user marketing campaign idea into a vivid, photorealistic English visual prompt for commercial advertising. Describe subjects, studio lighting, colors, mood, textures, 8k resolution. Output ONLY the English prompt in one paragraph, no quotes, no conversational filler.'
+            content: 'You are an award-winning commercial advertising art director for Brazilian and Latin American campaigns. Convert the user marketing idea into a photorealistic, ultra-realistic commercial advertising visual prompt. When people or models are depicted, explicitly specify authentic Brazilian / Latin American people with diverse, natural features, warm skin tones, realistic skin texture, genuine expressions and modern commercial studio lighting. Strictly avoid anime, avoid East Asian doll-like features, avoid CGI or 3D cartoon looks unless requested. Output ONLY the descriptive English prompt in one concise paragraph.'
           },
           {
             role: 'user',
-            content: `Campaign: ${campaign.name}. Business: ${campaign.client.name} (${campaign.client.segment || 'Business'}). Objective: ${campaign.objective}. Idea: ${prompt}`
+            content: `Campaign: ${campaign.name}. Business: ${campaign.client.name} (${campaign.client.segment || 'Marketing'}). Objective: ${campaign.objective}. Idea: ${prompt}`
           }
         ]
       });
@@ -853,7 +853,7 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
         visualPromptInEnglish = translationRes.text.trim();
       }
     } catch {
-      visualPromptInEnglish = `High-converting commercial advertising photography: ${prompt.trim()}, 8k, modern aesthetic, cinematic studio lighting, premium design`;
+      visualPromptInEnglish = `Authentic Brazilian commercial advertising photography: ${prompt.trim()}, natural Latin American models, realistic skin texture, 8k, modern aesthetic, cinematic studio lighting, premium marketing design`;
     }
 
     const images = await Promise.all(
