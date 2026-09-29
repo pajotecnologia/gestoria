@@ -193,173 +193,186 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
         </button>
       </div>
 
-      {/* Modal / Formulário de Criação/Edição */}
+      {/* Modal Dialog Popup de Criação / Edição de Campanha */}
       {showForm && (
-        <form onSubmit={save} className="shadcn-card space-y-4 animate-in fade-in duration-200">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-              {editing ? 'Editar Campanha' : 'Criar Nova Campanha'}
-            </h3>
-            <button 
-              type="button" 
-              onClick={() => { 
-                setEditing(null); 
-                setForm(emptyForm); 
-                setShowForm(false); 
-              }} 
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900 transition"
-            >
-              <X className="h-3.5 w-3.5" />
-              <span>Fechar</span>
-            </button>
-          </div>
-
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Empresa Vinculada *</label>
-              <select 
-                required 
-                value={form.clientId} 
-                onChange={e => setForm({ ...form, clientId: e.target.value })} 
-                className="shadcn-input"
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <Megaphone className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    {editing ? 'Editar Campanha' : 'Nova Campanha de Marketing'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                    Defina os objetivos, empresa e público-alvo para geração da estratégia de IA.
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => { 
+                  setEditing(null); 
+                  setForm(emptyForm); 
+                  setShowForm(false); 
+                }} 
+                className="text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
               >
-                <option value="">Selecione a empresa...</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Nome da Campanha *</label>
-              <input 
-                required 
-                placeholder="Ex: Lançamento Verão 2026" 
-                value={form.name} 
-                onChange={e => setForm({ ...form, name: e.target.value })} 
-                className="shadcn-input" 
-              />
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Objetivo Estratégico *</label>
-            <textarea 
-              required 
-              rows={2} 
-              placeholder="Ex: Gerar 150 leads qualificados B2B para o setor de energia solar..." 
-              value={form.objective} 
-              onChange={e => setForm({ ...form, objective: e.target.value })} 
-              className="shadcn-input !h-auto py-2" 
-            />
-          </div>
+            <form onSubmit={save} className="space-y-4">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Empresa Vinculada *</label>
+                  <select 
+                    required 
+                    value={form.clientId} 
+                    onChange={e => setForm({ ...form, clientId: e.target.value })} 
+                    className="shadcn-input"
+                  >
+                    <option value="">Selecione a empresa...</option>
+                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Nome da Campanha *</label>
+                  <input 
+                    required 
+                    placeholder="Ex: Lançamento Verão 2026" 
+                    value={form.name} 
+                    onChange={e => setForm({ ...form, name: e.target.value })} 
+                    className="shadcn-input" 
+                  />
+                </div>
+              </div>
 
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Oferta Principal / Produto</label>
-              <textarea 
-                rows={2} 
-                placeholder="Ex: Consultoria gratuita + 20% de desconto na adesão" 
-                value={form.offer} 
-                onChange={e => setForm({ ...form, offer: e.target.value })} 
-                className="shadcn-input !h-auto py-2" 
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Público-Alvo</label>
-              <textarea 
-                rows={2} 
-                placeholder="Ex: Gestores de operações e diretores comerciais" 
-                value={form.audience} 
-                onChange={e => setForm({ ...form, audience: e.target.value })} 
-                className="shadcn-input !h-auto py-2" 
-              />
-            </div>
-          </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Objetivo Estratégico *</label>
+                <textarea 
+                  required 
+                  rows={2} 
+                  placeholder="Ex: Gerar 150 leads qualificados B2B para o setor de energia solar..." 
+                  value={form.objective} 
+                  onChange={e => setForm({ ...form, objective: e.target.value })} 
+                  className="shadcn-input resize-y" 
+                />
+              </div>
 
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Canais Desejados</label>
-              <input 
-                placeholder="Ex: WhatsApp, Meta Ads, Google" 
-                value={form.channels} 
-                onChange={e => setForm({ ...form, channels: e.target.value })} 
-                className="shadcn-input" 
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Orçamento Estimado</label>
-              <input 
-                placeholder="Ex: R$ 5.000,00" 
-                value={form.budget} 
-                onChange={e => setForm({ ...form, budget: e.target.value })} 
-                className="shadcn-input" 
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Observações de Período</label>
-              <input 
-                placeholder="Ex: 30 dias contínuos" 
-                value={form.period} 
-                onChange={e => setForm({ ...form, period: e.target.value })} 
-                className="shadcn-input" 
-              />
-            </div>
-          </div>
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Oferta Principal / Produto</label>
+                  <textarea 
+                    rows={2} 
+                    placeholder="Ex: Consultoria gratuita + 20% de desconto na adesão" 
+                    value={form.offer} 
+                    onChange={e => setForm({ ...form, offer: e.target.value })} 
+                    className="shadcn-input resize-y" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Público-Alvo</label>
+                  <textarea 
+                    rows={2} 
+                    placeholder="Ex: Gestores de operações e diretores comerciais" 
+                    value={form.audience} 
+                    onChange={e => setForm({ ...form, audience: e.target.value })} 
+                    className="shadcn-input resize-y" 
+                  />
+                </div>
+              </div>
 
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Data de Início</label>
-              <input 
-                type="date" 
-                value={form.startDate} 
-                onChange={e => setForm({ ...form, startDate: e.target.value })} 
-                className="shadcn-input" 
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Data de Término</label>
-              <input 
-                type="date" 
-                value={form.endDate} 
-                onChange={e => setForm({ ...form, endDate: e.target.value })} 
-                className="shadcn-input" 
-              />
-            </div>
-          </div>
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Canais Desejados</label>
+                  <input 
+                    placeholder="Ex: WhatsApp, Meta Ads, Google" 
+                    value={form.channels} 
+                    onChange={e => setForm({ ...form, channels: e.target.value })} 
+                    className="shadcn-input" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Orçamento Estimado</label>
+                  <input 
+                    placeholder="Ex: R$ 5.000,00" 
+                    value={form.budget} 
+                    onChange={e => setForm({ ...form, budget: e.target.value })} 
+                    className="shadcn-input" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Observações de Período</label>
+                  <input 
+                    placeholder="Ex: 30 dias contínuos" 
+                    value={form.period} 
+                    onChange={e => setForm({ ...form, period: e.target.value })} 
+                    className="shadcn-input" 
+                  />
+                </div>
+              </div>
 
-          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-950/60">
-            <div>
-              <p className="text-xs font-semibold text-slate-900 dark:text-white">Ativação Automática</p>
-              <p className="text-[11px] text-slate-500 dark:text-zinc-400">Ativa o monitoramento e sincronia com agentes</p>
-            </div>
-            <button 
-              type="button" 
-              onClick={() => setForm({ ...form, isActive: !form.isActive })} 
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                form.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-800'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                form.isActive ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </button>
-          </div>
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Data de Início</label>
+                  <input 
+                    type="date" 
+                    value={form.startDate} 
+                    onChange={e => setForm({ ...form, startDate: e.target.value })} 
+                    className="shadcn-input" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Data de Término</label>
+                  <input 
+                    type="date" 
+                    value={form.endDate} 
+                    onChange={e => setForm({ ...form, endDate: e.target.value })} 
+                    className="shadcn-input" 
+                  />
+                </div>
+              </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button 
-              type="button" 
-              onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(false); }} 
-              className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button 
-              disabled={saving} 
-              type="submit" 
-              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white shadow hover:bg-indigo-500 disabled:opacity-50 transition cursor-pointer"
-            >
-              {saving ? 'Salvando...' : editing ? 'Salvar Alterações' : 'Criar Campanha'}
-            </button>
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-900">
+                <div>
+                  <p className="text-xs font-semibold text-slate-900 dark:text-white">Ativação Automática</p>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">Ativa o monitoramento e sincronia com agentes</p>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setForm({ ...form, isActive: !form.isActive })} 
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                    form.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-800'
+                  }`}
+                >
+                  <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                    form.isActive ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-zinc-800">
+                <button 
+                  type="button" 
+                  onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(false); }} 
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  disabled={saving} 
+                  type="submit" 
+                  className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white shadow hover:bg-indigo-500 disabled:opacity-50 transition cursor-pointer"
+                >
+                  {saving ? 'Salvando...' : editing ? 'Salvar Alterações' : 'Criar Campanha'}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       )}
 
       {/* Barra de Filtros e Busca */}

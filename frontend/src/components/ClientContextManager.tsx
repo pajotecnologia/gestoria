@@ -426,61 +426,63 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
             {filteredClients.map((client) => (
               <article
                 key={client.id}
-                className={
-                  'rounded-2xl border bg-zinc-900/80 p-5 transition-all duration-200 ease-in-out ' +
-                  (selected?.id === client.id
-                    ? 'border-indigo-500/50 ring-1 ring-indigo-500/20'
-                    : 'border-white/[0.07] hover:border-white/[0.10]')
-                }
+                className="shadcn-card flex flex-col justify-between space-y-4 hover:border-indigo-500/40 transition-all duration-200"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="truncate text-sm font-bold text-white">{client.name}</h3>
-                    <p className="mt-1 truncate text-[11px] text-zinc-500">
-                      {client.legalName || client.segment || 'Empresa'}
-                    </p>
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">{client.name}</h3>
+                      <p className="mt-0.5 truncate text-[11px] text-slate-500 dark:text-zinc-400">
+                        {client.legalName || client.segment || 'Empresa'}
+                      </p>
+                    </div>
+                    {renderStatus(client.status || 'ACTIVE')}
                   </div>
-                  {renderStatus(client.status || 'ACTIVE')}
+
+                  <div className="mt-3 space-y-1 text-[11px] text-slate-600 dark:text-zinc-400">
+                    {client.document && <p className="truncate">Documento: {client.document}</p>}
+                    {client.segment && <p className="truncate">Segmento: {client.segment}</p>}
+                    {client.updatedAt && (
+                      <p className="text-[10px] text-slate-400 dark:text-zinc-500">
+                        Atualizada em {new Date(client.updatedAt).toLocaleDateString('pt-BR')}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-3 grid gap-2 grid-cols-3">
+                    <div className="rounded-lg bg-slate-100 dark:bg-zinc-950 p-2 text-center border border-slate-200/60 dark:border-zinc-800">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{client._count?.knowledgeFiles || 0}</p>
+                      <p className="text-[9px] text-slate-500 dark:text-zinc-400">RAG</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-100 dark:bg-zinc-950 p-2 text-center border border-slate-200/60 dark:border-zinc-800">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{client._count?.resources || 0}</p>
+                      <p className="text-[9px] text-slate-500 dark:text-zinc-400">Links</p>
+                    </div>
+                    <div className="rounded-lg bg-slate-100 dark:bg-zinc-950 p-2 text-center border border-slate-200/60 dark:border-zinc-800">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{client._count?.campaigns || 0}</p>
+                      <p className="text-[9px] text-slate-500 dark:text-zinc-400">Campanhas</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-4 space-y-1.5 text-[11px] text-zinc-400">
-                  {client.document && <p className="truncate">Documento: {client.document}</p>}
-                  {client.segment && <p className="truncate">Segmento: {client.segment}</p>}
-                  {client.updatedAt && (
-                    <p>Atualizada em {new Date(client.updatedAt).toLocaleDateString('pt-BR')}</p>
-                  )}
-                </div>
-
-                <div className="mt-4 grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="rounded-lg bg-zinc-950 p-2 text-center">
-                    <p className="text-sm font-bold text-white">{client._count?.knowledgeFiles || 0}</p>
-                    <p className="text-[9px] text-zinc-500">Materiais</p>
-                  </div>
-                  <div className="rounded-lg bg-zinc-950 p-2 text-center">
-                    <p className="text-sm font-bold text-white">{client._count?.resources || 0}</p>
-                    <p className="text-[9px] text-zinc-500">Referências</p>
-                  </div>
-                  <div className="rounded-lg bg-zinc-950 p-2 text-center">
-                    <p className="text-sm font-bold text-white">{client._count?.campaigns || 0}</p>
-                    <p className="text-[9px] text-zinc-500">Campanhas</p>
-                  </div>
-                </div>
-
-                <div className="mt-5 flex gap-2">
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-zinc-800/80 gap-2">
                   <button
                     type="button"
                     onClick={() => void open(client.id)}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-[11px] font-semibold text-white hover:bg-indigo-500"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 transition cursor-pointer"
                   >
-                    <Pencil className="h-3.5 w-3.5" /> Alterar
+                    <Pencil className="h-3.5 w-3.5 text-indigo-500" />
+                    <span>Editar & Contexto</span>
                   </button>
+
                   <button
                     type="button"
                     onClick={() => void removeClient(client)}
                     disabled={deleting}
-                    className="flex items-center justify-center gap-1.5 rounded-lg bg-rose-500/10 px-3 py-2 text-[11px] font-semibold text-rose-400 hover:bg-rose-500/20 disabled:opacity-50"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-zinc-500 dark:hover:text-rose-400 dark:hover:bg-rose-500/10 transition cursor-pointer shrink-0"
+                    title="Excluir empresa"
                   >
-                    <Trash2 className="h-3.5 w-3.5" /> Excluir
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </article>
@@ -489,164 +491,200 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         )}
       </section>
 
+      {/* Modal Dialog Popup de Cadastro / Edição da Empresa */}
       {showForm && (
-        <section className="rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-5">
-          <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-base font-bold text-white">
-              {selected ? 'Editar contexto da empresa' : 'Nova empresa'}
-            </h3>
-            <p className="mt-1 text-[11px] text-zinc-500">
-              {selected ? 'Atualize os dados da empresa selecionada.' : 'Preencha os dados para cadastrar uma nova empresa.'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={resetForm}
-            className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-white/[0.07] px-3 py-2 text-[11px] font-semibold text-zinc-300 hover:bg-zinc-800/80"
-          >
-            <X className="h-3.5 w-3.5" /> Voltar para empresas
-          </button>
-        </div>
-
-        <form onSubmit={save} className="space-y-4">
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-            {[
-              ['name', 'Nome da empresa *'],
-              ['legalName', 'Razão social'],
-              ['document', 'CNPJ/Documento'],
-              ['segment', 'Segmento'],
-              ['website', 'Site'],
-              ['instagram', 'Instagram'],
-              ['linkedin', 'LinkedIn'],
-            ].map(([key, label]) => (
-              <div key={key} className={key === 'name' ? 'md:col-span-2' : ''}>
-                <label className="text-[11px] font-semibold text-zinc-300">{label}</label>
-                <input
-                  required={key === 'name'}
-                  value={form[key as keyof ClientForm] || ''}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  className="mt-1 w-full rounded-xl border border-white/[0.07] bg-zinc-950 px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500"
-                />
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3.5 dark:border-zinc-800">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {selected ? 'Editar Contexto da Empresa' : 'Cadastrar Nova Empresa'}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                    {selected ? 'Atualize as diretrizes, links e base de conhecimento da marca.' : 'Preencha os dados e informações para orientar os agentes de IA.'}
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
-
-          {[
-            ['description', 'Sobre a empresa'],
-            ['targetAudience', 'Público-alvo / personas'],
-            ['productsOffers', 'Produtos, serviços e ofertas'],
-            ['brandVoice', 'Posicionamento e tom de voz'],
-            ['goals', 'Objetivos de marketing/negócio'],
-            ['competitors', 'Concorrentes e referências'],
-            ['restrictions', 'Restrições, compliance e o que não pode ser prometido'],
-            ['notes', 'Observações internas da agência'],
-          ].map(([key, label]) => (
-            <div key={key}>
-              <label className="text-[11px] font-semibold text-zinc-300">{label}</label>
-              <textarea
-                rows={3}
-                value={form[key as keyof ClientForm] || ''}
-                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-white/[0.07] bg-zinc-950 px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500"
-              />
-            </div>
-          ))}
-
-          <div className="flex flex-col-reverse gap-2 border-t border-white/[0.07] pt-4 sm:flex-row sm:justify-end">
-            {selected && (
               <button
                 type="button"
-                onClick={() => void removeClient(selected)}
-                disabled={deleting}
-                className="flex items-center justify-center gap-2 rounded-xl bg-rose-500/10 px-4 py-2 text-xs text-rose-400 hover:bg-rose-500/20 disabled:opacity-50"
+                onClick={resetForm}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
               >
-                <Trash2 className="h-3.5 w-3.5" /> Excluir empresa
+                <X className="h-4 w-4" />
               </button>
-            )}
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" /> {saving ? 'Salvando...' : selected ? 'Salvar alterações' : 'Cadastrar empresa'}
-            </button>
-          </div>
-        </form>
+            </div>
 
-        {selected && (
-          <div className="mt-7 space-y-5 border-t border-white/[0.07] pt-6">
-            <div>
-              <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-                <Link2 className="h-4 w-4 text-cyan-400" /> Sites e referências
-              </h3>
-              <form onSubmit={addResource} className="mt-3 grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                <input
-                  required
-                  placeholder="Título"
-                  value={resource.title}
-                  onChange={(e) => setResource({ ...resource, title: e.target.value })}
-                  className="rounded-lg border border-white/[0.07] bg-zinc-950 px-3 py-2 text-xs text-white"
-                />
-                <input
-                  required
-                  type="url"
-                  placeholder="https://..."
-                  value={resource.url}
-                  onChange={(e) => setResource({ ...resource, url: e.target.value })}
-                  className="rounded-lg border border-white/[0.07] bg-zinc-950 px-3 py-2 text-xs text-white md:col-span-2"
-                />
-                <button className="rounded-lg bg-cyan-600 text-xs font-semibold text-white hover:bg-cyan-500">Adicionar</button>
-              </form>
-              <div className="mt-3 space-y-2">
-                {(selected.resources || []).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-2 rounded-lg border border-white/[0.07] bg-zinc-950 p-2.5">
-                    <div className="min-w-0">
-                      <p className="truncate text-xs text-white">{item.title}</p>
-                      <p className="truncate text-[10px] text-zinc-500">{item.url}</p>
+            <form onSubmit={save} className="space-y-4">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                {[
+                  ['name', 'Nome da Empresa *', true],
+                  ['legalName', 'Razão Social', false],
+                  ['document', 'CNPJ / Documento', false],
+                  ['segment', 'Segmento de Atuação', false],
+                  ['website', 'Website', false],
+                  ['instagram', 'Instagram (@)', false],
+                  ['linkedin', 'LinkedIn', false],
+                ].map(([key, label, required]) => (
+                  <div key={key as string} className={key === 'name' ? 'sm:col-span-2' : ''}>
+                    <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">{label}</label>
+                    <input
+                      required={Boolean(required)}
+                      value={form[key as keyof ClientForm] || ''}
+                      onChange={(e) => setForm({ ...form, [key as string]: e.target.value })}
+                      className="shadcn-input"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Contexto Estratégico para os Agentes de IA
+                </h4>
+                
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                  {[
+                    ['description', 'Sobre a Empresa & História'],
+                    ['targetAudience', 'Público-Alvo & Personas'],
+                    ['productsOffers', 'Produtos, Serviços & Ofertas Principais'],
+                    ['brandVoice', 'Posicionamento & Tom de Voz'],
+                    ['goals', 'Objetivos de Marketing / Negócio'],
+                    ['competitors', 'Concorrentes & Referências'],
+                    ['restrictions', 'Restrições, Compliance & Proibições'],
+                    ['notes', 'Observações Internas da Agência'],
+                  ].map(([key, label]) => (
+                    <div key={key as string}>
+                      <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">{label}</label>
+                      <textarea
+                        rows={3}
+                        value={form[key as keyof ClientForm] || ''}
+                        onChange={(e) => setForm({ ...form, [key as string]: e.target.value })}
+                        className="shadcn-input resize-y"
+                      />
                     </div>
-                    <a href={item.url} target="_blank" rel="noreferrer" className="text-cyan-400" aria-label={'Abrir ' + item.title}>
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-                <FileText className="h-4 w-4 text-indigo-400" /> Materiais da empresa
-              </h3>
-              <p className="mt-1 text-[11px] text-zinc-500">PDF/TXT ficam vinculados à empresa e podem alimentar a estratégia.</p>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <input
-                  type="file"
-                  accept=".pdf,.txt,application/pdf,text/plain"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="flex-1 text-xs text-zinc-400"
-                />
-                <button
-                  type="button"
-                  disabled={!file}
-                  onClick={() => void uploadMaterial()}
-                  className="flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
-                >
-                  <Upload className="h-3.5 w-3.5" /> Indexar material
-                </button>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-zinc-800">
+                {selected ? (
+                  <button
+                    type="button"
+                    onClick={() => void removeClient(selected)}
+                    disabled={deleting}
+                    className="flex items-center gap-1.5 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 transition cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Excluir Empresa
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-500 shadow-md shadow-indigo-500/20 transition cursor-pointer disabled:opacity-50"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span>{saving ? 'Salvando...' : selected ? 'Salvar Alterações' : 'Cadastrar Empresa'}</span>
+                  </button>
+                </div>
               </div>
-              <div className="mt-3 space-y-2">
-                {(selected.knowledgeFiles || []).map((item) => (
-                  <div key={item.id} className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-zinc-950 p-2.5">
-                    <FileText className="h-3.5 w-3.5 text-indigo-400" />
-                    <span className="truncate text-xs text-zinc-300">{item.fileName}</span>
-                    <span className="ml-auto text-[10px] text-emerald-400">{item.status}</span>
+            </form>
+
+            {/* Links e Materiais RAG (quando editando empresa existente) */}
+            {selected && (
+              <div className="mt-6 space-y-5 border-t border-slate-200 pt-5 dark:border-zinc-800">
+                <div>
+                  <h4 className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    <Link2 className="h-4 w-4 text-indigo-500" />
+                    <span>Links & Referências da Empresa</span>
+                  </h4>
+                  <form onSubmit={addResource} className="mt-3 grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                    <input
+                      required
+                      placeholder="Título (ex: Site Oficial)"
+                      value={resource.title}
+                      onChange={(e) => setResource({ ...resource, title: e.target.value })}
+                      className="shadcn-input"
+                    />
+                    <input
+                      required
+                      type="url"
+                      placeholder="https://..."
+                      value={resource.url}
+                      onChange={(e) => setResource({ ...resource, url: e.target.value })}
+                      className="shadcn-input sm:col-span-2"
+                    />
+                    <button className="rounded-xl bg-indigo-600 text-xs font-bold text-white hover:bg-indigo-500 py-2 cursor-pointer shadow">
+                      Adicionar Link
+                    </button>
+                  </form>
+
+                  <div className="mt-3 space-y-2">
+                    {(selected.resources || []).map((item) => (
+                      <div key={item.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-900">
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-semibold text-slate-900 dark:text-white">{item.title}</p>
+                          <p className="truncate text-[10px] text-slate-500 dark:text-zinc-400">{item.url}</p>
+                        </div>
+                        <a href={item.url} target="_blank" rel="noreferrer" className="text-indigo-500 hover:text-indigo-400" aria-label={'Abrir ' + item.title}>
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                <div>
+                  <h4 className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    <FileText className="h-4 w-4 text-indigo-500" />
+                    <span>Materiais da Empresa (Base RAG)</span>
+                  </h4>
+                  <p className="mt-0.5 text-[11px] text-slate-500 dark:text-zinc-400">PDFs e arquivos de texto para indexação no banco vetorial.</p>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <input
+                      type="file"
+                      accept=".pdf,.txt,application/pdf,text/plain"
+                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      className="flex-1 text-xs text-slate-600 dark:text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500/10 file:text-indigo-600 hover:file:bg-indigo-500/20 cursor-pointer"
+                    />
+                    <button
+                      type="button"
+                      disabled={!file}
+                      onClick={() => void uploadMaterial()}
+                      className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-40 transition cursor-pointer shadow"
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      <span>Indexar Material</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    {(selected.knowledgeFiles || []).map((item) => (
+                      <div key={item.id} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-zinc-800 dark:bg-zinc-900">
+                        <FileText className="h-3.5 w-3.5 text-indigo-500" />
+                        <span className="truncate text-xs text-slate-700 dark:text-zinc-300">{item.fileName}</span>
+                        <span className="ml-auto text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">{item.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
-        </section>
+        </div>
       )}
     </div>
   );
