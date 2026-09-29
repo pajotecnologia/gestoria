@@ -327,4 +327,191 @@ router.post('/:id/generate-strategy', async (req: Request, res: Response): Promi
   }
 });
 
+// Atualizar Métricas de Performance da Campanha (Tráfego Pago / Anúncios)
+const campaignMetricsSchema = z.object({
+  spend: z.number().min(0).optional().nullable(),
+  impressions: z.number().int().min(0).optional().nullable(),
+  clicks: z.number().int().min(0).optional().nullable(),
+  conversions: z.number().int().min(0).optional().nullable(),
+  revenue: z.number().min(0).optional().nullable(),
+});
+
+router.patch('/:id/metrics', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const { id } = req.params;
+    const parsed = campaignMetricsSchema.parse(req.body);
+
+    const existing = await prisma.campaign.findFirst({
+      where: { id, tenantId },
+    });
+
+    if (!existing) {
+      res.status(404).json({ error: 'Campanha não encontrada.' });
+      return;
+    }
+
+    const updated = await prisma.campaign.update({
+      where: { id },
+      data: {
+        spend: parsed.spend !== undefined ? parsed.spend : existing.spend,
+        impressions: parsed.impressions !== undefined ? parsed.impressions : existing.impressions,
+        clicks: parsed.clicks !== undefined ? parsed.clicks : existing.clicks,
+        conversions: parsed.conversions !== undefined ? parsed.conversions : existing.conversions,
+        revenue: parsed.revenue !== undefined ? parsed.revenue : existing.revenue,
+      },
+      include: {
+        client: { select: { id: true, name: true, segment: true } },
+      },
+    });
+
+    await writeAuditLog({
+      tenantId,
+      userId: req.user?.userId,
+      action: 'CAMPAIGN_METRICS_UPDATED',
+      entity: 'Campaign',
+      entityId: id,
+      metadata: { spend: updated.spend, conversions: updated.conversions, revenue: updated.revenue },
+    }).catch(() => undefined);
+
+    res.json({ success: true, data: serializeCampaign(updated) });
+  } catch (error: any) {
+    res.status(error?.name === 'ZodError' ? 400 : 500).json({ error: error?.message || 'Falha ao atualizar métricas da campanha.' });
+  }
+});
+
+// Diagnóstico Inteligente de Otimização de Performance por IA
+router.post('/:id/analyze-metrics', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const { id } = req.params;
+
+    const campaign = await prisma.campaign.findFirst({
+      where: { id, tenantId },
+      include: {
+        client: true,
+      },
+    });
+
+    if (!campaign) {
+      res.status(404).json({ error: 'Campanha não encontrada.' });
+      return;
+    }
+
+    const spend = campaign.spend || 0;
+    const impressions = campaign.impressions || 0;
+    const clicks = campaign.clicks || 0;
+    const conversions = campaign.conversions || 0;
+    const revenue = campaign.revenue || 0;
+
+    const ctr = impressions > 0 ? ((clicks / impressions) * 100).toFixed(2) : '0.00';
+    const cpc = clicks > 0 ? (spend / clicks).toFixed(2) : '0.00';
+    const cpa = conversions > 0 ? (spend / conversions).toFixed(2) : '0.00';
+    const roas = spend > 0 ? (revenue / spend).toFixed(2) : '0.00';
+    const convRate = clicks > 0 ? ((conversions / clicks) * 100).toFixed(2) : '0.00';
+    const profit = (revenue - spend).toFixed(2);
+
+    const specialists = await getActiveSpecialistsForTenant(tenantId);
+    const trafficManager = specialists.find((item) => item.roleKey === 'TRAFFIC_MANAGER');
+    const strategist = specialists.find((item) => item.roleKey === 'STRATEGIST');
+
+    const prompt = `Você é a Renata Dias (Gestora Chefe de Tráfego e Mídia Paga) e o Dr. Arthur Valente (CMO & Estrategista).
+Sua missão: Realizar uma auditoria técnica rigorosa e profunda dos resultados da campanha para entregar um plano de otimização de alta conversão.
+
+### 🏢 CONTEXTO DA EMPRESA & CAMPANHA:
+- Empresa: ${campaign.client.name} ${campaign.client.segment ? `(Segmento: ${campaign.client.segment})` : ''}
+- Campanha: ${campaign.name}
+- Objetivo Declarado: ${campaign.objective}
+- Público Segmentado: ${campaign.audience || 'Não especificado'}
+- Canais de Mídia: ${campaign.channels || 'Meta Ads / Google Ads / TikTok'}
+- Oferta: ${campaign.offer || 'Padrão'}
+- Orçamento Planejado: ${campaign.budget || 'N/A'}
+
+### 📊 NÚMEROS E MÉTRICAS REAIS COLETADOS:
+- 💰 Investimento Total: R$ ${spend.toFixed(2)}
+- 👁️ Impressões Totais: ${impressions.toLocaleString('pt-BR')}
+- 🖱️ Cliques no Link: ${clicks.toLocaleString('pt-BR')}
+- 📈 CTR (Taxa de Cliques): ${ctr}%
+- 💵 CPC Médio: R$ ${cpc}
+- 🎯 Conversões (Leads / Vendas): ${conversions.toLocaleString('pt-BR')}
+- 🏷️ CPL / CPA (Custo por Conversão): R$ ${cpa}
+- 📑 Taxa de Conversão da Página (CR): ${convRate}%
+- 💎 Faturamento / Receita: R$ ${revenue.toFixed(2)}
+- 🚀 ROAS: ${roas}x (Lucro Líquido: R$ ${profit})
+
+### INSTRUÇÕES DE ESTRUTURAÇÃO DO RELATÓRIO:
+Estruture sua resposta de forma executiva, clara e altamente acionável com:
+1. 🚦 **TERMÔMETRO GERAL DE PERFORMANCE** (Classificação: EXCELENTE, SAUDÁVEL, ATENÇÃO ou CRÍTICO com justificativa dos números).
+2. 🔍 **ANÁLISE DO FUNIL DE CONVERSÃO**:
+   - Topo de Funil (Criativos & CTR): O anúncio está atraindo o público certo?
+   - Meio de Funil (CPC & Qualidade do Tráfego): O custo do clique está competitivo?
+   - Fundo de Funil (Taxa de Conversão & CPL/ROAS): A oferta e página estão convertendo?
+3. 🚨 **PRINCIPAIS GARGALOS E PONTOS DE VAZAMENTO IDENTIFICADOS**.
+4. 🛠️ **PLANO DE AÇÃO & TESTES A/B RECOMENDADOS (Próximos 7 Dias)**:
+   - Mudanças em Criativos/Hooks, Segmentação de Públicos, Ajustes de Página e Oferta.
+5. 💡 **DIRETRIZES DE VERBA** (Recomendação: Escalar orçamento, manter com ajustes ou pausar/redirecionar).`;
+
+    const result = await generateText({
+      provider: trafficManager?.provider || strategist?.provider || 'openai',
+      model: trafficManager?.model || strategist?.model || 'gpt-4o',
+      temperature: 0.5,
+      tenantId,
+      taskType: 'war_room',
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é um auditor especialista em performance de tráfego pago e neuromarketing. Seja pragmático, objetivo, numérico e forneça direcionamentos claros.',
+        },
+        { role: 'user', content: prompt },
+      ],
+    });
+
+    const updated = await prisma.campaign.update({
+      where: { id },
+      data: {
+        aiDiagnostic: result.text,
+        aiDiagnosticAt: new Date(),
+      },
+      include: {
+        client: { select: { id: true, name: true, segment: true } },
+      },
+    });
+
+    await writeAuditLog({
+      tenantId,
+      userId: req.user?.userId,
+      action: 'CAMPAIGN_AI_DIAGNOSTIC_GENERATED',
+      entity: 'Campaign',
+      entityId: id,
+      metadata: { roas, ctr, cpa, provider: result.provider },
+    }).catch(() => undefined);
+
+    res.json({
+      success: true,
+      data: {
+        campaign: serializeCampaign(updated),
+        diagnostic: result.text,
+        diagnosticAt: updated.aiDiagnosticAt,
+        kpis: {
+          spend,
+          impressions,
+          clicks,
+          conversions,
+          revenue,
+          ctr: parseFloat(ctr),
+          cpc: parseFloat(cpc),
+          cpa: parseFloat(cpa),
+          roas: parseFloat(roas),
+          convRate: parseFloat(convRate),
+          profit: parseFloat(profit),
+        },
+        provider: result.provider,
+      },
+    });
+  } catch (error: any) {
+    console.error('[AI Metrics Diagnostic Error]:', error);
+    res.status(500).json({ error: error?.message || 'Falha ao gerar diagnóstico de performance por IA.' });
+  }
+});
+
 export default router;

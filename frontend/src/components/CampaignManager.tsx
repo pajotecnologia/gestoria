@@ -13,9 +13,18 @@ import {
   Check,
   Maximize2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  TrendingUp,
+  Bot,
+  RefreshCw
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
+
+const formatMoney = (v: number | null | undefined) => 
+  v === null || v === undefined || isNaN(v) ? 'R$ 0,00' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+const formatNumber = (v: number | null | undefined) => 
+  v === null || v === undefined || isNaN(v) ? '0' : new Intl.NumberFormat('pt-BR').format(v);
 
 export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   const [clients, setClients] = useState<any[]>([]);
@@ -49,10 +58,32 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
   const [expandedStrategies, setExpandedStrategies] = useState<Record<string, boolean>>({});
   const [copiedStrategy, setCopiedStrategy] = useState(false);
 
+  // Estados para Métricas de Performance & Diagnóstico IA
+  const [editingMetricsCampaign, setEditingMetricsCampaign] = useState<any | null>(null);
+  const [metricForm, setMetricForm] = useState({
+    spend: '',
+    impressions: '',
+    clicks: '',
+    conversions: '',
+    revenue: '',
+  });
+  const [savingMetrics, setSavingMetrics] = useState(false);
+
+  const [diagnosticCampaign, setDiagnosticCampaign] = useState<any | null>(null);
+  const [diagnosticText, setDiagnosticText] = useState<string>('');
+  const [diagnosticLoading, setDiagnosticLoading] = useState(false);
+  const [copiedDiagnostic, setCopiedDiagnostic] = useState(false);
+
   const handleCopyStrategy = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedStrategy(true);
     setTimeout(() => setCopiedStrategy(false), 2000);
+  };
+
+  const handleCopyDiagnostic = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedDiagnostic(true);
+    setTimeout(() => setCopiedDiagnostic(false), 2000);
   };
 
   const toggleExpandStrategy = (campaignId: string) => {
@@ -86,15 +117,20 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showForm) {
-        setEditing(null);
-        setForm(emptyForm);
-        setShowForm(false);
+      if (e.key === 'Escape') {
+        if (showForm) {
+          setEditing(null);
+          setForm(emptyForm);
+          setShowForm(false);
+        }
+        if (editingMetricsCampaign) setEditingMetricsCampaign(null);
+        if (viewingStrategyCampaign) setViewingStrategyCampaign(null);
+        if (diagnosticCampaign) setDiagnosticCampaign(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showForm]);
+  }, [showForm, editingMetricsCampaign, viewingStrategyCampaign, diagnosticCampaign]);
 
   const openEdit = (campaign: any) => {
     setEditing(campaign);
@@ -113,6 +149,82 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
       startDate: campaign.startDate ? campaign.startDate.slice(0, 10) : '',
       endDate: campaign.endDate ? campaign.endDate.slice(0, 10) : '',
     });
+  };
+
+  const openMetricsModal = (campaign: any) => {
+    setEditingMetricsCampaign(campaign);
+    setMetricForm({
+      spend: campaign.spend !== undefined && campaign.spend !== null ? String(campaign.spend) : '',
+      impressions: campaign.impressions !== undefined && campaign.impressions !== null ? String(campaign.impressions) : '',
+      clicks: campaign.clicks !== undefined && campaign.clicks !== null ? String(campaign.clicks) : '',
+      conversions: campaign.conversions !== undefined && campaign.conversions !== null ? String(campaign.conversions) : '',
+      revenue: campaign.revenue !== undefined && campaign.revenue !== null ? String(campaign.revenue) : '',
+    });
+  };
+
+  const handleSaveMetrics = async (e: React.FormEvent, generateAiAfter = false) => {
+    e.preventDefault();
+    if (!editingMetricsCampaign) return;
+    setSavingMetrics(true);
+    try {
+      const payload = {
+        spend: metricForm.spend ? parseFloat(metricForm.spend) : 0,
+        impressions: metricForm.impressions ? parseInt(metricForm.impressions, 10) : 0,
+        clicks: metricForm.clicks ? parseInt(metricForm.clicks, 10) : 0,
+        conversions: metricForm.conversions ? parseInt(metricForm.conversions, 10) : 0,
+        revenue: metricForm.revenue ? parseFloat(metricForm.revenue) : 0,
+      };
+
+      const res = await fetch(apiUrl(`/api/campaigns/${editingMetricsCampaign.id}/metrics`), {
+        method: 'PATCH',
+        headers: {
+          Authorization: 'Bearer ' + jwtToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Falha ao salvar métricas.');
+
+      const updated = json.data;
+      setEditingMetricsCampaign(null);
+      await load();
+
+      if (generateAiAfter) {
+        void handleRunDiagnostic(updated);
+      }
+    } catch (err: any) {
+      window.alert(err.message || 'Falha ao salvar métricas.');
+    } finally {
+      setSavingMetrics(false);
+    }
+  };
+
+  const handleRunDiagnostic = async (campaign: any) => {
+    setDiagnosticCampaign(campaign);
+    setDiagnosticText(campaign.aiDiagnostic || '');
+    setDiagnosticLoading(true);
+
+    try {
+      const res = await fetch(apiUrl(`/api/campaigns/${campaign.id}/analyze-metrics`), {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + jwtToken,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Falha ao gerar diagnóstico por IA.');
+
+      setDiagnosticText(json.data.diagnostic);
+      await load();
+    } catch (err: any) {
+      window.alert(err.message || 'Falha ao analisar métricas.');
+    } finally {
+      setDiagnosticLoading(false);
+    }
   };
 
   const save = async (e: React.FormEvent) => {
@@ -210,7 +322,7 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-            Defina briefings estratégicos e gere planos de ação com inteligência artificial baseada no contexto do cliente.
+            Defina briefings estratégicos, gere planos de ação com IA e acompanhe métricas de performance e ROAS.
           </p>
         </div>
 
@@ -468,6 +580,11 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
         <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
           {campaigns.map((c) => {
             const isGenerating = generatingId === c.id;
+            const spend = c.spend || 0;
+            const conversions = c.conversions || 0;
+            const revenue = c.revenue || 0;
+            const roas = spend > 0 ? (revenue / spend).toFixed(2) : '0.00';
+
             return (
               <div key={c.id} className="shadcn-card flex flex-col justify-between space-y-4">
                 <div>
@@ -493,12 +610,23 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
                     <div className="flex items-center gap-1">
                       <button 
                         type="button" 
+                        onClick={() => openMetricsModal(c)} 
+                        className="h-8 px-2 flex items-center gap-1 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-300 dark:hover:text-indigo-300 dark:hover:bg-indigo-950/40 text-[11px] font-semibold transition cursor-pointer border border-slate-200 dark:border-zinc-800" 
+                        title="Editar Métricas de Performance"
+                      >
+                        <TrendingUp className="h-3.5 w-3.5 text-indigo-500" />
+                        <span>Métricas</span>
+                      </button>
+
+                      <button 
+                        type="button" 
                         onClick={() => openEdit(c)} 
                         className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 transition cursor-pointer" 
                         title="Editar"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
+
                       <button 
                         type="button" 
                         onClick={() => removeCampaign(c)} 
@@ -513,6 +641,29 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
                   <p className="mt-2 text-xs text-slate-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
                     {c.objective}
                   </p>
+
+                  {/* Badges de Performance em tempo real */}
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span className="rounded-lg bg-slate-100 dark:bg-zinc-800/80 px-2 py-0.5 font-medium text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
+                      Investimento: <b>{formatMoney(spend)}</b>
+                    </span>
+                    <span className="rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 font-medium border border-emerald-500/20">
+                      Leads: <b>{formatNumber(conversions)}</b>
+                    </span>
+                    <span className="rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 font-medium border border-indigo-500/20">
+                      ROAS: <b>{roas}x</b>
+                    </span>
+                    {c.aiDiagnostic && (
+                      <button
+                        type="button"
+                        onClick={() => { setDiagnosticCampaign(c); setDiagnosticText(c.aiDiagnostic); }}
+                        className="rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20 px-2 py-0.5 font-medium border border-violet-500/20 transition cursor-pointer flex items-center gap-1"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        <span>Ver Diagnóstico IA</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="border-t border-slate-100 pt-3 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-2">
@@ -695,6 +846,239 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
               <button
                 type="button"
                 onClick={() => setViewingStrategyCampaign(null)}
+                className="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-2 text-xs font-bold text-white transition shadow-sm cursor-pointer"
+              >
+                Fechar Visualização
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição de Métricas de Performance */}
+      {editingMetricsCampaign && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setEditingMetricsCampaign(null)}
+        >
+          <div 
+            className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 space-y-4 text-slate-900 dark:text-white"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold">Métricas de Performance da Campanha</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate max-w-xs">{editingMetricsCampaign.name}</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setEditingMetricsCampaign(null)} 
+                className="text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => handleSaveMetrics(e, false)} className="space-y-4">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Investimento / Spend (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Ex: 1500.00"
+                    value={metricForm.spend}
+                    onChange={(e) => setMetricForm({ ...metricForm, spend: e.target.value })}
+                    className="shadcn-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Receita / Faturamento (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Ex: 7500.00"
+                    value={metricForm.revenue}
+                    onChange={(e) => setMetricForm({ ...metricForm, revenue: e.target.value })}
+                    className="shadcn-input"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Impressões
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Ex: 45000"
+                    value={metricForm.impressions}
+                    onChange={(e) => setMetricForm({ ...metricForm, impressions: e.target.value })}
+                    className="shadcn-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Cliques no Link
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Ex: 1250"
+                    value={metricForm.clicks}
+                    onChange={(e) => setMetricForm({ ...metricForm, clicks: e.target.value })}
+                    className="shadcn-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Leads / Conversões
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Ex: 85"
+                    value={metricForm.conversions}
+                    onChange={(e) => setMetricForm({ ...metricForm, conversions: e.target.value })}
+                    className="shadcn-input"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-zinc-800">
+                <button 
+                  type="button" 
+                  onClick={() => setEditingMetricsCampaign(null)} 
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={savingMetrics}
+                  className="rounded-xl bg-slate-800 hover:bg-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white px-4 py-2 text-xs font-semibold shadow-xs disabled:opacity-50 transition cursor-pointer"
+                >
+                  {savingMetrics ? 'Salvando...' : 'Salvar Métricas'}
+                </button>
+                <button 
+                  type="button" 
+                  disabled={savingMetrics}
+                  onClick={(e) => handleSaveMetrics(e, true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-2 text-xs font-bold text-white shadow hover:from-indigo-400 hover:to-violet-500 disabled:opacity-50 transition cursor-pointer"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Salvar & Diagnosticar IA</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Diagnóstico de Performance por IA */}
+      {diagnosticCampaign && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-3xl max-h-[90vh] bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-900 dark:text-white animate-in zoom-in-95 duration-150">
+            {/* Top Bar */}
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between gap-4 bg-slate-50/80 dark:bg-zinc-900/80 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/20">
+                  <Bot className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
+                      Diagnóstico de Performance por IA
+                    </h3>
+                    <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shrink-0">
+                      Renata Dias & Dr. Arthur
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 truncate">
+                    Campanha: {diagnosticCampaign.name} ({diagnosticCampaign.client?.name || 'Cliente'})
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {diagnosticText && (
+                  <button
+                    type="button"
+                    onClick={() => handleCopyDiagnostic(diagnosticText)}
+                    className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 transition cursor-pointer shadow-xs"
+                  >
+                    {copiedDiagnostic ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                    <span>{copiedDiagnostic ? 'Copiado!' : 'Copiar Relatório'}</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setDiagnosticCampaign(null)}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-900 transition cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Diagnostic Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4 text-xs sm:text-sm text-slate-800 dark:text-zinc-200 bg-slate-50/30 dark:bg-zinc-950">
+              {diagnosticLoading ? (
+                <div className="py-16 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="h-10 w-10 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="font-semibold text-slate-800 dark:text-zinc-200 text-sm">
+                    Renata Dias e Dr. Arthur estão analisando o funil de tráfego...
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm">
+                    Avaliando taxas de cliques (CTR), custo por lead (CPL/CPA), taxa de conversão e elaborando recomendações de testes A/B.
+                  </p>
+                </div>
+              ) : diagnosticText ? (
+                <div className="space-y-4">
+                  {/* Markdown diagnostic content */}
+                  <div className="whitespace-pre-wrap font-sans bg-white dark:bg-zinc-900 p-5 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs leading-relaxed text-xs sm:text-sm">
+                    {diagnosticText}
+                  </div>
+                </div>
+              ) : (
+                <div className="py-12 text-center text-xs text-slate-400 dark:text-zinc-500">
+                  Nenhum diagnóstico gerado ainda. Clique no botão abaixo para rodar a auditoria.
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3.5 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between bg-slate-50/80 dark:bg-zinc-900/80 shrink-0">
+              <button
+                type="button"
+                disabled={diagnosticLoading}
+                onClick={() => void handleRunDiagnostic(diagnosticCampaign)}
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 transition cursor-pointer shadow-xs"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${diagnosticLoading ? 'animate-spin' : ''}`} />
+                <span>Re-analisar Campanha</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDiagnosticCampaign(null)}
                 className="rounded-xl bg-indigo-600 hover:bg-indigo-500 px-5 py-2 text-xs font-bold text-white transition shadow-sm cursor-pointer"
               >
                 Fechar Visualização

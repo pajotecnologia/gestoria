@@ -265,6 +265,18 @@ model Campaign {
   startDate    DateTime?
   endDate      DateTime?
   status       String   @default("DRAFT")
+
+  // Métricas de Performance de Tráfego Pago / Anúncios
+  spend        Float?    @default(0)
+  impressions  Int?      @default(0)
+  clicks       Int?      @default(0)
+  conversions  Int?      @default(0)
+  revenue      Float?    @default(0)
+
+  // Diagnóstico e Otimização Inteligente por IA
+  aiDiagnostic   String?   @db.Text
+  aiDiagnosticAt DateTime?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
