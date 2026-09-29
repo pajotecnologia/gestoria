@@ -215,6 +215,11 @@ model Client {
   restrictions    String?  @db.Text
   notes           String?  @db.Text
   status          String   @default("ACTIVE")
+
+  // Meta Marketing API (Insights)
+  metaAccessToken String?  @db.Text
+  metaAdAccountId String?
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -276,6 +281,12 @@ model Campaign {
   // Diagnóstico e Otimização Inteligente por IA
   aiDiagnostic   String?   @db.Text
   aiDiagnosticAt DateTime?
+
+  // Conexão e Sincronização Meta Marketing API (Insights API)
+  metaAccessToken String?   @db.Text
+  metaAdAccountId String?
+  metaCampaignId  String?
+  metaLastSyncAt  DateTime?
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

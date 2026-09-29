@@ -22,7 +22,8 @@ import {
   Check,
   X,
   Search,
-  Activity
+  Activity,
+  Radio
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
 
@@ -81,10 +82,16 @@ type Campaign = {
   revenue?: number;
   aiDiagnostic?: string;
   aiDiagnosticAt?: string;
+  metaAccessToken?: string;
+  metaAdAccountId?: string;
+  metaCampaignId?: string;
+  metaLastSyncAt?: string;
   client?: {
     id: string;
     name: string;
     segment?: string;
+    metaAccessToken?: string;
+    metaAdAccountId?: string;
   };
 };
 
@@ -109,6 +116,7 @@ const getActionLabel = (v: string) => {
     CAMPAIGN_STRATEGY_GENERATED: 'Estratégia gerada',
     CAMPAIGN_METRICS_UPDATED: 'Métricas de tráfego atualizadas',
     CAMPAIGN_AI_DIAGNOSTIC_GENERATED: 'Diagnóstico IA gerado',
+    CAMPAIGN_META_SYNCED: 'Sincronizado com Meta Ads',
     CLIENT_CREATED: 'Empresa cadastrada',
     CLIENT_UPDATED: 'Empresa atualizada',
     CLIENT_DELETED: 'Empresa excluída',
@@ -416,7 +424,7 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
   const [error, setError] = useState('');
   const [searchCampaign, setSearchCampaign] = useState('');
 
-  // Modal de Edição de Métricas
+  // Modal de Edição de Métricas Manuais
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [metricForm, setMetricForm] = useState({
     spend: '',
@@ -432,6 +440,20 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
   const [diagnosticText, setDiagnosticText] = useState<string>('');
   const [diagnosticLoading, setDiagnosticLoading] = useState(false);
   const [copiedDiagnostic, setCopiedDiagnostic] = useState(false);
+
+  // Modal de Sincronização com Meta Marketing Graph API
+  const [syncMetaCampaign, setSyncMetaCampaign] = useState<Campaign | null>(null);
+  const [metaForm, setMetaForm] = useState({
+    accessToken: '',
+    adAccountId: '',
+    campaignId: '',
+    datePreset: 'maximum',
+    saveCredentials: true,
+  });
+  const [testingMeta, setTestingMeta] = useState(false);
+  const [metaAccountInfo, setMetaAccountInfo] = useState<any | null>(null);
+  const [metaCampaignList, setMetaCampaignList] = useState<any[]>([]);
+  const [syncingMeta, setSyncingMeta] = useState(false);
 
   const loadAnalytics = async () => {
     setLoading(true);
@@ -494,6 +516,83 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
       conversions: c.conversions !== undefined && c.conversions !== null ? String(c.conversions) : '',
       revenue: c.revenue !== undefined && c.revenue !== null ? String(c.revenue) : '',
     });
+  };
+
+  const openMetaSyncModal = (c: Campaign) => {
+    setSyncMetaCampaign(c);
+    setMetaAccountInfo(null);
+    setMetaCampaignList([]);
+    setMetaForm({
+      accessToken: c.metaAccessToken || c.client?.metaAccessToken || '',
+      adAccountId: c.metaAdAccountId || c.client?.metaAdAccountId || '',
+      campaignId: c.metaCampaignId || '',
+      datePreset: 'maximum',
+      saveCredentials: true,
+    });
+  };
+
+  const handleTestMetaConnection = async () => {
+    if (!metaForm.accessToken || !metaForm.adAccountId) {
+      window.alert('Informe o Access Token e o ID da Conta de Anúncios.');
+      return;
+    }
+    setTestingMeta(true);
+    try {
+      const res = await fetch(apiUrl('/api/campaigns/meta/test-connection'), {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + jwtToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          metaAccessToken: metaForm.accessToken,
+          metaAdAccountId: metaForm.adAccountId,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Falha ao testar conexão com Meta Ads.');
+      setMetaAccountInfo(json.data.accountInfo);
+      setMetaCampaignList(json.data.campaigns || []);
+    } catch (err: any) {
+      window.alert(err.message || 'Erro na conexão com Meta Ads.');
+    } finally {
+      setTestingMeta(false);
+    }
+  };
+
+  const handleSyncMetaInsights = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!syncMetaCampaign) return;
+    setSyncingMeta(true);
+    try {
+      const res = await fetch(apiUrl(`/api/campaigns/${syncMetaCampaign.id}/sync-meta`), {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + jwtToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          metaAccessToken: metaForm.accessToken,
+          metaAdAccountId: metaForm.adAccountId,
+          metaCampaignId: metaForm.campaignId || undefined,
+          datePreset: metaForm.datePreset,
+          saveCredentials: metaForm.saveCredentials,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Falha ao sincronizar métricas com Meta Ads.');
+
+      const updated = json.data;
+      setCampaigns(prev => prev.map(c => c.id === updated.id ? updated : c));
+      setSyncMetaCampaign(null);
+      void loadAnalytics();
+      window.alert(`✅ Métricas sincronizadas com sucesso!\nInvestimento: ${formatMoney(updated.spend)}\nImpressões: ${formatNumber(updated.impressions)}\nCliques: ${formatNumber(updated.clicks)}\nConversões: ${formatNumber(updated.conversions)}\nReceita: ${formatMoney(updated.revenue)}`);
+    } catch (err: any) {
+      window.alert(err.message || 'Falha na sincronização.');
+    } finally {
+      setSyncingMeta(false);
+    }
   };
 
   const handleSaveMetrics = async (e: React.FormEvent, generateAiAfter = false) => {
@@ -589,7 +688,7 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-            Acompanhe números de investimento, leads, CTR, ROAS e receba auditorias e diagnósticos acionáveis com IA.
+            Acompanhe métricas reais de anúncios, sincronize direto com o <b>Meta Ads (Graph API)</b> e gere diagnósticos com IA.
           </p>
         </div>
 
@@ -694,7 +793,7 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
                   <span>Auditoria & Performance por Campanha</span>
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-zinc-400">
-                  Cadastre métricas reais e dispare diagnósticos com a Gestora de Tráfego Renata Dias e o CMO Dr. Arthur.
+                  Sincronize com o <b>Meta Ads</b>, cadastre métricas reais e dispare diagnósticos com a Gestora de Tráfego Renata Dias e o CMO Dr. Arthur.
                 </p>
               </div>
 
@@ -751,6 +850,12 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
                             }`}>
                               {c.isActive ? 'Ativa' : 'Pausada'}
                             </span>
+                            {c.metaLastSyncAt && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center gap-1">
+                                <Radio className="h-2.5 w-2.5" />
+                                Meta Ads Conectado
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mt-0.5">
                             {c.client?.name || 'Empresa não vinculada'} {c.client?.segment ? `• ${c.client.segment}` : ''}
@@ -758,7 +863,18 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {/* Botão de Integração Meta Ads */}
+                          <button
+                            type="button"
+                            onClick={() => openMetaSyncModal(c)}
+                            className="flex h-8 items-center gap-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition cursor-pointer shadow-xs"
+                            title="Sincronizar dados direto do Meta Ads (Insights API)"
+                          >
+                            <Radio className="h-3.5 w-3.5" />
+                            <span>Meta Ads</span>
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => openMetricsModal(c)}
@@ -1056,7 +1172,167 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
       )}
 
       {/* =========================================================================
-          MODAL: EDITAR MÉTRICAS DE PERFORMANCE DA CAMPANHA
+          MODAL: SINCRONIZAR COM META MARKETING GRAPH API (INSIGHTS)
+          ========================================================================= */}
+      {syncMetaCampaign && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setSyncMetaCampaign(null)}
+        >
+          <div 
+            className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 space-y-4 text-slate-900 dark:text-white"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <Radio className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold">Sincronizar com Meta Ads (Graph API)</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate max-w-xs">{syncMetaCampaign.name}</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setSyncMetaCampaign(null)} 
+                className="text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSyncMetaInsights} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                  Meta User / System Access Token *
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="EAAB..."
+                  value={metaForm.accessToken}
+                  onChange={(e) => setMetaForm({ ...metaForm, accessToken: e.target.value })}
+                  className="shadcn-input font-mono text-xs"
+                />
+                <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1">
+                  Token gerado no Meta for Developers / Graph API Explorer com permissões <code>ads_read</code> e <code>read_insights</code>.
+                </p>
+              </div>
+
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    ID da Conta de Anúncios *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="act_1234567890 ou 1234567890"
+                    value={metaForm.adAccountId}
+                    onChange={(e) => setMetaForm({ ...metaForm, adAccountId: e.target.value })}
+                    className="shadcn-input text-xs font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Período de Extração
+                  </label>
+                  <select
+                    value={metaForm.datePreset}
+                    onChange={(e) => setMetaForm({ ...metaForm, datePreset: e.target.value })}
+                    className="shadcn-input text-xs"
+                  >
+                    <option value="maximum">Todo o Histórico (Maximum)</option>
+                    <option value="last_30d">Últimos 30 Dias</option>
+                    <option value="last_7d">Últimos 7 Dias</option>
+                    <option value="this_month">Este Mês</option>
+                    <option value="today">Hoje</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Botão de Testar Conexão e Listar Campanhas da Meta */}
+              <div className="flex items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800">
+                <div className="text-xs">
+                  <p className="font-semibold text-slate-800 dark:text-zinc-200">
+                    {metaAccountInfo ? `Conta: ${metaAccountInfo.name} (${metaAccountInfo.currency})` : 'Testar Credenciais da Meta'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-zinc-400">
+                    {metaAccountInfo ? `${metaCampaignList.length} campanhas encontradas na conta.` : 'Verifique se o token é válido e liste as campanhas da conta.'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTestMetaConnection}
+                  disabled={testingMeta || !metaForm.accessToken || !metaForm.adAccountId}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-50 transition cursor-pointer shadow-xs"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${testingMeta ? 'animate-spin' : ''}`} />
+                  <span>{testingMeta ? 'Testando...' : 'Testar Conexão'}</span>
+                </button>
+              </div>
+
+              {/* Seletor de Campanha Específica da Meta se listada */}
+              {metaCampaignList.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
+                    Vincular a uma Campanha Específica da Meta (Opcional)
+                  </label>
+                  <select
+                    value={metaForm.campaignId}
+                    onChange={(e) => setMetaForm({ ...metaForm, campaignId: e.target.value })}
+                    className="shadcn-input text-xs"
+                  >
+                    <option value="">Puxar métricas de toda a Conta de Anúncios</option>
+                    {metaCampaignList.map((mc) => (
+                      <option key={mc.id} value={mc.id}>
+                        {mc.name} ({mc.status}) - ID: {mc.id}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="saveCreds"
+                  checked={metaForm.saveCredentials}
+                  onChange={(e) => setMetaForm({ ...metaForm, saveCredentials: e.target.checked })}
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                />
+                <label htmlFor="saveCreds" className="text-xs text-slate-700 dark:text-zinc-300 cursor-pointer">
+                  Salvar estas credenciais nesta campanha/empresa para sincronizações futuras em 1 clique
+                </label>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-slate-200 dark:border-zinc-800">
+                <button 
+                  type="button" 
+                  onClick={() => setSyncMetaCampaign(null)} 
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={syncingMeta}
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-2 text-xs font-bold text-white shadow hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 transition cursor-pointer"
+                >
+                  <Radio className={`h-3.5 w-3.5 ${syncingMeta ? 'animate-pulse' : ''}`} />
+                  <span>{syncingMeta ? 'Sincronizando com Meta...' : 'Puxar Métricas do Meta Ads'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL: EDITAR MÉTRICAS DE PERFORMANCE MANUALMENTE
           ========================================================================= */}
       {editingCampaign && (
         <div 

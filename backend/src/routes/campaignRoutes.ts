@@ -514,4 +514,145 @@ Estruture sua resposta de forma executiva, clara e altamente acionável com:
   }
 });
 
+import {
+  testMetaAdAccount,
+  listMetaCampaigns,
+  fetchMetaInsights,
+} from '../services/metaMarketingService';
+
+// Testar Conexão com a Conta de Anúncios da Meta e Listar Campanhas
+router.post('/meta/test-connection', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { metaAccessToken, metaAdAccountId } = req.body;
+    if (!metaAccessToken || !metaAdAccountId) {
+      res.status(400).json({ error: 'Meta Access Token e ID da Conta de Anúncios são obrigatórios.' });
+      return;
+    }
+
+    const [accountInfo, campaigns] = await Promise.all([
+      testMetaAdAccount(metaAccessToken, metaAdAccountId),
+      listMetaCampaigns(metaAccessToken, metaAdAccountId).catch(() => []),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        accountInfo,
+        campaigns,
+      },
+    });
+  } catch (error: any) {
+    res.status(400).json({ error: error?.message || 'Falha ao conectar com a Meta Ads API.' });
+  }
+});
+
+// Sincronizar Métricas da Campanha com a Meta Marketing Graph API
+router.post('/:id/sync-meta', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const { id } = req.params;
+    const {
+      metaAccessToken,
+      metaAdAccountId,
+      metaCampaignId,
+      datePreset = 'maximum',
+      saveCredentials = true,
+    } = req.body;
+
+    const campaign = await prisma.campaign.findFirst({
+      where: { id, tenantId },
+      include: { client: true },
+    });
+
+    if (!campaign) {
+      res.status(404).json({ error: 'Campanha não encontrada.' });
+      return;
+    }
+
+    const tokenToUse = metaAccessToken || campaign.metaAccessToken || campaign.client.metaAccessToken;
+    const adAccountToUse = metaAdAccountId || campaign.metaAdAccountId || campaign.client.metaAdAccountId;
+    const campaignIdToUse = metaCampaignId || campaign.metaCampaignId;
+
+    if (!tokenToUse) {
+      res.status(400).json({
+        error: 'Meta Access Token não encontrado. Forneça o token ou configure-o na campanha/empresa.',
+      });
+      return;
+    }
+
+    if (!adAccountToUse && !campaignIdToUse) {
+      res.status(400).json({
+        error: 'Informe o ID da Conta de Anúncios ou o ID da Campanha da Meta para sincronização.',
+      });
+      return;
+    }
+
+    // Busca dados em tempo real da Meta Graph API
+    const insights = await fetchMetaInsights({
+      accessToken: tokenToUse,
+      adAccountId: adAccountToUse || undefined,
+      campaignId: campaignIdToUse || undefined,
+      datePreset,
+    });
+
+    // Atualiza os números no banco de dados
+    const updated = await prisma.campaign.update({
+      where: { id },
+      data: {
+        spend: insights.spend,
+        impressions: insights.impressions,
+        clicks: insights.clicks,
+        conversions: insights.conversions,
+        revenue: insights.revenue,
+        metaLastSyncAt: new Date(),
+        ...(saveCredentials
+          ? {
+              metaAccessToken: metaAccessToken ? metaAccessToken.trim() : campaign.metaAccessToken,
+              metaAdAccountId: adAccountToUse ? adAccountToUse.trim() : campaign.metaAdAccountId,
+              metaCampaignId: campaignIdToUse ? campaignIdToUse.trim() : campaign.metaCampaignId,
+            }
+          : {}),
+      },
+      include: {
+        client: { select: { id: true, name: true, segment: true } },
+      },
+    });
+
+    // Se solicitado salvar credenciais e a empresa não possuir, atualiza a empresa também
+    if (saveCredentials && tokenToUse && adAccountToUse && !campaign.client.metaAccessToken) {
+      await prisma.client
+        .update({
+          where: { id: campaign.clientId },
+          data: {
+            metaAccessToken: tokenToUse.trim(),
+            metaAdAccountId: adAccountToUse.trim(),
+          },
+        })
+        .catch(() => undefined);
+    }
+
+    await writeAuditLog({
+      tenantId,
+      userId: req.user?.userId,
+      action: 'CAMPAIGN_META_SYNCED',
+      entity: 'Campaign',
+      entityId: id,
+      metadata: {
+        spend: insights.spend,
+        conversions: insights.conversions,
+        revenue: insights.revenue,
+        datePreset,
+      },
+    }).catch(() => undefined);
+
+    res.json({
+      success: true,
+      data: serializeCampaign(updated),
+      insights,
+    });
+  } catch (error: any) {
+    res.status(400).json({ error: error?.message || 'Falha ao sincronizar com Meta Ads.' });
+  }
+});
+
 export default router;
