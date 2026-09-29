@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart3, 
   Bot, 
@@ -33,6 +34,19 @@ import { CampaignManager } from './components/CampaignManager';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { CommandPalette } from './components/CommandPalette';
 import { APP_VERSION, RELEASE_HISTORY } from './version';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './components/ui/tooltip';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './components/ui/dialog';
 
 export const App: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -310,332 +324,364 @@ export const App: React.FC = () => {
   const CurrentIcon = currentItem?.icon || BarChart3;
 
   return (
-    <div className="h-screen w-screen max-w-full bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 flex overflow-hidden selection:bg-indigo-500/30">
-      {/* Command Palette Global Modal (Ctrl+K) */}
-      <CommandPalette
-        isOpen={commandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
-        onSelectView={handleViewChange}
-        onOpenReleases={() => setReleaseModalOpen(true)}
-        onLogout={handleLogout}
-        userRole={user?.role}
-      />
+    <TooltipProvider delayDuration={150}>
+      <div className="h-screen w-screen max-w-full bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 flex overflow-hidden selection:bg-indigo-500/30">
+        {/* Command Palette Global Modal (Ctrl+K) */}
+        <CommandPalette
+          isOpen={commandPaletteOpen}
+          onClose={() => setCommandPaletteOpen(false)}
+          onSelectView={handleViewChange}
+          onOpenReleases={() => setReleaseModalOpen(true)}
+          onLogout={handleLogout}
+          userRole={user?.role}
+        />
 
-      {/* =========================================================================
-          SIDEBAR LATERAL ESQUERDA (ESTILO APEX / SHADCN UI)
-          ========================================================================= */}
-      <aside 
-        className={`hidden md:flex flex-col border-r border-zinc-800/80 bg-zinc-950 text-zinc-100 transition-all duration-300 z-30 shrink-0 select-none ${
-          sidebarCollapsed ? 'w-[72px]' : 'w-64'
-        }`}
-      >
-        {/* Workspace Brand Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-800/80">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/20">
-              <Bot className="h-5 w-5" />
-            </div>
-            {!sidebarCollapsed && (
-              <div className="min-w-0 flex-1 truncate">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-sm text-white tracking-tight truncate">Gestor IA</span>
-                  <span className="rounded-full bg-indigo-500/10 px-1.5 py-0.2 text-[9px] font-semibold text-indigo-300 border border-indigo-500/20">
-                    SaaS
-                  </span>
-                </div>
-                <p className="text-[11px] text-zinc-400 truncate">{tenant?.name}</p>
+        {/* =========================================================================
+            SIDEBAR LATERAL ESQUERDA ANIMADA (FRAMER MOTION + RADIX TOOLTIP)
+            ========================================================================= */}
+        <motion.aside 
+          initial={false}
+          animate={{ width: sidebarCollapsed ? 76 : 260 }}
+          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+          className="hidden md:flex flex-col border-r border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 z-30 shrink-0 select-none overflow-hidden"
+        >
+          {/* Workspace Brand Header */}
+          <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 dark:border-zinc-800/80 shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/20">
+                <Bot className="h-5 w-5" />
               </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-900 transition"
-            title={sidebarCollapsed ? 'Expandir Menu' : 'Colapsar Menu'}
-          >
-            {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
-        </div>
-
-        {/* Navigation Items */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {navigationGroups.map((group) => (
-            <div key={group.title} className="space-y-1">
-              {!sidebarCollapsed ? (
-                <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                  {group.title}
-                </p>
-              ) : (
-                <div className="h-px bg-zinc-800/60 my-2 mx-2" />
-              )}
-
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentView === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleViewChange(item.id as typeof currentView)}
-                    title={sidebarCollapsed ? item.label : undefined}
-                    className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all duration-200 group cursor-pointer ${
-                      isActive
-                        ? 'bg-zinc-900 text-white border border-zinc-700/80 shadow-sm shadow-black/40'
-                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/60'
-                    } ${sidebarCollapsed ? 'justify-center px-0' : ''}`}
+              <AnimatePresence>
+                {!sidebarCollapsed && (
+                  <motion.div 
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="min-w-0 flex-1 truncate"
                   >
-                    <Icon className={`h-4 w-4 shrink-0 transition-colors ${
-                      isActive ? 'text-indigo-400' : 'text-zinc-400 group-hover:text-zinc-200'
-                    }`} />
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-sm text-slate-900 dark:text-white tracking-tight truncate">Gestor IA</span>
+                      <span className="rounded-full bg-indigo-500/10 px-1.5 py-0.2 text-[9px] font-semibold text-indigo-600 dark:text-indigo-300 border border-indigo-500/20">
+                        SaaS
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">{tenant?.name}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-                    {!sidebarCollapsed && (
-                      <div className="flex flex-1 items-center justify-between min-w-0">
-                        <span className="truncate">{item.label}</span>
-                        {item.badge && (
-                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-semibold border ${
-                            item.badge === 'Live'
-                              ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                              : 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400'
-                          }`}>
-                            {item.badge}
-                          </span>
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-900 transition cursor-pointer"
+              title={sidebarCollapsed ? 'Expandir Menu' : 'Colapsar Menu'}
+            >
+              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
+          </div>
+
+          {/* Navigation Items */}
+          <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+            {navigationGroups.map((group) => (
+              <div key={group.title} className="space-y-1">
+                {!sidebarCollapsed ? (
+                  <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                    {group.title}
+                  </p>
+                ) : (
+                  <div className="h-px bg-slate-200 dark:bg-zinc-800/60 my-2 mx-2" />
+                )}
+
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentView === item.id;
+                  
+                  const buttonElement = (
+                    <button
+                      type="button"
+                      onClick={() => handleViewChange(item.id as typeof currentView)}
+                      className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all duration-200 group cursor-pointer ${
+                        isActive
+                          ? 'bg-slate-100 text-slate-900 dark:bg-zinc-900 dark:text-white border border-slate-200 dark:border-zinc-700/80 shadow-xs'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100/80 dark:hover:bg-zinc-900/60'
+                      } ${sidebarCollapsed ? 'justify-center px-0' : ''}`}
+                    >
+                      <Icon className={`h-4 w-4 shrink-0 transition-colors ${
+                        isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-400 group-hover:text-slate-700 dark:group-hover:text-zinc-200'
+                      }`} />
+
+                      <AnimatePresence>
+                        {!sidebarCollapsed && (
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="flex flex-1 items-center justify-between min-w-0"
+                          >
+                            <span className="truncate">{item.label}</span>
+                            {item.badge && (
+                              <span className={`rounded-full px-2 py-0.5 text-[9px] font-semibold border ${
+                                item.badge === 'Tempo Real'
+                                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                  : 'border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                              }`}>
+                                {item.badge}
+                              </span>
+                            )}
+                          </motion.div>
                         )}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+                      </AnimatePresence>
+                    </button>
+                  );
 
-        {/* Sidebar Footer / User Profile Card */}
-        <div className="border-t border-zinc-800/80 p-3 bg-zinc-950/80">
-          {!sidebarCollapsed ? (
-            <div className="flex items-center justify-between rounded-xl border border-zinc-800/80 bg-zinc-900/60 p-2.5">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 text-[11px] font-bold text-indigo-300">
-                  {user?.name?.slice(0, 2).toUpperCase() || 'US'}
-                </div>
-                <div className="min-w-0 truncate">
-                  <p className="text-xs font-medium text-zinc-200 truncate">{user?.name}</p>
-                  <p className="text-[10px] text-zinc-500 truncate">{user?.email}</p>
-                </div>
+                  if (sidebarCollapsed) {
+                    return (
+                      <Tooltip key={item.id}>
+                        <TooltipTrigger asChild>
+                          {buttonElement}
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p>{item.label}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  }
+
+                  return <React.Fragment key={item.id}>{buttonElement}</React.Fragment>;
+                })}
               </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="h-7 w-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
-                title="Encerrar Sessão"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="h-9 w-9 flex items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-rose-400 transition"
-                title="Encerrar Sessão"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* =========================================================================
-          CONTEÚDO PRINCIPAL (HEADER SUPERIOR + VIEW ATIVA)
-          ========================================================================= */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overflow-x-hidden">
-        {/* Topbar Superior Estilo Apex / Shadcn */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 dark:border-zinc-800/80 bg-white/90 dark:bg-zinc-950/80 px-4 sm:px-6 backdrop-blur-xl shrink-0">
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Mobile Menu Toggle Button */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-
-            {/* Breadcrumb / Title */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400 dark:text-zinc-500 font-medium hidden sm:inline">Gestor IA</span>
-              <span className="text-slate-300 dark:text-zinc-600 hidden sm:inline">/</span>
-              <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-zinc-200">
-                <CurrentIcon className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-                <span>{currentItem?.label || 'Visão Geral'}</span>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Center / Search Quick Command (Ctrl+K) */}
-          <div className="hidden lg:flex items-center max-w-sm w-full mx-4">
-            <button
-              type="button"
-              onClick={() => setCommandPaletteOpen(true)}
-              className="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-slate-100/90 px-3.5 py-1.5 text-xs text-slate-500 hover:border-slate-300 hover:text-slate-800 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300 transition shadow-sm cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <Search className="h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
-                <span>Buscar telas, comandos ou agentes...</span>
-              </div>
-              <kbd className="rounded bg-white px-1.5 py-0.5 text-[10px] font-mono text-slate-500 border border-slate-200 shadow-xs dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
-                ⌘K
-              </kbd>
-            </button>
-          </div>
-
-          {/* Right Action Icons & Status */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Quick Search on Mobile */}
-            <button
-              type="button"
-              onClick={() => setCommandPaletteOpen(true)}
-              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 shadow-sm"
-              title="Buscar (Ctrl+K)"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-
-            {/* System Version Changelog Pill */}
-            <button
-              type="button"
-              onClick={() => setReleaseModalOpen(true)}
-              className="flex h-9 items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20 transition cursor-pointer"
-              title="Ver notas de versão"
-            >
-              <History className="h-3.5 w-3.5" />
-              <span>v{APP_VERSION}</span>
-            </button>
-
-            {/* Theme Toggle Button (Light / Dark) */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300 dark:hover:text-white dark:hover:border-zinc-700 transition cursor-pointer"
-              title={theme === 'dark' ? 'Alternar para Tema Claro' : 'Alternar para Tema Escuro'}
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-indigo-500" />}
-            </button>
-
-            {/* Tenant Status Indicator */}
-            <div className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs text-slate-600 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
-              <span className="font-medium text-slate-800 dark:text-zinc-300 truncate max-w-[120px]">{tenant?.name}</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Mobile Navigation Drawer */}
-        {mobileMenuOpen && (
-          <>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
-            />
-            <aside className="fixed inset-y-0 left-0 z-50 w-72 border-r border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 p-4 shadow-2xl md:hidden flex flex-col">
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
-                    <Bot className="h-4 w-4" />
+          {/* Sidebar Footer / User Profile Card */}
+          <div className="border-t border-slate-200 dark:border-zinc-800/80 p-3 bg-slate-50/80 dark:bg-zinc-950/80 shrink-0">
+            {!sidebarCollapsed ? (
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/60 p-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 text-[11px] font-bold text-indigo-600 dark:text-indigo-300">
+                    {user?.name?.slice(0, 2).toUpperCase() || 'US'}
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">Gestor IA</p>
-                    <p className="text-[11px] text-slate-500 dark:text-zinc-400">{tenant?.name}</p>
+                  <div className="min-w-0 truncate">
+                    <p className="text-xs font-medium text-slate-900 dark:text-zinc-200 truncate">{user?.name}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-500 truncate">{user?.email}</p>
                   </div>
-                </div>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-900"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto py-4 space-y-6">
-                {navigationGroups.map((group) => (
-                  <div key={group.title} className="space-y-1">
-                    <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                      {group.title}
-                    </p>
-                    {group.items.map((item) => {
-                      const Icon = item.icon;
-                      const isActive = currentView === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleViewChange(item.id as typeof currentView)}
-                          className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition ${
-                            isActive
-                              ? 'bg-slate-100 text-slate-900 border border-slate-200 dark:bg-zinc-900 dark:text-white dark:border-zinc-700 font-semibold'
-                              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-900/60 dark:hover:text-zinc-200'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Icon className={`h-4 w-4 ${isActive ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-400'}`} />
-                            <span>{item.label}</span>
-                          </div>
-                          {item.badge && (
-                            <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold border border-indigo-500/30 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400">
-                              {item.badge}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-slate-200 dark:border-zinc-800 pt-3">
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-rose-600 dark:text-rose-300 hover:bg-rose-500/20 transition"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Sair da Conta</span>
-                </button>
-              </div>
-            </aside>
-          </>
-        )}
-
-        {/* Release Notes Modal */}
-        {releaseModalOpen && (
-          <>
-            <button
-              type="button"
-              onClick={() => setReleaseModalOpen(false)}
-              className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
-            />
-            <section
-              role="dialog"
-              className="fixed left-1/2 top-1/2 z-[60] w-[min(92vw,42rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 px-5 py-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <History className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-                    <h2 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">Atualizações do Sistema</h2>
-                  </div>
-                  <p className="mt-1 text-[11px] text-slate-500 dark:text-zinc-500">Versão Atual: v{APP_VERSION}</p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setReleaseModalOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:text-slate-900 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
+                  onClick={handleLogout}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10 dark:text-zinc-400 dark:hover:text-rose-400 transition cursor-pointer"
+                  title="Encerrar Sessão"
                 >
-                  <X className="h-4 w-4" />
+                  <LogOut className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="max-h-[70vh] space-y-3 overflow-y-auto p-5">
+            ) : (
+              <div className="flex justify-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="h-9 w-9 flex items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-400 hover:text-rose-600 dark:text-zinc-400 dark:hover:text-rose-400 transition cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Encerrar Sessão</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+          </div>
+        </motion.aside>
+
+        {/* =========================================================================
+            CONTEÚDO PRINCIPAL (HEADER SUPERIOR + VIEW ATIVA)
+            ========================================================================= */}
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overflow-x-hidden">
+          {/* Topbar Superior Estilo Apex / Shadcn */}
+          <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 dark:border-zinc-800/80 bg-white/90 dark:bg-zinc-950/80 px-4 sm:px-6 backdrop-blur-xl shrink-0">
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Mobile Menu Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 cursor-pointer"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
+              {/* Breadcrumb / Title */}
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-400 dark:text-zinc-500 font-medium hidden sm:inline">Gestor IA</span>
+                <span className="text-slate-300 dark:text-zinc-600 hidden sm:inline">/</span>
+                <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-zinc-200">
+                  <CurrentIcon className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+                  <span>{currentItem?.label || 'Visão Geral'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Center / Search Quick Command (Ctrl+K) */}
+            <div className="hidden lg:flex items-center max-w-sm w-full mx-4">
+              <button
+                type="button"
+                onClick={() => setCommandPaletteOpen(true)}
+                className="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-slate-100/90 px-3.5 py-1.5 text-xs text-slate-500 hover:border-slate-300 hover:text-slate-800 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300 transition shadow-sm cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <Search className="h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
+                  <span>Buscar telas, comandos ou agentes...</span>
+                </div>
+                <kbd className="rounded bg-white px-1.5 py-0.5 text-[10px] font-mono text-slate-500 border border-slate-200 shadow-xs dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
+                  ⌘K
+                </kbd>
+              </button>
+            </div>
+
+            {/* Right Action Icons & Status */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Quick Search on Mobile */}
+              <button
+                type="button"
+                onClick={() => setCommandPaletteOpen(true)}
+                className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 shadow-sm cursor-pointer"
+                title="Buscar (Ctrl+K)"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+
+              {/* System Version Changelog Pill */}
+              <button
+                type="button"
+                onClick={() => setReleaseModalOpen(true)}
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20 transition cursor-pointer"
+                title="Ver notas de versão"
+              >
+                <History className="h-3.5 w-3.5" />
+                <span>v{APP_VERSION}</span>
+              </button>
+
+              {/* Theme Toggle Button (Light / Dark) */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300 dark:hover:text-white dark:hover:border-zinc-700 transition cursor-pointer"
+                title={theme === 'dark' ? 'Alternar para Tema Claro' : 'Alternar para Tema Escuro'}
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-indigo-500" />}
+              </button>
+
+              {/* Tenant Status Indicator */}
+              <div className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs text-slate-600 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+                <span className="font-medium text-slate-800 dark:text-zinc-300 truncate max-w-[120px]">{tenant?.name}</span>
+              </div>
+            </div>
+          </header>
+
+          {/* Mobile Navigation Drawer */}
+          <AnimatePresence>
+            {mobileMenuOpen && (
+              <>
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
+                />
+                <motion.aside 
+                  initial={{ x: -280 }}
+                  animate={{ x: 0 }}
+                  exit={{ x: -280 }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="fixed inset-y-0 left-0 z-50 w-72 border-r border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 p-4 shadow-2xl md:hidden flex flex-col"
+                >
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
+                        <Bot className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900 dark:text-white">Gestor IA</p>
+                        <p className="text-[11px] text-slate-500 dark:text-zinc-400">{tenant?.name}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-900 cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto py-4 space-y-6">
+                    {navigationGroups.map((group) => (
+                      <div key={group.title} className="space-y-1">
+                        <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                          {group.title}
+                        </p>
+                        {group.items.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = currentView === item.id;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => handleViewChange(item.id as typeof currentView)}
+                              className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition cursor-pointer ${
+                                isActive
+                                  ? 'bg-slate-100 text-slate-900 border border-slate-200 dark:bg-zinc-900 dark:text-white dark:border-zinc-700 font-semibold'
+                                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-900/60 dark:hover:text-zinc-200'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Icon className={`h-4 w-4 ${isActive ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-400'}`} />
+                                <span>{item.label}</span>
+                              </div>
+                              {item.badge && (
+                                <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold border border-indigo-500/30 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400">
+                                  {item.badge}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-slate-200 dark:border-zinc-800 pt-3">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-rose-600 dark:text-rose-300 hover:bg-rose-500/20 transition cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Sair da Conta</span>
+                    </button>
+                  </div>
+                </motion.aside>
+              </>
+            )}
+          </AnimatePresence>
+
+          {/* Release Notes Dialog (Radix UI) */}
+          <Dialog open={releaseModalOpen} onOpenChange={setReleaseModalOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <div className="flex items-center gap-2">
+                  <History className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
+                  <DialogTitle>Atualizações do Sistema</DialogTitle>
+                </div>
+                <DialogDescription>Versão Atual: v{APP_VERSION}</DialogDescription>
+              </DialogHeader>
+
+              <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
                 {RELEASE_HISTORY.map((release) => (
                   <article key={release.version} className="rounded-xl border border-slate-200 bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900/60 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -663,44 +709,54 @@ export const App: React.FC = () => {
                   </article>
                 ))}
               </div>
-            </section>
-          </>
-        )}
+            </DialogContent>
+          </Dialog>
 
-        {/* =========================================================================
-            ÁREA PRINCIPAL DE CONTEÚDO
-            ========================================================================= */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          {currentView === 'analytics' ? (
-            <AnalyticsDashboard jwtToken={token} />
-          ) : currentView === 'clients' ? (
-            <ClientContextManager jwtToken={token} />
-          ) : currentView === 'campaigns' ? (
-            <CampaignManager jwtToken={token} />
-          ) : currentView === 'warroom' ? (
-            <WarRoomChat jwtToken={token} />
-          ) : currentView === 'agents' ? (
-            <AgentsDashboard jwtToken={token} />
-          ) : currentView === 'specialists' ? (
-            <SpecialistManager jwtToken={token} />
-          ) : currentView === 'ai' && user?.role === 'AGENCY_ADMIN' ? (
-            <AIProvidersSettings jwtToken={token} />
-          ) : currentView === 'users' && user?.role === 'AGENCY_ADMIN' ? (
-            <UserManagement jwtToken={token} />
-          ) : currentView === 'audit' && user?.role === 'AGENCY_ADMIN' ? (
-            <AuditLogViewer jwtToken={token} />
-          ) : (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-sm text-zinc-400">
-              Esta seção está disponível apenas para administradores da agência.
-            </div>
-          )}
-        </main>
+          {/* =========================================================================
+              ÁREA PRINCIPAL DE CONTEÚDO ANIMADA (FRAMER MOTION)
+              ========================================================================= */}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentView}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                {currentView === 'analytics' ? (
+                  <AnalyticsDashboard jwtToken={token} />
+                ) : currentView === 'clients' ? (
+                  <ClientContextManager jwtToken={token} />
+                ) : currentView === 'campaigns' ? (
+                  <CampaignManager jwtToken={token} />
+                ) : currentView === 'warroom' ? (
+                  <WarRoomChat jwtToken={token} />
+                ) : currentView === 'agents' ? (
+                  <AgentsDashboard jwtToken={token} />
+                ) : currentView === 'specialists' ? (
+                  <SpecialistManager jwtToken={token} />
+                ) : currentView === 'ai' && user?.role === 'AGENCY_ADMIN' ? (
+                  <AIProvidersSettings jwtToken={token} />
+                ) : currentView === 'users' && user?.role === 'AGENCY_ADMIN' ? (
+                  <UserManagement jwtToken={token} />
+                ) : currentView === 'audit' && user?.role === 'AGENCY_ADMIN' ? (
+                  <AuditLogViewer jwtToken={token} />
+                ) : (
+                  <div className="rounded-2xl border border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/60 p-6 text-sm text-slate-600 dark:text-zinc-400">
+                    Esta seção está disponível apenas para administradores da agência.
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </main>
 
-        {/* Footer */}
-        <footer className="border-t border-zinc-800/60 py-4 px-6 text-center text-xs text-zinc-500">
-          Gestor IA SaaS &bull; Plataforma Multi-Tenant com RAG Qdrant, Evolution API e War Room Multi-Agente
-        </footer>
+          {/* Footer */}
+          <footer className="border-t border-slate-200/80 dark:border-zinc-800/60 py-4 px-6 text-center text-xs text-slate-400 dark:text-zinc-500">
+            Gestor IA SaaS &bull; Plataforma Multi-Tenant com RAG Qdrant, Evolution API e War Room Multi-Agente
+          </footer>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
