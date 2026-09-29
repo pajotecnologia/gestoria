@@ -829,26 +829,22 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
     const requestedFormat: '1:1' | '9:16' | '16:9' = ['1:1', '9:16', '16:9'].includes(format) ? format : '1:1';
     const count = Math.min(Math.max(Number(quantity) || 1, 1), 4);
 
-    const STYLE_CONFIG: Record<string, { prefix: string; focus: string; negative: string }> = {
+    const STYLE_CONFIG: Record<string, { prefix: string; focus: string }> = {
       brazilian_people: {
-        prefix: 'Authentic Brazilian commercial advertising RAW photography',
-        focus: 'featuring real everyday Brazilian people, Latin American ethnicity, diverse warm skin tones, natural hair, authentic Brazilian lifestyle and smiles, realistic human skin pores, shot on 85mm lens f/1.8',
-        negative: 'Asian, Japanese, anime, manga, porcelain doll skin, pale skin, cartoon, 3d render, cgi, illustration, fake drawing',
+        prefix: 'Award-winning commercial advertising photography of authentic Brazilian people',
+        focus: 'real everyday Brazilian men, women and children, diverse warm olive and golden brown skin tones, rich dark curly and wavy hair, candid radiant Brazilian smiles, realistic human skin pores, sunny daylight in Rio de Janeiro or São Paulo, shot on Canon EOS R5 with 85mm f/1.2 lens, 8k resolution, National Geographic commercial style RAW photograph, razor-sharp focus, crystal clear details',
       },
       brazilian_business: {
-        prefix: 'Professional Brazilian corporate commercial advertising photography',
-        focus: 'real Brazilian executives and entrepreneurs in a modern office, diverse Latin American professionals, natural skin textures, elegant corporate attire, sharp commercial studio lighting',
-        negative: 'Asian, Japanese, anime, manga, 3d render, cartoon, cgi, doll face',
+        prefix: 'Modern Brazilian corporate advertising photography',
+        focus: 'successful Brazilian business executives and entrepreneurs in a modern São Paulo office, authentic Latin American professionals, natural skin textures, stylish corporate attire, sharp studio softbox lighting, 8k resolution RAW photo',
       },
       brazilian_retail: {
         prefix: 'Vibrant Brazilian retail advertising lifestyle photography',
-        focus: 'authentic Brazilian customers and families enjoying products, lively natural Brazilian ambiance, warm daylight, high energy commercial marketing shot',
-        negative: 'Asian, Japanese, anime, manga, cartoon, 3d render, cgi',
+        focus: 'cheerful Brazilian customers and families in a modern Brazilian store, warm sunny daylight, high energy commercial marketing, sharp focus, 8k resolution RAW photo',
       },
       product_only: {
         prefix: 'High-end commercial product photography',
-        focus: 'minimalist clean advertising studio backdrop, soft commercial softbox lighting, 8k crisp details, ultra-sharp focus on the product, no people',
-        negative: 'people, human, faces, Asian, anime, cartoon, 3d render, cgi, blurry',
+        focus: 'clean minimalist advertising studio podium, soft luxury lighting, razor sharp details, 8k masterpiece, no people',
       },
     };
 
@@ -860,19 +856,19 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
       const translationRes = await generateText({
         provider: 'gemini',
         model: 'gemini-2.5-flash',
-        temperature: 0.4,
+        temperature: 0.3,
         tenantId,
         taskType: 'war_room',
         messages: [
           {
             role: 'system',
-            content: `You are an award-winning Brazilian Art Director creating prompts for photorealistic commercial advertising campaigns in Brazil.
-Strict Rules:
-1. Target the Brazilian market exclusively.
-2. When people are depicted, ALWAYS describe them explicitly as authentic Brazilian / Latin American individuals with diverse natural skin tones (moreno, pardo, mixed, warm undertones), real human skin textures, and genuine expressions.
-3. STRICTLY PROHIBIT East Asian, Japanese, anime, manga, doll-like porcelain skin, or 3D CGI cartoon aesthetics.
+            content: `You are an award-winning Brazilian Advertising Art Director. Create an ultra-detailed, photorealistic commercial photography prompt for an advertising campaign in Brazil.
+Guidelines:
+1. When people or models are depicted, explicitly describe them as authentic Brazilian / Latin American individuals with diverse warm skin tones (moreno, pardo, mixed), natural hair textures, real human skin pores, and genuine warm smiles.
+2. Photographic qualities: Crisp 8k DSLR photography, natural lighting, sharp focus, 85mm lens, realistic textures.
+3. NEVER mention unwanted words (do not write "no anime", "no asian", etc. because text-to-image models accidentally draw mentioned words). Instead, purely describe the desired Brazilian photorealistic scene in rich positive detail.
 4. Style focus: ${styleInfo.focus}.
-5. Write the final prompt in descriptive English in one detailed paragraph, starting with "${styleInfo.prefix}". Explicitly append negative constraints: "Avoid: ${styleInfo.negative}".`
+5. Output ONLY the descriptive English prompt in one paragraph starting with "${styleInfo.prefix}".`
           },
           {
             role: 'user',
@@ -884,7 +880,7 @@ Strict Rules:
         visualPromptInEnglish = translationRes.text.trim();
       }
     } catch {
-      visualPromptInEnglish = `${styleInfo.prefix}: ${prompt.trim()}, ${styleInfo.focus}, 8k, cinematic commercial lighting. Avoid: ${styleInfo.negative}`;
+      visualPromptInEnglish = `${styleInfo.prefix}: ${prompt.trim()}, ${styleInfo.focus}, 8k, cinematic commercial lighting`;
     }
 
     const VARIATION_ANGLES = [

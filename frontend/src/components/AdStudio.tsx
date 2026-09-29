@@ -698,8 +698,8 @@ const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
           .trim()
           .slice(0, 280);
 
-        const width = img.format === '9:16' ? 720 : img.format === '16:9' ? 1280 : 1024;
-        const height = img.format === '9:16' ? 1280 : img.format === '16:9' ? 720 : 1024;
+        const width = img.format === '9:16' ? 768 : img.format === '16:9' ? 1344 : 1024;
+        const height = img.format === '9:16' ? 1344 : img.format === '16:9' ? 768 : 1024;
         
         // No 3º retry tenta com modelo turbo para garantir resposta instantânea caso o flux esteja sobrecarregado
         const model = nextAttempt === 3 ? 'turbo' : 'flux';
@@ -725,8 +725,8 @@ const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
       .trim()
       .slice(0, 280);
 
-    const width = img.format === '9:16' ? 720 : img.format === '16:9' ? 1280 : 1024;
-    const height = img.format === '9:16' ? 1280 : img.format === '16:9' ? 720 : 1024;
+    const width = img.format === '9:16' ? 768 : img.format === '16:9' ? 1344 : 1024;
+    const height = img.format === '9:16' ? 1344 : img.format === '16:9' ? 768 : 1024;
     const retryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${newSeed}`;
     setCurrentUrl(retryUrl);
   };
@@ -766,7 +766,7 @@ const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
 
       {/* Imagem / Loading / Erro */}
       <div className={`relative bg-slate-950 overflow-hidden flex items-center justify-center ${
-        img.format === '9:16' ? 'aspect-[9/16] max-h-96' : img.format === '16:9' ? 'aspect-[16/9]' : 'aspect-square'
+        img.format === '9:16' ? 'aspect-[9/16] w-full' : img.format === '16:9' ? 'aspect-[16/9] w-full' : 'aspect-square w-full'
       }`}>
         {/* Shimmer Placeholder enquanto carrega */}
         {!isLoaded && !isError && (

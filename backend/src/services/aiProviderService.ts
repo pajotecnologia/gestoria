@@ -383,12 +383,12 @@ export async function generateImage(
   let dalleSize: '1024x1024' | '1024x1792' | '1792x1024' = '1024x1024';
 
   if (format === '9:16') {
-    width = 720;
-    height = 1280;
+    width = 768;
+    height = 1344;
     dalleSize = '1024x1792';
   } else if (format === '16:9') {
-    width = 1280;
-    height = 720;
+    width = 1344;
+    height = 768;
     dalleSize = '1792x1024';
   }
 
