@@ -875,13 +875,14 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
         imageUrl: result.url,
         provider: result.provider,
         prompt: prompt.trim(),
+        englishPrompt: variationPrompt,
         title: count > 1 ? `${title || 'Arte do Anúncio'} (Variação ${idx + 1})` : (title || 'Arte do Anúncio'),
         format: requestedFormat,
         generatedAt: new Date(),
       });
-      // Pequeno delay de 150ms para evitar colisões no servidor de imagens
+      // Delay entre gerações para escalonar requisições e garantir estabilidade
       if (idx < count - 1) {
-        await new Promise(r => setTimeout(r, 150));
+        await new Promise(r => setTimeout(r, 300));
       }
     }
 

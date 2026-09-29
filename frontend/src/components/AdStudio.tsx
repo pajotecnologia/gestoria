@@ -22,6 +22,7 @@ interface GeneratedImageItem {
   id: string;
   url: string;
   prompt: string;
+  englishPrompt?: string;
   title: string;
   format: '1:1' | '9:16' | '16:9';
   provider: string;
@@ -140,6 +141,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
         id: String(Date.now() + i),
         url: img.imageUrl,
         prompt: img.prompt,
+        englishPrompt: img.englishPrompt || img.prompt,
         title: img.title || `Variação ${i + 1}`,
         format: img.format || formatToUse,
         provider: img.provider || 'Flux',
@@ -156,15 +158,16 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   };
 
   const handleRegenerateSingleImage = (img: GeneratedImageItem) => {
-    // Regenera com nova semente e prompt higienizado
+    // Regenera com nova semente e prompt visual completo
     const newSeed = Math.floor(Math.random() * 900000) + 100000;
-    const cleanPrompt = img.prompt
+    const promptSource = img.englishPrompt || img.prompt;
+    const cleanPrompt = promptSource
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-zA-Z0-9\s,.-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 250);
+      .slice(0, 280);
     const width = img.format === '9:16' ? 720 : img.format === '16:9' ? 1280 : 1024;
     const height = img.format === '9:16' ? 1280 : img.format === '16:9' ? 720 : 1024;
     const newUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${newSeed}`;
@@ -462,10 +465,11 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {generatedImages.map((img) => (
+                  {generatedImages.map((img, idx) => (
                     <AdImageCardItem
                       key={img.id}
                       img={img}
+                      index={idx}
                       onRegenerate={() => handleRegenerateSingleImage(img)}
                       onDelete={() => handleDeleteImage(img.id)}
                       onPreview={() => setPreviewModalUrl(img.url)}
@@ -484,7 +488,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
               <div className="h-12 w-12 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Sofia Martins & Bruno Castro estão escrevendo seus anúncios...
+                  {copywriterName} & {designerName} estão escrevendo seus anúncios...
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 max-w-md">
                   Criando 5 variações de ganchos de alta atenção, 3 copies completas (AIDA/PAS), 2 roteiros de vídeo e briefings visuais para os criativos.
@@ -522,7 +526,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
               <Megaphone className="h-10 w-10 text-indigo-500 mx-auto" />
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">Copies & Roteiros ainda não gerados</h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
-                Clique no botão <strong>"Gerar Pacote de Anúncios"</strong> para que a Copywriter Sofia e o Designer Bruno montem suas copies, ganchos e roteiros completos.
+                Clique no botão <strong>"Gerar Pacote de Anúncios"</strong> para que a equipe monte suas copies, ganchos e roteiros completos.
               </p>
               <button
                 type="button"
@@ -578,6 +582,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
 
 interface AdImageCardItemProps {
   img: GeneratedImageItem;
+  index: number;
   onRegenerate: () => void;
   onDelete: () => void;
   onPreview: () => void;
@@ -585,6 +590,7 @@ interface AdImageCardItemProps {
 
 const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
   img,
+  index,
   onRegenerate,
   onDelete,
   onPreview,
@@ -592,36 +598,70 @@ const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
   const [retryAttempt, setRetryAttempt] = useState(0);
-  const [currentUrl, setCurrentUrl] = useState(img.url);
+  const [currentUrl, setCurrentUrl] = useState<string>('');
 
+  // Carregamento escalonado (stagger) para evitar saturação no provedor de imagens
   useEffect(() => {
-    setCurrentUrl(img.url);
     setIsLoaded(false);
     setIsError(false);
     setRetryAttempt(0);
-  }, [img.url]);
+
+    const timer = setTimeout(() => {
+      setCurrentUrl(img.url);
+    }, Math.min(index * 400, 2000));
+
+    return () => clearTimeout(timer);
+  }, [img.url, index]);
 
   const handleImageError = () => {
-    if (retryAttempt < 2) {
-      // Auto-retry com delay e nova semente sem quebrar o card
-      setRetryAttempt(prev => prev + 1);
+    if (retryAttempt < 3) {
+      const nextAttempt = retryAttempt + 1;
+      setRetryAttempt(nextAttempt);
+
+      // Backoff progressivo (1.2s, 2.4s, 3.6s)
+      const delay = nextAttempt * 1200;
       setTimeout(() => {
-        const newSeed = Math.floor(Math.random() * 900000) + 100000;
-        const cleanPrompt = img.prompt
+        const newSeed = Math.floor(Math.random() * 900000) + 100000 + nextAttempt * 4444;
+        const promptSource = img.englishPrompt || img.prompt;
+        const cleanPrompt = promptSource
           .normalize('NFD')
           .replace(/[\u0300-\u036f]/g, '')
           .replace(/[^a-zA-Z0-9\s,.-]/g, ' ')
           .replace(/\s+/g, ' ')
           .trim()
-          .slice(0, 250);
+          .slice(0, 280);
+
         const width = img.format === '9:16' ? 720 : img.format === '16:9' ? 1280 : 1024;
         const height = img.format === '9:16' ? 1280 : img.format === '16:9' ? 720 : 1024;
-        const retryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${newSeed}`;
+        
+        // No 3º retry tenta com modelo turbo para garantir resposta instantânea caso o flux esteja sobrecarregado
+        const model = nextAttempt === 3 ? 'turbo' : 'flux';
+        const retryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=${model}&seed=${newSeed}`;
         setCurrentUrl(retryUrl);
-      }, 1200);
+      }, delay);
     } else {
       setIsError(true);
     }
+  };
+
+  const handleManualRetry = () => {
+    setIsError(false);
+    setIsLoaded(false);
+    setRetryAttempt(0);
+    const newSeed = Math.floor(Math.random() * 900000) + 100000;
+    const promptSource = img.englishPrompt || img.prompt;
+    const cleanPrompt = promptSource
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9\s,.-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 280);
+
+    const width = img.format === '9:16' ? 720 : img.format === '16:9' ? 1280 : 1024;
+    const height = img.format === '9:16' ? 1280 : img.format === '16:9' ? 720 : 1024;
+    const retryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${newSeed}`;
+    setCurrentUrl(retryUrl);
   };
 
   return (
@@ -679,11 +719,7 @@ const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
             <div className="flex items-center gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => {
-                  setIsError(false);
-                  setRetryAttempt(0);
-                  onRegenerate();
-                }}
+                onClick={handleManualRetry}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer shadow-xs"
               >
                 <RefreshCw className="h-3 w-3" />
@@ -701,15 +737,17 @@ const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
           </div>
         ) : (
           <>
-            <img
-              src={currentUrl}
-              alt={img.title}
-              className={`w-full h-full object-cover transition duration-300 group-hover:scale-105 ${
-                isLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              onLoad={() => setIsLoaded(true)}
-              onError={handleImageError}
-            />
+            {currentUrl && (
+              <img
+                src={currentUrl}
+                alt={img.title}
+                className={`w-full h-full object-cover transition duration-300 group-hover:scale-105 ${
+                  isLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
+                onLoad={() => setIsLoaded(true)}
+                onError={handleImageError}
+              />
+            )}
 
             {/* Overlay para Zoom */}
             {isLoaded && (
@@ -741,16 +779,18 @@ const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
             >
               Excluir
             </button>
-            <a
-              href={currentUrl}
-              target="_blank"
-              rel="noreferrer"
-              download={`criativo_${img.id}.png`}
-              className="flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
-            >
-              <Download className="h-3 w-3" />
-              <span>Baixar HD</span>
-            </a>
+            {currentUrl && (
+              <a
+                href={currentUrl}
+                target="_blank"
+                rel="noreferrer"
+                download={`criativo_${img.id}.png`}
+                className="flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+              >
+                <Download className="h-3 w-3" />
+                <span>Baixar HD</span>
+              </a>
+            )}
           </div>
         </div>
       </div>
