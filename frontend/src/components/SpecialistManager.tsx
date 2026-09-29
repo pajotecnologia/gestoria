@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, 
   Plus, 
   Trash2, 
   Edit3, 
@@ -357,25 +356,25 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-2xl">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-2xl shadow-lg shadow-indigo-600/30">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">Especialistas do Squad & Treinamento</h1>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Crie, treine e converse 1-a-1 com especialistas customizados da sua agência para debater na Mesa Redonda.
-              </p>
-            </div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+              Especialistas do Squad & Treinamento
+            </h1>
+            <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
+              {specialists.length} {specialists.length === 1 ? 'especialista' : 'especialistas'}
+            </span>
           </div>
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
+            Crie, treine e converse 1-a-1 com especialistas customizados da sua agência para debater na Mesa Redonda.
+          </p>
         </div>
 
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition cursor-pointer self-start sm:self-auto"
+          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-400 hover:to-violet-500 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Criar Novo Especialista</span>
@@ -383,9 +382,9 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
       </div>
 
       {message && (
-        <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 flex items-center justify-between">
+        <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-xs text-indigo-600 dark:text-indigo-300 flex items-center justify-between">
           <span>{message}</span>
-          <button onClick={() => setMessage('')} className="text-slate-400 hover:text-white">✕</button>
+          <button onClick={() => setMessage('')} className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">✕</button>
         </div>
       )}
 
@@ -399,14 +398,14 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
             return (
               <div
                 key={spec.roleKey}
-                className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 flex flex-col justify-between shadow-xl transition space-y-4"
+                className="shadcn-card flex flex-col justify-between shadow-sm hover:shadow-md transition space-y-4"
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-950 text-indigo-400 border border-slate-800">
+                    <span className="text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-100 text-indigo-600 dark:bg-slate-950 dark:text-indigo-400 border border-slate-200 dark:border-slate-800">
                       @{ROLE_TRANSLATIONS[spec.roleKey] || spec.roleKey}
                     </span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${spec.isCustom ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-slate-800 text-slate-400'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${spec.isCustom ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>
                       {spec.isCustom ? 'Customizado' : 'Nativo do Squad'}
                     </span>
                   </div>
@@ -416,32 +415,32 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                       <IconComponent className="w-6 h-6" />
                     </div>
                     <div className="truncate">
-                      <h3 className="text-sm font-bold text-white truncate">{spec.name}</h3>
-                      <p className="text-xs text-slate-400 truncate">{spec.title}</p>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">{spec.name}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{spec.title}</p>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-1.5 text-xs text-slate-400">
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500">Motor IA:</span>
-                      <span className="text-[11px] font-mono text-slate-300 uppercase">{spec.provider} • {spec.model}</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Motor IA:</span>
+                      <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300 uppercase">{spec.provider} • {spec.model}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500">Criatividade (Temp):</span>
-                      <span className="text-[11px] font-mono text-slate-300">{spec.temperature}</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Criatividade (Temp):</span>
+                      <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300">{spec.temperature}</span>
                     </div>
                   </div>
 
-                  <div className="mt-3 bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-[11px] text-slate-400 line-clamp-3 leading-relaxed font-mono">
+                  <div className="mt-3 bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-[11px] text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed font-mono">
                     {spec.systemPrompt}
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                   <button
                     type="button"
                     onClick={() => handleOpenTestChat(spec)}
-                    className="flex-1 flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition cursor-pointer"
+                    className="flex-1 flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20 text-xs font-semibold transition cursor-pointer"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>Conversar 1-a-1</span>
@@ -450,7 +449,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                   <button
                     type="button"
                     onClick={() => handleOpenEdit(spec)}
-                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition cursor-pointer"
+                    className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 text-xs transition cursor-pointer"
                     title="Editar Treinamento"
                   >
                     <Edit3 className="w-4 h-4" />
@@ -460,7 +459,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                     <button
                       type="button"
                       onClick={() => handleDelete(spec)}
-                      className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs transition cursor-pointer"
+                      className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 dark:text-rose-400 text-xs transition cursor-pointer"
                       title="Excluir"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -476,23 +475,23 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
       {/* MODAL DE CRIAÇÃO / EDIÇÃO DO ESPECIALISTA */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 my-8">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+                <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-500/20">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                     {editingSpecialist ? `Editar ${editingSpecialist.name}` : 'Criar Novo Especialista'}
                   </h2>
-                  <p className="text-xs text-slate-400">Parametrize o papel, estilo e modelo de inferência da IA.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Parametrize o papel, estilo e modelo de inferência da IA.</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -501,7 +500,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
             {/* Sugestões de Modelos Prontos */}
             {!editingSpecialist && (
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2">
                   Modelos Prontos de Especialistas (Clique para Carregar):
                 </label>
                 <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -510,10 +509,10 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                       key={tpl.roleKey}
                       type="button"
                       onClick={() => handleApplyTemplate(tpl)}
-                      className="text-left p-2.5 rounded-xl border border-slate-800 bg-slate-950/60 hover:border-indigo-500/40 text-xs transition"
+                      className="text-left p-2.5 rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60 hover:border-indigo-500/40 text-xs transition cursor-pointer"
                     >
-                      <span className="font-bold text-white block truncate">{tpl.name}</span>
-                      <span className="text-[10px] text-slate-400 block truncate">{tpl.title}</span>
+                      <span className="font-bold text-slate-900 dark:text-white block truncate">{tpl.name}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">{tpl.title}</span>
                     </button>
                   ))}
                 </div>
@@ -523,19 +522,19 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
             <form onSubmit={handleSave} className="space-y-4">
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Nome do Especialista</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Nome do Especialista</label>
                   <input
                     required
                     type="text"
                     value={form.name || ''}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="Ex: Dr. Roberto Silva"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="shadcn-input"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                     Tag / Identificador (@Comando)
                   </label>
                   <input
@@ -545,26 +544,26 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                     value={form.roleKey || ''}
                     onChange={(e) => setForm({ ...form, roleKey: e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase() })}
                     placeholder="Ex: TRIBUTARIO, DEV, SEO"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+                    className="shadcn-input disabled:opacity-50"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Cargo / Especialidade Principal</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Cargo / Especialidade Principal</label>
                 <input
                   required
                   type="text"
                   value={form.title || ''}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="Ex: Especialista em Direito Tributário & M&A"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  className="shadcn-input"
                 />
               </div>
 
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Provedor de IA</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Provedor de IA</label>
                   <select
                     value={form.provider || 'gemini'}
                     onChange={(e) => {
@@ -573,7 +572,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                       setForm({ ...form, provider: p, model: defaultModel });
                       setCustomModelMode(false);
                     }}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="shadcn-input cursor-pointer"
                   >
                     <option value="gemini">Google Gemini (Recomendado)</option>
                     <option value="openai">OpenAI</option>
@@ -584,11 +583,11 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-300">Modelo</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Modelo</label>
                     <button
                       type="button"
                       onClick={() => setCustomModelMode(!customModelMode)}
-                      className="text-[10px] text-indigo-400 hover:text-indigo-300 underline"
+                      className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 underline cursor-pointer"
                     >
                       {customModelMode ? 'Ver Lista Padrão' : 'Digitar Outro'}
                     </button>
@@ -600,13 +599,13 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                       value={form.model || ''}
                       onChange={(e) => setForm({ ...form, model: e.target.value })}
                       placeholder="gemini-3.8-flash"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                      className="shadcn-input font-mono"
                     />
                   ) : (
                     <select
                       value={form.model || ''}
                       onChange={(e) => setForm({ ...form, model: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                      className="shadcn-input cursor-pointer font-mono"
                     >
                       {(PROVIDER_MODELS[form.provider || 'gemini'] || []).map((m) => (
                         <option key={m.id} value={m.id}>{m.name}</option>
@@ -616,7 +615,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                     Temperatura ({form.temperature})
                   </label>
                   <input
@@ -626,18 +625,18 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                     step="0.05"
                     value={form.temperature ?? 0.7}
                     onChange={(e) => setForm({ ...form, temperature: parseFloat(e.target.value) })}
-                    className="w-full accent-indigo-500 mt-2"
+                    className="w-full accent-indigo-600 mt-2 cursor-pointer"
                   />
                 </div>
               </div>
 
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Cor do Avatar</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Cor do Avatar</label>
                   <select
                     value={form.avatarColor}
                     onChange={(e) => setForm({ ...form, avatarColor: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="shadcn-input cursor-pointer"
                   >
                     {COLOR_PRESETS.map((c) => (
                       <option key={c.value} value={c.value}>{c.label}</option>
@@ -646,11 +645,11 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Ícone Visual</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Ícone Visual</label>
                   <select
                     value={form.iconName}
                     onChange={(e) => setForm({ ...form, iconName: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    className="shadcn-input cursor-pointer"
                   >
                     <option value="BrainCircuit">Cérebro / Estratégia (BrainCircuit)</option>
                     <option value="PenTool">Caneta / Redação (PenTool)</option>
@@ -666,7 +665,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   Treinamento & System Prompt (Instruções RTCE do Especialista)
                 </label>
                 <textarea
@@ -675,12 +674,12 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                   value={form.systemPrompt || ''}
                   onChange={(e) => setForm({ ...form, systemPrompt: e.target.value })}
                   placeholder={`Você é [Nome], [Cargo] especialista em...\nSua missão é...\nEstruture suas respostas em:\n1. ...\n2. ...`}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500"
+                  className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-xs text-slate-900 font-mono placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-600"
                 />
               </div>
 
               <div className="flex items-center justify-between pt-2">
-                <label className="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                <label className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={form.generateImage || false}
@@ -691,11 +690,11 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                 </label>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:text-white"
+                  className="px-4 py-2.5 rounded-xl text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -714,26 +713,26 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
       {/* MODAL DE SIMULADOR / PLAYGROUND 1-A-1 */}
       {testingSpecialist && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col h-[80vh]">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col h-[80vh]">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center space-x-3">
                 <div className={`w-10 h-10 rounded-2xl bg-gradient-to-tr ${testingSpecialist.avatarColor} flex items-center justify-center text-white shadow-lg`}>
                   <Bot className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-white flex items-center space-x-2">
+                  <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                     <span>Conversa Direta com {testingSpecialist.name}</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-indigo-400">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400">
                       @{ROLE_TRANSLATIONS[testingSpecialist.roleKey] || testingSpecialist.roleKey}
                     </span>
                   </h2>
-                  <p className="text-xs text-slate-400">{testingSpecialist.title}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{testingSpecialist.title}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setTestingSpecialist(null)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -752,13 +751,13 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                     </div>
                   )}
                   <div
-                    className={`max-w-xl p-3.5 rounded-2xl text-xs leading-relaxed shadow-lg ${
+                    className={`max-w-xl p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${
                       m.role === 'user'
                         ? 'bg-indigo-600 text-white rounded-tr-sm'
-                        : 'bg-slate-950 text-slate-200 border border-slate-800 rounded-tl-sm'
+                        : 'bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-tl-sm'
                     }`}
                   >
-                    <div className="flex items-center justify-between pb-1 mb-1 border-b border-white/10 text-[10px] opacity-70">
+                    <div className="flex items-center justify-between pb-1 mb-1 border-b border-slate-200/60 dark:border-white/10 text-[10px] opacity-70">
                       <span>{m.role === 'user' ? 'Você' : testingSpecialist.name}</span>
                       <span>{m.time}</span>
                     </div>
@@ -767,7 +766,7 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
                 </div>
               ))}
               {testLoading && (
-                <div className="flex items-center space-x-2 text-xs text-slate-400 py-2">
+                <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 py-2">
                   <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                   <span>{testingSpecialist.name} está analisando e formulando resposta...</span>
                 </div>
@@ -775,13 +774,13 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
             </div>
 
             {/* Input Form */}
-            <form onSubmit={handleSendTestMessage} className="pt-3 border-t border-slate-800 flex items-center space-x-2">
+            <form onSubmit={handleSendTestMessage} className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center space-x-2">
               <input
                 type="text"
                 value={testPrompt}
                 onChange={(e) => setTestPrompt(e.target.value)}
                 placeholder={`Envie uma pergunta ou briefing para testar ${testingSpecialist.name}...`}
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500"
               />
               <button
                 type="submit"

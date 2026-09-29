@@ -125,26 +125,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-16 sm:pt-24 bg-black/70 backdrop-blur-md animate-in fade-in duration-150" onClick={onClose}>
       <div 
-        className="w-full max-w-xl overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl shadow-black/80 ring-1 ring-white/10"
+        className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 shadow-2xl shadow-black/80 ring-1 ring-slate-900/5 dark:ring-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
-        <div className="flex items-center border-b border-zinc-800 px-4 py-3 bg-zinc-900/50">
-          <Search className="h-5 w-5 text-zinc-400 mr-3 shrink-0" />
+        <div className="flex items-center border-b border-slate-200 dark:border-zinc-800 px-4 py-3 bg-slate-50/80 dark:bg-zinc-900/50">
+          <Search className="h-5 w-5 text-slate-400 dark:text-zinc-400 mr-3 shrink-0" />
           <input
             type="text"
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar telas, comandos, especialistas ou ações..."
-            className="w-full bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 outline-none"
+            className="w-full bg-transparent text-sm text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 outline-none"
           />
-          <kbd className="hidden sm:inline-flex items-center gap-1 rounded bg-zinc-800 px-2 py-0.5 text-[10px] font-mono text-zinc-400 border border-zinc-700">
+          <kbd className="hidden sm:inline-flex items-center gap-1 rounded bg-white dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-mono text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700 shadow-xs">
             ESC
           </kbd>
           <button 
             onClick={onClose}
-            className="sm:hidden ml-2 text-zinc-400 hover:text-white"
+            className="sm:hidden ml-2 text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>
@@ -153,13 +153,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         {/* Results List */}
         <div className="max-h-[60vh] overflow-y-auto p-2 space-y-4">
           {filtered.length === 0 ? (
-            <div className="py-12 text-center text-xs text-zinc-500">
+            <div className="py-12 text-center text-xs text-slate-400 dark:text-zinc-500">
               Nenhum comando ou tela encontrado para "{query}".
             </div>
           ) : (
             filtered.map((cat) => (
               <div key={cat.category} className="space-y-1">
-                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                   {cat.category}
                 </p>
                 {cat.actions.map((act) => {
@@ -175,18 +175,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         }
                         onClose();
                       }}
-                      className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs transition-colors hover:bg-zinc-800/80 group cursor-pointer"
+                      className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs transition-colors hover:bg-slate-100 dark:hover:bg-zinc-800/80 group cursor-pointer"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 group-hover:text-indigo-400 group-hover:border-indigo-500/30 group-hover:bg-indigo-500/10 transition-colors">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:border-indigo-500/30 group-hover:bg-indigo-500/10 transition-colors">
                           <Icon className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="font-medium text-zinc-200 group-hover:text-white">{act.label}</p>
-                          <p className="text-[11px] text-zinc-500 line-clamp-1">{act.desc}</p>
+                          <p className="font-medium text-slate-800 dark:text-zinc-200 group-hover:text-slate-900 dark:group-hover:text-white">{act.label}</p>
+                          <p className="text-[11px] text-slate-500 dark:text-zinc-500 line-clamp-1">{act.desc}</p>
                         </div>
                       </div>
-                      <span className="text-[10px] text-zinc-600 group-hover:text-zinc-400">Ir ↵</span>
+                      <span className="text-[10px] text-slate-400 dark:text-zinc-600 group-hover:text-slate-600 dark:group-hover:text-zinc-400">Ir ↵</span>
                     </button>
                   );
                 })}
@@ -196,15 +196,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Footer info */}
-        <div className="flex items-center justify-between border-t border-zinc-800/80 bg-zinc-900/30 px-4 py-2 text-[10px] text-zinc-500">
+        <div className="flex items-center justify-between border-t border-slate-200 dark:border-zinc-800/80 bg-slate-50 dark:bg-zinc-900/30 px-4 py-2 text-[10px] text-slate-500 dark:text-zinc-500">
           <div className="flex items-center gap-2">
             <span>Navegação Rápida</span>
             <span>•</span>
             <span>Gestor IA SaaS</span>
           </div>
           <div className="flex items-center gap-3">
-            <span><kbd className="font-mono bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">↑↓</kbd> navegar</span>
-            <span><kbd className="font-mono bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">↵</kbd> selecionar</span>
+            <span><kbd className="font-mono bg-white dark:bg-zinc-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-800">↑↓</kbd> navegar</span>
+            <span><kbd className="font-mono bg-white dark:bg-zinc-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-zinc-800">↵</kbd> selecionar</span>
           </div>
         </div>
       </div>

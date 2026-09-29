@@ -451,23 +451,23 @@ export const App: React.FC = () => {
           ========================================================================= */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overflow-x-hidden">
         {/* Topbar Superior Estilo Apex / Shadcn */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 px-4 sm:px-6 backdrop-blur-xl shrink-0">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 dark:border-zinc-800/80 bg-white/90 dark:bg-zinc-950/80 px-4 sm:px-6 backdrop-blur-xl shrink-0">
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Mobile Menu Toggle Button */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-200"
+              className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
             >
               <Menu className="h-5 w-5" />
             </button>
 
             {/* Breadcrumb / Title */}
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-zinc-500 font-medium hidden sm:inline">Gestor IA</span>
-              <span className="text-zinc-600 hidden sm:inline">/</span>
-              <div className="flex items-center gap-1.5 font-semibold text-zinc-200">
-                <CurrentIcon className="h-4 w-4 text-indigo-400" />
+              <span className="text-slate-400 dark:text-zinc-500 font-medium hidden sm:inline">Gestor IA</span>
+              <span className="text-slate-300 dark:text-zinc-600 hidden sm:inline">/</span>
+              <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-zinc-200">
+                <CurrentIcon className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
                 <span>{currentItem?.label || 'Visão Geral'}</span>
               </div>
             </div>
@@ -478,13 +478,13 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setCommandPaletteOpen(true)}
-              className="w-full flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/60 px-3.5 py-1.5 text-xs text-zinc-400 hover:border-zinc-700 hover:text-zinc-300 transition shadow-sm"
+              className="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-slate-100/90 px-3.5 py-1.5 text-xs text-slate-500 hover:border-slate-300 hover:text-slate-800 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-300 transition shadow-sm cursor-pointer"
             >
               <div className="flex items-center gap-2">
-                <Search className="h-3.5 w-3.5 text-zinc-500" />
+                <Search className="h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
                 <span>Buscar telas, comandos ou agentes...</span>
               </div>
-              <kbd className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-mono text-zinc-400 border border-zinc-700">
+              <kbd className="rounded bg-white px-1.5 py-0.5 text-[10px] font-mono text-slate-500 border border-slate-200 shadow-xs dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
                 ⌘K
               </kbd>
             </button>
@@ -496,7 +496,7 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setCommandPaletteOpen(true)}
-              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900 text-zinc-300"
+              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 shadow-sm"
               title="Buscar (Ctrl+K)"
             >
               <Search className="h-4 w-4" />
@@ -506,7 +506,7 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setReleaseModalOpen(true)}
-              className="flex h-9 items-center gap-1.5 rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-2.5 text-xs font-semibold text-indigo-300 hover:bg-indigo-500/20 transition cursor-pointer"
+              className="flex h-9 items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20 transition cursor-pointer"
               title="Ver notas de versão"
             >
               <History className="h-3.5 w-3.5" />
@@ -517,16 +517,16 @@ export const App: React.FC = () => {
             <button
               type="button"
               onClick={toggleTheme}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900/80 text-zinc-300 hover:text-white hover:border-zinc-700 transition cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-300 dark:hover:text-white dark:hover:border-zinc-700 transition cursor-pointer"
               title={theme === 'dark' ? 'Alternar para Tema Claro' : 'Alternar para Tema Escuro'}
             >
-              {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-indigo-400" />}
+              {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-indigo-500" />}
             </button>
 
             {/* Tenant Status Indicator */}
-            <div className="hidden sm:flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-medium text-zinc-300 truncate max-w-[120px]">{tenant?.name}</span>
+            <div className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs text-slate-600 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+              <span className="font-medium text-slate-800 dark:text-zinc-300 truncate max-w-[120px]">{tenant?.name}</span>
             </div>
           </div>
         </header>
@@ -539,20 +539,20 @@ export const App: React.FC = () => {
               onClick={() => setMobileMenuOpen(false)}
               className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm md:hidden"
             />
-            <aside className="fixed inset-y-0 left-0 z-50 w-72 border-r border-zinc-800 bg-zinc-950 p-4 shadow-2xl md:hidden flex flex-col">
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+            <aside className="fixed inset-y-0 left-0 z-50 w-72 border-r border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 p-4 shadow-2xl md:hidden flex flex-col">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
                     <Bot className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-white">Gestor IA</p>
-                    <p className="text-[11px] text-zinc-400">{tenant?.name}</p>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">Gestor IA</p>
+                    <p className="text-[11px] text-slate-500 dark:text-zinc-400">{tenant?.name}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:text-white bg-zinc-900"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white bg-slate-100 dark:bg-zinc-900"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -561,7 +561,7 @@ export const App: React.FC = () => {
               <div className="flex-1 overflow-y-auto py-4 space-y-6">
                 {navigationGroups.map((group) => (
                   <div key={group.title} className="space-y-1">
-                    <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                    <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                       {group.title}
                     </p>
                     {group.items.map((item) => {
@@ -574,16 +574,16 @@ export const App: React.FC = () => {
                           onClick={() => handleViewChange(item.id as typeof currentView)}
                           className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition ${
                             isActive
-                              ? 'bg-zinc-900 text-white border border-zinc-700 font-semibold'
-                              : 'text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-200'
+                              ? 'bg-slate-100 text-slate-900 border border-slate-200 dark:bg-zinc-900 dark:text-white dark:border-zinc-700 font-semibold'
+                              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-400 dark:hover:bg-zinc-900/60 dark:hover:text-zinc-200'
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <Icon className={`h-4 w-4 ${isActive ? 'text-indigo-400' : 'text-zinc-400'}`} />
+                            <Icon className={`h-4 w-4 ${isActive ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-400'}`} />
                             <span>{item.label}</span>
                           </div>
                           {item.badge && (
-                            <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold border border-indigo-500/30 bg-indigo-500/10 text-indigo-400">
+                            <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold border border-indigo-500/30 bg-indigo-500/10 text-indigo-500 dark:text-indigo-400">
                               {item.badge}
                             </span>
                           )}
@@ -594,10 +594,10 @@ export const App: React.FC = () => {
                 ))}
               </div>
 
-              <div className="border-t border-zinc-800 pt-3">
+              <div className="border-t border-slate-200 dark:border-zinc-800 pt-3">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-rose-300 hover:bg-rose-500/20 transition"
+                  className="w-full flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs font-semibold text-rose-600 dark:text-rose-300 hover:bg-rose-500/20 transition"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Sair da Conta</span>
@@ -617,45 +617,45 @@ export const App: React.FC = () => {
             />
             <section
               role="dialog"
-              className="fixed left-1/2 top-1/2 z-[60] w-[min(92vw,42rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl"
+              className="fixed left-1/2 top-1/2 z-[60] w-[min(92vw,42rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 shadow-2xl"
             >
-              <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+              <div className="flex items-center justify-between border-b border-slate-200 dark:border-zinc-800 px-5 py-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <History className="h-4 w-4 text-indigo-400" />
-                    <h2 className="text-sm font-semibold text-zinc-100">Atualizações do Sistema</h2>
+                    <History className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+                    <h2 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">Atualizações do Sistema</h2>
                   </div>
-                  <p className="mt-1 text-[11px] text-zinc-500">Versão Atual: v{APP_VERSION}</p>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-zinc-500">Versão Atual: v{APP_VERSION}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setReleaseModalOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-zinc-400 hover:text-white"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 hover:text-slate-900 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
               <div className="max-h-[70vh] space-y-3 overflow-y-auto p-5">
                 {RELEASE_HISTORY.map((release) => (
-                  <article key={release.version} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
+                  <article key={release.version} className="rounded-xl border border-slate-200 bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900/60 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <span className="text-sm font-semibold text-zinc-100">{release.title}</span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-zinc-100">{release.title}</span>
                         {release.version === APP_VERSION && (
-                          <span className="ml-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                          <span className="ml-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                             Atual
                           </span>
                         )}
                       </div>
-                      <div className="text-right text-[10px] text-zinc-500">
-                        <div className="font-mono text-indigo-300">v{release.version}</div>
+                      <div className="text-right text-[10px] text-slate-500 dark:text-zinc-500">
+                        <div className="font-mono text-indigo-600 dark:text-indigo-300 font-semibold">v{release.version}</div>
                         <div>{release.date}</div>
                       </div>
                     </div>
                     <ul className="mt-3 space-y-1.5">
                       {release.changes.map((change) => (
-                        <li key={change} className="flex gap-2 text-xs text-zinc-400">
-                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
+                        <li key={change} className="flex gap-2 text-xs text-slate-600 dark:text-zinc-400">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500 dark:bg-indigo-400" />
                           <span>{change}</span>
                         </li>
                       ))}

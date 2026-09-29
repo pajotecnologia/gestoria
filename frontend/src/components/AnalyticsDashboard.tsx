@@ -100,32 +100,32 @@ const MetricCard = ({
 }) => {
   const colorMap = {
     indigo: {
-      bg: 'bg-indigo-500/10',
-      text: 'text-indigo-400',
+      bg: 'bg-indigo-500/10 dark:bg-indigo-500/10',
+      text: 'text-indigo-600 dark:text-indigo-400',
       border: 'border-indigo-500/20',
       glow: 'group-hover:border-indigo-500/40',
     },
     emerald: {
-      bg: 'bg-emerald-500/10',
-      text: 'text-emerald-400',
+      bg: 'bg-emerald-500/10 dark:bg-emerald-500/10',
+      text: 'text-emerald-600 dark:text-emerald-400',
       border: 'border-emerald-500/20',
       glow: 'group-hover:border-emerald-500/40',
     },
     cyan: {
-      bg: 'bg-cyan-500/10',
-      text: 'text-cyan-400',
+      bg: 'bg-cyan-500/10 dark:bg-cyan-500/10',
+      text: 'text-cyan-600 dark:text-cyan-400',
       border: 'border-cyan-500/20',
       glow: 'group-hover:border-cyan-500/40',
     },
     violet: {
-      bg: 'bg-violet-500/10',
-      text: 'text-violet-400',
+      bg: 'bg-violet-500/10 dark:bg-violet-500/10',
+      text: 'text-violet-600 dark:text-violet-400',
       border: 'border-violet-500/20',
       glow: 'group-hover:border-violet-500/40',
     },
     amber: {
-      bg: 'bg-amber-500/10',
-      text: 'text-amber-400',
+      bg: 'bg-amber-500/10 dark:bg-amber-500/10',
+      text: 'text-amber-600 dark:text-amber-400',
       border: 'border-amber-500/20',
       glow: 'group-hover:border-amber-500/40',
     },
@@ -135,9 +135,9 @@ const MetricCard = ({
   const isPositive = trend !== null && trend >= 0;
 
   return (
-    <div className={`group relative overflow-hidden rounded-2xl border border-zinc-800/90 bg-zinc-900/60 p-5 backdrop-blur-xl transition-all duration-300 hover:bg-zinc-900/80 hover:shadow-lg hover:shadow-black/40 ${style.glow}`}>
+    <div className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-md dark:border-zinc-800/90 dark:bg-zinc-900/60 dark:hover:bg-zinc-900/80 dark:hover:shadow-black/40 ${style.glow}`}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-zinc-400">{title}</span>
+        <span className="text-xs font-medium text-slate-500 dark:text-zinc-400">{title}</span>
         <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${style.border} ${style.bg} ${style.text}`}>
           <Icon className="h-4 w-4" />
         </div>
@@ -145,7 +145,7 @@ const MetricCard = ({
 
       <div className="mt-4">
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold tracking-tight text-white">{value}</span>
+          <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{value}</span>
         </div>
 
         <div className="mt-3 flex items-center justify-between text-xs">
@@ -153,22 +153,22 @@ const MetricCard = ({
             {trend !== null ? (
               <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                 isPositive 
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                  : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' 
+                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
               }`}>
                 {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                 {formatVariation(trend)}
               </span>
             ) : (
-              <span className="rounded-full bg-zinc-800/80 px-2 py-0.5 text-[10px] font-medium text-zinc-400">
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-zinc-800/80 dark:text-zinc-400">
                 Sem histórico
               </span>
             )}
-            <span className="text-[11px] text-zinc-500">
+            <span className="text-[11px] text-slate-400 dark:text-zinc-500">
               {unavailable ? 'sem eventos' : 'vs. anterior'}
             </span>
           </div>
-          {subtitle && <span className="text-[10px] text-zinc-500">{subtitle}</span>}
+          {subtitle && <span className="text-[10px] text-slate-400 dark:text-zinc-500">{subtitle}</span>}
         </div>
       </div>
     </div>
@@ -204,18 +204,20 @@ const InteractiveChart = ({ data }: { data: Analytics['trend'] }) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-zinc-800/80 pb-4">
         <div>
-          <h4 className="text-sm font-semibold text-white">Evolução de Crescimento & Operação</h4>
-          <p className="text-xs text-zinc-500">Fluxo de empresas ativas, campanhas geradas e chamadas aos Agentes de IA.</p>
+          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Evolução de Crescimento & Operação</h4>
+          <p className="text-xs text-slate-500 dark:text-zinc-400">Fluxo de empresas ativas, campanhas geradas e chamadas aos Agentes de IA.</p>
         </div>
 
         {/* Legend / Filter buttons */}
-        <div className="flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 p-1">
+        <div className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 dark:border-zinc-800 dark:bg-zinc-950 p-1">
           <button
             onClick={() => setActiveMetric('all')}
             className={`rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-              activeMetric === 'all' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'
+              activeMetric === 'all' 
+                ? 'bg-white text-slate-900 shadow-sm dark:bg-zinc-800 dark:text-white' 
+                : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             Todos
@@ -223,7 +225,7 @@ const InteractiveChart = ({ data }: { data: Analytics['trend'] }) => {
           <button
             onClick={() => setActiveMetric('clients')}
             className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-              activeMetric === 'clients' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'text-zinc-400 hover:text-zinc-200'
+              activeMetric === 'clients' ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30' : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-indigo-500" />
@@ -232,7 +234,7 @@ const InteractiveChart = ({ data }: { data: Analytics['trend'] }) => {
           <button
             onClick={() => setActiveMetric('campaigns')}
             className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-              activeMetric === 'campaigns' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-zinc-400 hover:text-zinc-200'
+              activeMetric === 'campaigns' ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30' : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-cyan-400" />
@@ -241,7 +243,7 @@ const InteractiveChart = ({ data }: { data: Analytics['trend'] }) => {
           <button
             onClick={() => setActiveMetric('aiRequests')}
             className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition cursor-pointer ${
-              activeMetric === 'aiRequests' ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : 'text-zinc-400 hover:text-zinc-200'
+              activeMetric === 'aiRequests' ? 'bg-violet-500/20 text-violet-600 dark:text-violet-300 border border-violet-500/30' : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
             }`}
           >
             <span className="h-2 w-2 rounded-full bg-violet-400" />
@@ -272,8 +274,23 @@ const InteractiveChart = ({ data }: { data: Analytics['trend'] }) => {
             const y = h - py - ratio * (h - py * 2);
             return (
               <g key={ratio}>
-                <line x1={px} y1={y} x2={w - px} y2={y} stroke="#27272a" strokeDasharray="4 4" strokeWidth="1" />
-                <text x={px - 8} y={y + 4} fill="#71717a" fontSize="10" textAnchor="end">
+                <line 
+                  x1={px} 
+                  y1={y} 
+                  x2={w - px} 
+                  y2={y} 
+                  stroke="currentColor" 
+                  strokeDasharray="4 4" 
+                  strokeWidth="1" 
+                  className="text-slate-200 dark:text-zinc-800"
+                />
+                <text 
+                  x={px - 8} 
+                  y={y + 4} 
+                  fontSize="10" 
+                  textAnchor="end"
+                  className="fill-slate-400 dark:fill-zinc-500 font-mono"
+                >
                   {Math.round(ratio * maxVal)}
                 </text>
               </g>
@@ -282,7 +299,14 @@ const InteractiveChart = ({ data }: { data: Analytics['trend'] }) => {
 
           {/* X Axis Labels */}
           {data.map((d, i) => (
-            <text key={d.label} x={getX(i)} y={h - 8} fill="#71717a" fontSize="10" textAnchor="middle">
+            <text 
+              key={d.label} 
+              x={getX(i)} 
+              y={h - 8} 
+              fontSize="10" 
+              textAnchor="middle"
+              className="fill-slate-400 dark:fill-zinc-500 font-mono"
+            >
               {d.label}
             </text>
           ))}
@@ -303,7 +327,7 @@ const InteractiveChart = ({ data }: { data: Analytics['trend'] }) => {
             <path d={getPath('clients')} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" />
           )}
           {(activeMetric === 'all' || activeMetric === 'campaigns') && (
-            <path d={getPath('campaigns')} fill="none" stroke="#22d3ee" strokeWidth="2.5" strokeLinecap="round" />
+            <path d={getPath('campaigns')} fill="none" stroke="#06b6d4" strokeWidth="2.5" strokeLinecap="round" />
           )}
           {(activeMetric === 'all' || activeMetric === 'aiRequests') && (
             <path d={getPath('aiRequests')} fill="none" stroke="#a855f7" strokeWidth="2.5" strokeLinecap="round" />
@@ -313,17 +337,41 @@ const InteractiveChart = ({ data }: { data: Analytics['trend'] }) => {
           {data.map((d, i) => (
             <g key={i}>
               {(activeMetric === 'all' || activeMetric === 'clients') && (
-                <circle cx={getX(i)} cy={getY(d.clients)} r="4" fill="#6366f1" stroke="#09090b" strokeWidth="2" className="transition hover:r-6">
+                <circle 
+                  cx={getX(i)} 
+                  cy={getY(d.clients)} 
+                  r="4" 
+                  fill="#6366f1" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  className="text-white dark:text-zinc-950 transition hover:r-6"
+                >
                   <title>{`${d.label} • Empresas: ${d.clients}`}</title>
                 </circle>
               )}
               {(activeMetric === 'all' || activeMetric === 'campaigns') && (
-                <circle cx={getX(i)} cy={getY(d.campaigns)} r="4" fill="#22d3ee" stroke="#09090b" strokeWidth="2" className="transition hover:r-6">
+                <circle 
+                  cx={getX(i)} 
+                  cy={getY(d.campaigns)} 
+                  r="4" 
+                  fill="#06b6d4" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  className="text-white dark:text-zinc-950 transition hover:r-6"
+                >
                   <title>{`${d.label} • Campanhas: ${d.campaigns}`}</title>
                 </circle>
               )}
               {(activeMetric === 'all' || activeMetric === 'aiRequests') && (
-                <circle cx={getX(i)} cy={getY(d.aiRequests)} r="4" fill="#a855f7" stroke="#09090b" strokeWidth="2" className="transition hover:r-6">
+                <circle 
+                  cx={getX(i)} 
+                  cy={getY(d.aiRequests)} 
+                  r="4" 
+                  fill="#a855f7" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  className="text-white dark:text-zinc-950 transition hover:r-6"
+                >
                   <title>{`${d.label} • Chamadas de IA: ${d.aiRequests}`}</title>
                 </circle>
               )}
@@ -368,28 +416,28 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-white sm:text-2xl">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
               Visão Geral & Métricas
             </h1>
-            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
               Tempo Real
             </span>
           </div>
-          <p className="mt-1 text-xs text-zinc-400">
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
             Acompanhe a tração da sua agência, clientes ativos, volume de campanhas e consumo de IA.
           </p>
         </div>
 
         {/* Action controls & Segmented Period Tabs */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <div className="inline-flex rounded-xl border border-zinc-800 bg-zinc-950 p-1">
+          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 dark:border-zinc-800 dark:bg-zinc-950 p-1">
             <button
               onClick={() => setPeriod('7d')}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                 period === '7d' 
-                  ? 'bg-zinc-800 text-white shadow-sm' 
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-zinc-800 dark:text-white' 
+                  : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
               7 Dias
@@ -398,8 +446,8 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
               onClick={() => setPeriod('30d')}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                 period === '30d' 
-                  ? 'bg-zinc-800 text-white shadow-sm' 
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-zinc-800 dark:text-white' 
+                  : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
               30 Dias
@@ -408,8 +456,8 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
               onClick={() => setPeriod('12m')}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                 period === '12m' 
-                  ? 'bg-zinc-800 text-white shadow-sm' 
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-zinc-800 dark:text-white' 
+                  : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
               12 Meses
@@ -420,7 +468,7 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="flex h-9 items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-3 text-xs font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white cursor-pointer"
+            className="flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 hover:text-slate-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white transition-colors cursor-pointer"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Atualizar</span>
@@ -429,7 +477,7 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
       </div>
 
       {error && (
-        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-300">
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-600 dark:text-rose-300">
           {error}
         </div>
       )}
@@ -477,7 +525,7 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
       {/* Charts & Distribution Section */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Main Growth Chart (2 Cols) */}
-        <div className="rounded-2xl border border-zinc-800/90 bg-zinc-900/60 p-5 backdrop-blur-xl lg:col-span-2">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backdrop-blur-xl dark:border-zinc-800/90 dark:bg-zinc-900/60 lg:col-span-2">
           {loading || !data ? (
             <Skeleton className="h-[340px]" />
           ) : (
@@ -486,13 +534,13 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
         </div>
 
         {/* Distribution Card (1 Col) */}
-        <div className="rounded-2xl border border-zinc-800/90 bg-zinc-900/60 p-5 backdrop-blur-xl">
-          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backdrop-blur-xl dark:border-zinc-800/90 dark:bg-zinc-900/60">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-4">
             <div>
-              <h4 className="text-sm font-semibold text-white">Estágio das Campanhas</h4>
-              <p className="text-xs text-zinc-500">Distribuição por status operacional.</p>
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Estágio das Campanhas</h4>
+              <p className="text-xs text-slate-500 dark:text-zinc-400">Distribuição por status operacional.</p>
             </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/10 text-violet-400">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
               <Layers className="h-4 w-4" />
             </div>
           </div>
@@ -501,9 +549,9 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
             {loading || !data ? (
               <Skeleton className="h-48" />
             ) : data.distribution.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 p-8 text-center">
-                <Sparkles className="h-6 w-6 text-zinc-600 mb-2" />
-                <p className="text-xs text-zinc-400">Nenhuma campanha cadastrada no período.</p>
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 p-8 text-center">
+                <Sparkles className="h-6 w-6 text-slate-400 dark:text-zinc-600 mb-2" />
+                <p className="text-xs text-slate-500 dark:text-zinc-400">Nenhuma campanha cadastrada no período.</p>
               </div>
             ) : (
               data.distribution.map((item) => {
@@ -512,10 +560,10 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
                 return (
                   <div key={item.category} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-zinc-300">{item.category}</span>
-                      <span className="font-semibold text-white">{item.value}</span>
+                      <span className="font-medium text-slate-700 dark:text-zinc-300">{item.category}</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">{item.value}</span>
                     </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500"
                         style={{ width: `${pct}%` }}
@@ -530,23 +578,23 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
       </section>
 
       {/* Activity Timeline / Table (Apex Style) */}
-      <section className="rounded-2xl border border-zinc-800/90 bg-zinc-900/60 p-5 backdrop-blur-xl">
-        <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm backdrop-blur-xl dark:border-zinc-800/90 dark:bg-zinc-900/60">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-4">
           <div>
-            <h4 className="text-sm font-semibold text-white">Log de Atividades Recentes</h4>
-            <p className="text-xs text-zinc-500">Ações executadas por usuários e agentes na sua organização.</p>
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Log de Atividades Recentes</h4>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Ações executadas por usuários e agentes na sua organização.</p>
           </div>
-          <div className="flex items-center gap-1 text-xs text-zinc-500">
+          <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-zinc-500">
             <Clock3 className="h-3.5 w-3.5" />
             <span>Últimos registros</span>
           </div>
         </div>
 
-        <div className="mt-4 divide-y divide-zinc-800/50">
+        <div className="mt-4 divide-y divide-slate-100 dark:divide-zinc-800/50">
           {loading || !data ? (
             [1, 2, 3, 4].map((i) => <Skeleton key={i} className="my-2 h-14" />)
           ) : data.activity.length === 0 ? (
-            <p className="py-8 text-center text-xs text-zinc-500">Nenhuma atividade registrada ainda.</p>
+            <p className="py-8 text-center text-xs text-slate-400 dark:text-zinc-500">Nenhuma atividade registrada ainda.</p>
           ) : (
             data.activity.map((act) => {
               const initials = act.userName
@@ -558,17 +606,17 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
               const isError = act.status === 'ERROR';
 
               return (
-                <div key={act.id} className="flex items-center justify-between py-3 hover:bg-zinc-950/40 px-2 rounded-xl transition">
+                <div key={act.id} className="flex items-center justify-between py-3 hover:bg-slate-50 dark:hover:bg-zinc-950/40 px-2 rounded-xl transition">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 text-xs font-bold text-indigo-300">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 text-xs font-bold text-indigo-600 dark:text-indigo-300">
                       {initials}
                     </div>
                     <div className="min-w-0 truncate">
-                      <p className="truncate text-xs font-medium text-zinc-200">
+                      <p className="truncate text-xs font-medium text-slate-800 dark:text-zinc-200">
                         {getActionLabel(act.action)}
                       </p>
-                      <p className="truncate text-[11px] text-zinc-500">
-                        Por <span className="text-zinc-400">{act.userName}</span> • {act.entity}
+                      <p className="truncate text-[11px] text-slate-400 dark:text-zinc-500">
+                        Por <span className="text-slate-600 dark:text-zinc-400">{act.userName}</span> • {act.entity}
                       </p>
                     </div>
                   </div>
@@ -576,13 +624,13 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
                   <div className="flex items-center gap-3 shrink-0 ml-2">
                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
                       isError 
-                        ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' 
-                        : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                        ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400' 
+                        : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                     }`}>
                       {isError ? <XCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
                       {isError ? 'Falha' : 'Sucesso'}
                     </span>
-                    <time className="text-[11px] font-mono text-zinc-500 hidden sm:inline">
+                    <time className="text-[11px] font-mono text-slate-400 dark:text-zinc-500 hidden sm:inline">
                       {new Date(act.createdAt).toLocaleString('pt-BR', {
                         day: '2-digit',
                         month: '2-digit',
