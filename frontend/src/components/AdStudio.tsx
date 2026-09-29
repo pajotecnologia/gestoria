@@ -463,123 +463,13 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {generatedImages.map((img) => (
-                    <div 
+                    <AdImageCardItem
                       key={img.id}
-                      className="group relative rounded-2xl border border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/90 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col"
-                    >
-                      {/* Top Action Bar (Sempre visível e clicável no topo do card) */}
-                      <div className="absolute top-2.5 right-2.5 z-30 flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRegenerateSingleImage(img);
-                          }}
-                          className="h-7 w-7 rounded-lg bg-black/70 text-white hover:bg-indigo-600 hover:text-white flex items-center justify-center transition cursor-pointer shadow-md"
-                          title="Regerar esta imagem com nova semente"
-                        >
-                          <RefreshCw className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteImage(img.id);
-                          }}
-                          className="h-7 w-7 rounded-lg bg-black/70 text-white hover:bg-rose-600 hover:text-white flex items-center justify-center transition cursor-pointer shadow-md"
-                          title="Excluir esta imagem"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-
-                      {/* Tag de Formato e Provedor */}
-                      <div className="absolute top-2.5 left-2.5 z-30 bg-black/70 backdrop-blur-md rounded-lg px-2 py-0.5 text-[10px] font-mono text-white pointer-events-none">
-                        {img.format} &bull; {img.provider}
-                      </div>
-
-                      {/* Área da Imagem / Erro */}
-                      <div className={`relative bg-slate-950 overflow-hidden ${img.format === '9:16' ? 'aspect-[9/16] max-h-96' : img.format === '16:9' ? 'aspect-[16/9]' : 'aspect-square'}`}>
-                        {img.hasError ? (
-                          <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-slate-900 text-slate-400">
-                            <AlertCircle className="h-8 w-8 text-rose-500" />
-                            <div>
-                              <p className="text-xs font-semibold text-slate-200">Falha ao carregar arte</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">O servidor de imagens oscilou momentaneamente.</p>
-                            </div>
-                            <div className="flex items-center gap-2 pt-1">
-                              <button
-                                type="button"
-                                onClick={() => handleRegenerateSingleImage(img)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer shadow-xs"
-                              >
-                                <RefreshCw className="h-3 w-3" />
-                                <span>Tentar Novamente</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteImage(img.id)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white text-xs font-semibold transition cursor-pointer"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                                <span>Excluir</span>
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <img 
-                              src={img.url} 
-                              alt={img.title}
-                              className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
-                              loading="lazy"
-                              onError={() => {
-                                setGeneratedImages(prev => prev.map(item => item.id === img.id ? { ...item, hasError: true } : item));
-                              }}
-                            />
-
-                            {/* Botão de Zoom em Tela Cheia */}
-                            <button
-                              type="button"
-                              onClick={() => setPreviewModalUrl(img.url)}
-                              className="absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 text-white text-xs font-semibold backdrop-blur-xs transition cursor-pointer"
-                            >
-                              <Eye className="h-4 w-4" />
-                              <span>Ver em Tela Cheia</span>
-                            </button>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Rodapé do Card */}
-                      <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
-                        <p className="text-[11px] text-slate-600 dark:text-zinc-400 line-clamp-2 italic">
-                          "{img.prompt}"
-                        </p>
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-[10px]">
-                          <span className="text-slate-400 dark:text-zinc-500">{img.createdAt}</span>
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteImage(img.id)}
-                              className="text-slate-400 hover:text-rose-500 transition font-medium"
-                            >
-                              Excluir
-                            </button>
-                            <a
-                              href={img.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              download={`criativo_${img.id}.png`}
-                              className="flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
-                            >
-                              <Download className="h-3 w-3" />
-                              <span>Baixar HD</span>
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      img={img}
+                      onRegenerate={() => handleRegenerateSingleImage(img)}
+                      onDelete={() => handleDeleteImage(img.id)}
+                      onPreview={() => setPreviewModalUrl(img.url)}
+                    />
                   ))}
                 </div>
               </div>
@@ -682,6 +572,188 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+interface AdImageCardItemProps {
+  img: GeneratedImageItem;
+  onRegenerate: () => void;
+  onDelete: () => void;
+  onPreview: () => void;
+}
+
+const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
+  img,
+  onRegenerate,
+  onDelete,
+  onPreview,
+}) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
+  const [currentUrl, setCurrentUrl] = useState(img.url);
+
+  useEffect(() => {
+    setCurrentUrl(img.url);
+    setIsLoaded(false);
+    setIsError(false);
+    setRetryAttempt(0);
+  }, [img.url]);
+
+  const handleImageError = () => {
+    if (retryAttempt < 2) {
+      // Auto-retry com delay e nova semente sem quebrar o card
+      setRetryAttempt(prev => prev + 1);
+      setTimeout(() => {
+        const newSeed = Math.floor(Math.random() * 900000) + 100000;
+        const cleanPrompt = img.prompt
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9\s,.-]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 250);
+        const width = img.format === '9:16' ? 720 : img.format === '16:9' ? 1280 : 1024;
+        const height = img.format === '9:16' ? 1280 : img.format === '16:9' ? 720 : 1024;
+        const retryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${newSeed}`;
+        setCurrentUrl(retryUrl);
+      }, 1200);
+    } else {
+      setIsError(true);
+    }
+  };
+
+  return (
+    <div className="group relative rounded-2xl border border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/90 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col">
+      {/* Top Action Bar */}
+      <div className="absolute top-2.5 right-2.5 z-30 flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRegenerate();
+          }}
+          className="h-7 w-7 rounded-lg bg-black/75 text-white hover:bg-indigo-600 hover:text-white flex items-center justify-center transition cursor-pointer shadow-md"
+          title="Regerar esta imagem com nova semente"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          className="h-7 w-7 rounded-lg bg-black/75 text-white hover:bg-rose-600 hover:text-white flex items-center justify-center transition cursor-pointer shadow-md"
+          title="Excluir esta imagem"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {/* Tag de Formato e Provedor */}
+      <div className="absolute top-2.5 left-2.5 z-30 bg-black/75 backdrop-blur-md rounded-lg px-2 py-0.5 text-[10px] font-mono text-white pointer-events-none">
+        {img.format} &bull; {img.provider}
+      </div>
+
+      {/* Imagem / Loading / Erro */}
+      <div className={`relative bg-slate-950 overflow-hidden flex items-center justify-center ${
+        img.format === '9:16' ? 'aspect-[9/16] max-h-96' : img.format === '16:9' ? 'aspect-[16/9]' : 'aspect-square'
+      }`}>
+        {/* Shimmer Placeholder enquanto carrega */}
+        {!isLoaded && !isError && (
+          <div className="absolute inset-0 bg-slate-900 animate-pulse flex flex-col items-center justify-center text-slate-400 gap-2">
+            <div className="h-6 w-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-[11px] font-medium">Renderizando arte com IA...</span>
+          </div>
+        )}
+
+        {isError ? (
+          <div className="h-full w-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-slate-900 text-slate-400">
+            <AlertCircle className="h-8 w-8 text-rose-500" />
+            <div>
+              <p className="text-xs font-semibold text-slate-200">Falha ao carregar arte</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">O servidor de imagens oscilou momentaneamente.</p>
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsError(false);
+                  setRetryAttempt(0);
+                  onRegenerate();
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer shadow-xs"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Tentar Novamente</span>
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white text-xs font-semibold transition cursor-pointer"
+              >
+                <Trash2 className="h-3 w-3" />
+                <span>Excluir</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <img
+              src={currentUrl}
+              alt={img.title}
+              className={`w-full h-full object-cover transition duration-300 group-hover:scale-105 ${
+                isLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setIsLoaded(true)}
+              onError={handleImageError}
+            />
+
+            {/* Overlay para Zoom */}
+            {isLoaded && (
+              <button
+                type="button"
+                onClick={onPreview}
+                className="absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 text-white text-xs font-semibold backdrop-blur-xs transition cursor-pointer"
+              >
+                <Eye className="h-4 w-4" />
+                <span>Ver em Tela Cheia</span>
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Rodapé do Card */}
+      <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+        <p className="text-[11px] text-slate-600 dark:text-zinc-400 line-clamp-2 italic">
+          "{img.prompt}"
+        </p>
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800 text-[10px]">
+          <span className="text-slate-400 dark:text-zinc-500">{img.createdAt}</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onDelete}
+              className="text-slate-400 hover:text-rose-500 transition font-medium cursor-pointer"
+            >
+              Excluir
+            </button>
+            <a
+              href={currentUrl}
+              target="_blank"
+              rel="noreferrer"
+              download={`criativo_${img.id}.png`}
+              className="flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
+              <Download className="h-3 w-3" />
+              <span>Baixar HD</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -856,21 +856,34 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
       visualPromptInEnglish = `Authentic Brazilian commercial advertising photography: ${prompt.trim()}, natural Latin American models, realistic skin texture, 8k, modern aesthetic, cinematic studio lighting, premium marketing design`;
     }
 
-    const images = await Promise.all(
-      Array.from({ length: count }).map(async (_, idx) => {
-        const seed = Math.floor(Math.random() * 900000) + 100000 + idx * 777;
-        const result = await generateImage(visualPromptInEnglish, tenantId, { format: requestedFormat, seed });
-        return {
-          id: `${Date.now()}_${idx}`,
-          imageUrl: result.url,
-          provider: result.provider,
-          prompt: prompt.trim(),
-          title: count > 1 ? `${title || 'Arte do Anúncio'} (Variação ${idx + 1})` : (title || 'Arte do Anúncio'),
-          format: requestedFormat,
-          generatedAt: new Date(),
-        };
-      })
-    );
+    const VARIATION_ANGLES = [
+      'front hero angle, candid authentic Brazilian expression, vibrant commercial advertising lighting, clean composition',
+      'lifestyle action shot, warm natural sunlight, happy authentic emotion, realistic Brazilian people',
+      'close-up portrait focusing on genuine smile and human connection, editorial commercial advertising, sharp focus',
+      'modern cinematic environment, high contrast professional studio lighting, sleek aesthetic'
+    ];
+
+    const images: any[] = [];
+    for (let idx = 0; idx < count; idx++) {
+      const angle = VARIATION_ANGLES[idx % VARIATION_ANGLES.length];
+      const variationPrompt = `${visualPromptInEnglish}, ${angle}`;
+      const seed = Math.floor(Math.random() * 800000) + 100000 + idx * 12345;
+      
+      const result = await generateImage(variationPrompt, tenantId, { format: requestedFormat, seed });
+      images.push({
+        id: `${Date.now()}_${idx}`,
+        imageUrl: result.url,
+        provider: result.provider,
+        prompt: prompt.trim(),
+        title: count > 1 ? `${title || 'Arte do Anúncio'} (Variação ${idx + 1})` : (title || 'Arte do Anúncio'),
+        format: requestedFormat,
+        generatedAt: new Date(),
+      });
+      // Pequeno delay de 150ms para evitar colisões no servidor de imagens
+      if (idx < count - 1) {
+        await new Promise(r => setTimeout(r, 150));
+      }
+    }
 
     await writeAuditLog({
       tenantId,
