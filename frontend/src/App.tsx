@@ -67,6 +67,7 @@ export const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [releaseModalOpen, setReleaseModalOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [warRoomModalOpen, setWarRoomModalOpen] = useState(false);
 
   // Estados de Auth
   const [isRegistering, setIsRegistering] = useState(false);
@@ -131,7 +132,11 @@ export const App: React.FC = () => {
   };
 
   const handleViewChange = (view: typeof currentView) => {
-    setCurrentView(view);
+    if (view === 'warroom') {
+      setWarRoomModalOpen(true);
+    } else {
+      setCurrentView(view);
+    }
     setMobileMenuOpen(false);
   };
 
@@ -395,7 +400,7 @@ export const App: React.FC = () => {
 
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = currentView === item.id;
+                  const isActive = item.id === 'warroom' ? warRoomModalOpen : (currentView === item.id && !warRoomModalOpen);
                   
                   const buttonElement = (
                     <button
@@ -628,7 +633,7 @@ export const App: React.FC = () => {
                         </p>
                         {group.items.map((item) => {
                           const Icon = item.icon;
-                          const isActive = currentView === item.id;
+                          const isActive = item.id === 'warroom' ? warRoomModalOpen : (currentView === item.id && !warRoomModalOpen);
                           return (
                             <button
                               key={item.id}
@@ -756,6 +761,29 @@ export const App: React.FC = () => {
             Gestor IA SaaS &bull; Plataforma Multi-Tenant com RAG Qdrant, Evolution API e War Room Multi-Agente
           </footer>
         </div>
+
+        {/* =========================================================================
+            MODAL EM TELA CHEIA - MESA REDONDA MULTI-IA
+            ========================================================================= */}
+        <AnimatePresence>
+          {warRoomModalOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col p-2 sm:p-4"
+            >
+              <div className="w-full h-full rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-2xl overflow-hidden flex flex-col">
+                <WarRoomChat
+                  jwtToken={token}
+                  isModal={true}
+                  onClose={() => setWarRoomModalOpen(false)}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </TooltipProvider>
   );

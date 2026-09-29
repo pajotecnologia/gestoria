@@ -51,6 +51,8 @@ interface RoomMessage {
 
 interface WarRoomChatProps {
   jwtToken: string;
+  onClose?: () => void;
+  isModal?: boolean;
 }
 
 const ROLE_TRANSLATIONS: Record<string, { label: string; shortRole: string; tag: string }> = {
@@ -128,7 +130,7 @@ const ROLE_BADGES: Record<string, { label: string; tag: string; icon: any; gradi
 
 import { Specialist } from './SpecialistManager';
 
-export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
+export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isModal }) => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<RoomMessage[]>([]);
@@ -151,6 +153,17 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
   const [createLoading, setCreateLoading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fechar no ESC quando estiver em modo modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -475,9 +488,11 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
   };
 
   return (
-    <div className="shadcn-card p-0 w-full max-w-full min-w-0 flex flex-col h-[calc(100vh-140px)] min-h-[640px] overflow-hidden">
+    <div className={`shadcn-card p-0 w-full max-w-full min-w-0 flex flex-col overflow-hidden ${
+      isModal ? 'h-full flex-1 border-0 shadow-none rounded-2xl' : 'h-[calc(100vh-140px)] min-h-[640px]'
+    }`}>
       {/* Top Header do War Room */}
-      <div className="px-5 py-3.5 border-b border-slate-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
+      <div className="px-5 py-3.5 border-b border-slate-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/20">
             <Users className="h-5 w-5" />
@@ -530,6 +545,19 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
             <Plus className="h-4 w-4" />
             <span>Nova Sala</span>
           </button>
+
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white transition shadow-sm cursor-pointer ml-1"
+              title="Fechar Mesa Redonda (ESC)"
+            >
+              <X className="h-4 w-4 text-rose-500" />
+              <span>Fechar</span>
+              <kbd className="hidden sm:inline-block ml-1 rounded bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.2 text-[9px] font-mono text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700">ESC</kbd>
+            </button>
+          )}
         </div>
       </div>
 
