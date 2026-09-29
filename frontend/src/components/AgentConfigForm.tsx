@@ -118,19 +118,19 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
   };
 
   return (
-    <div className="w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="shadcn-card p-0 w-full max-w-full min-w-0 overflow-hidden space-y-0">
       {/* Cabeçalho */}
-      <div className="px-6 py-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+      <div className="px-6 py-5 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-bold text-white tracking-wide">Configuração do Agente de IA</h1>
-          <p className="text-xs text-slate-400">Parametrize o comportamento, motor de inferência e RTCE Prompt.</p>
+          <h1 className="text-base font-bold text-slate-900 dark:text-white tracking-wide">Configuração do Agente de IA</h1>
+          <p className="text-xs text-slate-500 dark:text-zinc-400">Parametrize o comportamento, motor de inferência e RTCE Prompt.</p>
         </div>
 
         <button
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/25 transition cursor-pointer shrink-0"
         >
           {saveSuccess ? (
             <>
@@ -147,14 +147,14 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-800 bg-slate-950/40 px-6">
+      <div className="flex border-b border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/40 px-6 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab('general')}
-          className={`flex items-center space-x-2 py-4 px-4 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 py-3.5 px-4 text-xs font-semibold border-b-2 transition cursor-pointer whitespace-nowrap ${
             activeTab === 'general'
-              ? 'border-indigo-500 text-indigo-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200'
           }`}
         >
           <Settings className="w-4 h-4" />
@@ -164,10 +164,10 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('engine')}
-          className={`flex items-center space-x-2 py-4 px-4 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 py-3.5 px-4 text-xs font-semibold border-b-2 transition cursor-pointer whitespace-nowrap ${
             activeTab === 'engine'
-              ? 'border-indigo-500 text-indigo-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200'
           }`}
         >
           <Cpu className="w-4 h-4" />
@@ -177,10 +177,10 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
         <button
           type="button"
           onClick={() => setActiveTab('instructions')}
-          className={`flex items-center space-x-2 py-4 px-4 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 py-3.5 px-4 text-xs font-semibold border-b-2 transition cursor-pointer whitespace-nowrap ${
             activeTab === 'instructions'
-              ? 'border-indigo-500 text-indigo-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200'
           }`}
         >
           <FileCode2 className="w-4 h-4" />
@@ -189,28 +189,28 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
       </div>
 
       {/* Conteúdo das Abas */}
-      <div className="p-6">
+      <div className="p-6 min-w-0 max-w-full">
         {/* ABA GERAL */}
         {activeTab === 'general' && (
-          <div className="space-y-6 max-w-xl">
+          <div className="space-y-5 max-w-xl">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Nome do Agente</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">Nome do Agente</label>
               <input
                 type="text"
                 value={agentName}
                 onChange={(e) => setAgentName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="shadcn-input"
                 placeholder="Ex: Concierge Imobiliário"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Nicho / Segmento do Cliente</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">Nicho / Segmento do Cliente</label>
               <input
                 type="text"
                 value={marketNiche}
                 onChange={(e) => setMarketNiche(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="shadcn-input"
                 placeholder="Ex: E-commerce de Moda, Clínica Médica, Advocacia"
               />
             </div>
@@ -219,13 +219,13 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
 
         {/* ABA MOTOR DE IA */}
         {activeTab === 'engine' && (
-          <div className="space-y-6 max-w-xl">
+          <div className="space-y-5 max-w-xl">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Provedor de IA</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">Provedor de IA</label>
               <select
                 value={provider}
                 onChange={(e) => handleProviderChange(e.target.value as any)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="shadcn-input"
               >
                 <option value="openai">OpenAI (Oficial)</option>
                 <option value="gemini">Google Gemini (Oficial)</option>
@@ -235,11 +235,11 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">Modelo de Inferência</label>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">Modelo de Inferência</label>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                className="shadcn-input"
               >
                 {PROVIDER_MODELS[provider].map((model) => (
                   <option key={model.id} value={model.id}>
@@ -251,8 +251,8 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-slate-300">Temperatura (Criatividade vs Precisão)</label>
-                <span className="text-xs font-mono text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Temperatura (Criatividade vs Precisão)</label>
+                <span className="text-xs font-mono text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
                   {temperature}
                 </span>
               </div>
@@ -263,9 +263,9 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
                 step="0.05"
                 value={temperature}
                 onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                className="w-full accent-indigo-500 bg-slate-800 h-2 rounded-lg cursor-pointer"
+                className="w-full accent-indigo-500 bg-slate-200 dark:bg-zinc-800 h-2 rounded-lg cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+              <div className="flex justify-between text-[10px] text-slate-500 dark:text-zinc-400 mt-1">
                 <span>0.0 (Focado & Rígido)</span>
                 <span>0.5 (Balanceado)</span>
                 <span>1.0 (Mais Criativo)</span>
@@ -276,7 +276,7 @@ export const AgentConfigForm: React.FC<AgentConfigFormProps> = ({
 
         {/* ABA INSTRUÇÕES (PROMPT GENERATOR) */}
         {activeTab === 'instructions' && (
-          <div>
+          <div className="min-w-0 max-w-full">
             <PromptGenerator
               initialStructure={structure}
               initialVariables={variables}

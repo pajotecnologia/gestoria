@@ -310,7 +310,7 @@ export const App: React.FC = () => {
   const CurrentIcon = currentItem?.icon || BarChart3;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex overflow-hidden selection:bg-indigo-500/30">
+    <div className="h-screen w-screen max-w-full bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 flex overflow-hidden selection:bg-indigo-500/30">
       {/* Command Palette Global Modal (Ctrl+K) */}
       <CommandPalette
         isOpen={commandPaletteOpen}
@@ -325,7 +325,7 @@ export const App: React.FC = () => {
           SIDEBAR LATERAL ESQUERDA (ESTILO APEX / SHADCN UI)
           ========================================================================= */}
       <aside 
-        className={`hidden md:flex flex-col border-r border-zinc-800/80 bg-zinc-950 transition-all duration-300 z-30 shrink-0 select-none ${
+        className={`hidden md:flex flex-col border-r border-zinc-800/80 bg-zinc-950 text-zinc-100 transition-all duration-300 z-30 shrink-0 select-none ${
           sidebarCollapsed ? 'w-[72px]' : 'w-64'
         }`}
       >
@@ -449,9 +449,9 @@ export const App: React.FC = () => {
       {/* =========================================================================
           CONTEÚDO PRINCIPAL (HEADER SUPERIOR + VIEW ATIVA)
           ========================================================================= */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto overflow-x-hidden">
         {/* Topbar Superior Estilo Apex / Shadcn */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-zinc-800/80 bg-zinc-950/80 px-4 sm:px-6 backdrop-blur-xl shrink-0">
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-950/80 px-4 sm:px-6 backdrop-blur-xl shrink-0">
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Mobile Menu Toggle Button */}
             <button

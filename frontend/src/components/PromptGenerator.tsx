@@ -249,130 +249,130 @@ export const PromptGenerator: React.FC<PromptGeneratorProps> = ({
   };
 
   return (
-    <div className="w-full bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-6 text-slate-100">
-      <div className="flex items-center justify-between pb-6 border-b border-slate-800">
-        <div className="flex items-center space-x-3">
-          <div className="p-2.5 bg-indigo-600/20 text-indigo-400 rounded-lg border border-indigo-500/30">
-            <Sparkles className="w-5 h-5" />
+    <div className="shadcn-card p-4 sm:p-6 w-full max-w-full min-w-0 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-slate-200 dark:border-zinc-800 gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+            <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Compilador de Prompt RTCE</h2>
-            <p className="text-xs text-slate-400">Framework Role, Task, Context & Execution com variáveis dinâmicas.</p>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Compilador de Prompt RTCE</h2>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Framework Role, Task, Context & Execution com variáveis dinâmicas.</p>
           </div>
         </div>
 
         <button
           type="button"
           onClick={copyToClipboard}
-          className="flex items-center space-x-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg border border-slate-700 transition"
+          className="flex items-center justify-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-xs font-semibold rounded-xl border border-slate-200 dark:border-zinc-700 transition cursor-pointer shrink-0"
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-          <span>{copied ? 'Copiado!' : 'Copiar Prompt'}</span>
+          {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-indigo-500" />}
+          <span>{copied ? 'Prompt Copiado!' : 'Copiar Prompt'}</span>
         </button>
       </div>
 
       {/* Tabs de Seleção de Templates */}
-      <div className="mt-6">
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-3">
+      <div className="space-y-2 max-w-full min-w-0">
+        <label className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block">
           Templates de Mercado Agnósticos
         </label>
-        <div className="flex space-x-2 overflow-x-auto pb-2">
+        <div className="flex flex-wrap gap-2 max-w-full">
           {MARKET_TEMPLATES.map((tmpl) => (
             <button
               type="button"
               key={tmpl.id}
               onClick={() => handleTemplateChange(tmpl.id)}
-              className={`px-4 py-2.5 rounded-lg text-xs font-medium whitespace-nowrap border transition-all flex items-center space-x-2 ${
+              className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all flex items-center gap-2 cursor-pointer ${
                 selectedTemplateId === tmpl.id
-                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/30'
-                  : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/25'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
-              <span>{tmpl.name}</span>
-              <span className="text-[10px] opacity-60 ml-1">({tmpl.niche})</span>
+              <Layers className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-semibold">{tmpl.name}</span>
+              <span className="text-[10px] opacity-70">({tmpl.niche})</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Grade Principal: Inputs e Preview */}
-      <div className="grid gap-6 mt-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2 max-w-full min-w-0">
         {/* Painel Esquerdo: Estrutura RTCE e Variáveis */}
-        <div className="space-y-5">
-          <div className="bg-slate-950/60 border border-slate-800 p-4 rounded-xl">
-            <h3 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-3 flex items-center space-x-2">
-              <RefreshCw className="w-3.5 h-3.5" />
+        <div className="space-y-5 min-w-0">
+          <div className="bg-slate-50 dark:bg-zinc-950/70 border border-slate-200 dark:border-zinc-800 p-4 rounded-xl space-y-3">
+            <h3 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+              <RefreshCw className="h-3.5 w-3.5" />
               <span>Variáveis Dinâmicas do Cliente</span>
             </h3>
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
               {Object.keys(variables).map((varKey) => (
-                <div key={varKey}>
-                  <label className="text-[11px] text-slate-400 font-mono block mb-1">
+                <div key={varKey} className="min-w-0">
+                  <label className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono block mb-1 truncate">
                     {`{{${varKey}}}`}
                   </label>
                   <input
                     type="text"
                     value={variables[varKey]}
                     onChange={(e) => handleVariableChange(varKey, e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                    className="shadcn-input text-xs"
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Role (Papel & Identidade)</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Role (Papel & Identidade)</label>
               <textarea
                 rows={2}
                 value={structure.role}
                 onChange={(e) => handleStructureChange('role', e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="shadcn-input resize-y min-h-[60px]"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Task (Objetivo & Tarefas)</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Task (Objetivo & Tarefas)</label>
               <textarea
                 rows={2}
                 value={structure.task}
                 onChange={(e) => handleStructureChange('task', e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="shadcn-input resize-y min-h-[60px]"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Context (Contexto do Negócio)</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Context (Contexto do Negócio)</label>
               <textarea
                 rows={2}
                 value={structure.context}
                 onChange={(e) => handleStructureChange('context', e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="shadcn-input resize-y min-h-[60px]"
               />
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1">Execution (Diretrizes & Tom de Voz)</label>
+              <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300 block mb-1">Execution (Diretrizes & Tom de Voz)</label>
               <textarea
                 rows={2}
                 value={structure.execution}
                 onChange={(e) => handleStructureChange('execution', e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="shadcn-input resize-y min-h-[60px]"
               />
             </div>
           </div>
         </div>
 
         {/* Painel Direito: Preview em Tempo Real */}
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-2">
-              <FileText className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="flex flex-col min-w-0 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+              <FileText className="h-3.5 w-3.5 text-emerald-500" />
               <span>Preview do Prompt Compilado (System Prompt)</span>
             </label>
-            <span className="text-[10px] text-slate-500 font-mono">{compiledPrompt.length} caracteres</span>
+            <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono">{compiledPrompt.length} caracteres</span>
           </div>
 
-          <div className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-emerald-300/90 whitespace-pre-wrap leading-relaxed overflow-y-auto max-h-[520px] select-all shadow-inner">
+          <div className="flex-1 bg-slate-900 text-emerald-400 border border-slate-800 rounded-xl p-4 font-mono text-xs whitespace-pre-wrap break-words leading-relaxed overflow-y-auto max-h-[520px] select-all shadow-inner">
             {compiledPrompt}
           </div>
         </div>
