@@ -288,6 +288,10 @@ model Campaign {
   metaCampaignId  String?
   metaLastSyncAt  DateTime?
 
+  // Ad Studio: Criativos, Copies e Roteiros gerados
+  adCreatives           String?   @db.Text
+  adCreativesGeneratedAt DateTime?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.3.0';
 
 export type ReleaseItem = {
   version: string;
@@ -8,6 +8,18 @@ export type ReleaseItem = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: '1.3.0',
+    date: '29/09/2026',
+    title: 'Ad Creative Studio, Sincronização Meta Ads, Relatórios PDF & Benchmarking',
+    changes: [
+      'Ad Creative Studio: Geração automatizada de Hooks de alta conversão, Copies (AIDA, PAS, Storytelling), Roteiros de Vídeo (Reels/TikTok) e Briefings Visuais para designers.',
+      'Sincronização 1-clique com Meta Marketing Graph API (Insights) puxando Gastos, Impressões, Cliques, Conversões e Receita.',
+      'Exportação Executiva em PDF / Impressão de Alta Qualidade para Apresentação de Estratégias e Relatórios de Performance.',
+      'Aba de Benchmarking no Dashboard comparando ROAS, CPL, CTR e Taxa de Conversão entre todas as campanhas da agência.',
+      'Navegação reestruturada com foco em Planejamento Estratégico, Criação e Inteligência de Mídia Paga.',
+    ],
+  },
   {
     version: '1.2.0',
     date: '28/09/2026',

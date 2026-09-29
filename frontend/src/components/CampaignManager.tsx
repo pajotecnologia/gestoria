@@ -17,9 +17,11 @@ import {
   TrendingUp,
   Bot,
   RefreshCw,
-  Radio
+  Radio,
+  Printer
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
+import { exportReportToPdf } from '../utils/pdfExport';
 
 const formatMoney = (v: number | null | undefined) => 
   v === null || v === undefined || isNaN(v) ? 'R$ 0,00' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -918,6 +920,34 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
                 >
                   {copiedStrategy ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
                   <span>{copiedStrategy ? 'Copiado!' : 'Copiar Texto'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => exportReportToPdf({
+                    title: `Plano Estratégico: ${viewingStrategyCampaign.name}`,
+                    subtitle: `Objetivo: ${viewingStrategyCampaign.objective}`,
+                    clientName: viewingStrategyCampaign.client?.name || 'Cliente',
+                    sections: [
+                      {
+                        title: 'Diretrizes da Campanha',
+                        content: `Empresa: ${viewingStrategyCampaign.client?.name || 'N/A'}\nObjetivo: ${viewingStrategyCampaign.objective}\nPúblico: ${viewingStrategyCampaign.audience || 'Geral'}\nCanais: ${viewingStrategyCampaign.channels || 'Meta / Google'}`,
+                        badge: 'Briefing',
+                      },
+                      {
+                        title: 'Estratégia Compilada (Roberto & Especialistas IA)',
+                        content: typeof viewingStrategyCampaign.strategy === 'string'
+                          ? viewingStrategyCampaign.strategy
+                          : JSON.stringify(viewingStrategyCampaign.strategy, null, 2),
+                        badge: 'Estratégia IA',
+                      },
+                    ],
+                  })}
+                  className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 transition cursor-pointer shadow-xs"
+                  title="Exportar Estratégia em PDF"
+                >
+                  <Printer className="h-4 w-4 text-indigo-500" />
+                  <span>Exportar PDF</span>
                 </button>
 
                 <button

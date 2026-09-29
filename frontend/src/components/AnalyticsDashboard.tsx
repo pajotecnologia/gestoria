@@ -23,9 +23,13 @@ import {
   X,
   Search,
   Activity,
-  Radio
+  Radio,
+  Printer,
+  Award,
+  Zap
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
+import { exportReportToPdf } from '../utils/pdfExport';
 
 type Period = '7d' | '30d' | '12m';
 
@@ -117,6 +121,7 @@ const getActionLabel = (v: string) => {
     CAMPAIGN_METRICS_UPDATED: 'Métricas de tráfego atualizadas',
     CAMPAIGN_AI_DIAGNOSTIC_GENERATED: 'Diagnóstico IA gerado',
     CAMPAIGN_META_SYNCED: 'Sincronizado com Meta Ads',
+    CAMPAIGN_AD_CREATIVES_GENERATED: 'Criativos & Copies gerados',
     CLIENT_CREATED: 'Empresa cadastrada',
     CLIENT_UPDATED: 'Empresa atualizada',
     CLIENT_DELETED: 'Empresa excluída',
@@ -415,7 +420,7 @@ const InteractiveChart = ({ data }: { data: Analytics['trend'] }) => {
 };
 
 export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
-  const [activeTab, setActiveTab] = useState<'performance' | 'agency'>('performance');
+  const [activeTab, setActiveTab] = useState<'performance' | 'benchmark' | 'agency'>('performance');
   const [period, setPeriod] = useState<Period>('30d');
   const [data, setData] = useState<Analytics | null>(null);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -506,6 +511,25 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
   const avgCPA = totalConversions > 0 ? totalSpend / totalConversions : 0;
   const avgROAS = totalSpend > 0 ? totalRevenue / totalSpend : 0;
   const netProfit = totalRevenue - totalSpend;
+
+  const handleExportPerformancePdf = () => {
+    exportReportToPdf({
+      title: 'Relatório Executivo de Performance & Tráfego Pago',
+      subtitle: `Consolidado de ${campaigns.length} campanhas de marketing`,
+      kpis: [
+        { label: 'Investimento Total', value: formatMoney(totalSpend), hint: `${formatNumber(totalImpressions)} impressões` },
+        { label: 'Faturamento Total', value: formatMoney(totalRevenue), hint: `Lucro: ${formatMoney(netProfit)}` },
+        { label: 'ROAS Consolidado', value: `${avgROAS.toFixed(2)}x`, hint: `Retorno sobre anúncio` },
+        { label: 'Total de Leads / Vendas', value: formatNumber(totalConversions), hint: `CPL Médio: ${formatMoney(avgCPA)}` },
+        { label: 'Cliques Totais & CTR', value: formatNumber(totalClicks), hint: `CTR Médio: ${formatPercent(avgCTR)}` },
+      ],
+      sections: campaigns.map(c => ({
+        title: `Campanha: ${c.name} (${c.client?.name || 'Cliente'})`,
+        badge: c.isActive ? 'Ativa' : 'Pausada',
+        content: `• Objetivo: ${c.objective}\n• Investimento: ${formatMoney(c.spend)} | Leads: ${formatNumber(c.conversions)} | ROAS: ${c.spend && c.spend > 0 ? ((c.revenue || 0)/c.spend).toFixed(2) : '0.00'}x | Receita: ${formatMoney(c.revenue)}\n${c.aiDiagnostic ? `\n--- DIAGNÓSTICO IA (RENATA & DR. ARTHUR) ---\n${c.aiDiagnostic}` : ''}`,
+      })),
+    });
+  };
 
   const openMetricsModal = (c: Campaign) => {
     setEditingCampaign(c);
@@ -673,6 +697,18 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
     c.objective?.toLowerCase().includes(searchCampaign.toLowerCase())
   );
 
+  // Ordenação para Benchmarking
+  const benchmarkCampaigns = [...campaigns].sort((a, b) => {
+    const roasA = a.spend && a.spend > 0 ? (a.revenue || 0) / a.spend : 0;
+    const roasB = b.spend && b.spend > 0 ? (b.revenue || 0) / b.spend : 0;
+    return roasB - roasA;
+  });
+
+  const topRoasCampaign = benchmarkCampaigns[0];
+  const lowestCplCampaign = [...campaigns]
+    .filter(c => (c.conversions || 0) > 0 && (c.spend || 0) > 0)
+    .sort((a, b) => ((a.spend || 0) / (a.conversions || 1)) - ((b.spend || 0) / (b.conversions || 1)))[0];
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -688,7 +724,7 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-            Acompanhe métricas reais de anúncios, sincronize direto com o <b>Meta Ads (Graph API)</b> e gere diagnósticos com IA.
+            Acompanhe métricas reais de anúncios, sincronize com o <b>Meta Ads (Graph API)</b> e gere diagnósticos com IA.
           </p>
         </div>
 
@@ -704,7 +740,18 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
               }`}
             >
               <TrendingUp className="h-3.5 w-3.5" />
-              <span>Performance & IA</span>
+              <span>Performance</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('benchmark')}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                activeTab === 'benchmark' 
+                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-zinc-800 dark:text-indigo-400' 
+                  : 'text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              }`}
+            >
+              <Award className="h-3.5 w-3.5" />
+              <span>Benchmarking</span>
             </button>
             <button
               onClick={() => setActiveTab('agency')}
@@ -715,9 +762,19 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
               }`}
             >
               <BarChart3 className="h-3.5 w-3.5" />
-              <span>Visão da Agência</span>
+              <span>Visão Geral</span>
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={handleExportPerformancePdf}
+            className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition cursor-pointer shadow-xs"
+            title="Exportar Relatório Consolidado em PDF"
+          >
+            <Printer className="h-3.5 w-3.5 text-indigo-500" />
+            <span>Exportar PDF</span>
+          </button>
 
           <button
             type="button"
@@ -963,7 +1020,125 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
       )}
 
       {/* =========================================================================
-          ABA 2: VISÃO GERAL DA AGÊNCIA (GRÁFICOS, DISTRIBUIÇÃO & ATIVIDADES)
+          ABA 2: BENCHMARKING & COMPARATIVO DE CAMPANHAS
+          ========================================================================= */}
+      {activeTab === 'benchmark' && (
+        <div className="space-y-6">
+          {/* Highlights Cards */}
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                <Award className="h-4 w-4" />
+                <span>Campeã em ROAS</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mt-2 truncate">
+                {topRoasCampaign?.name || 'N/A'}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+                Empresa: {topRoasCampaign?.client?.name || 'N/A'}
+              </p>
+              <div className="mt-3 text-2xl font-black text-amber-600 dark:text-amber-400">
+                {topRoasCampaign?.spend && topRoasCampaign.spend > 0 ? ((topRoasCampaign.revenue || 0) / topRoasCampaign.spend).toFixed(2) + 'x' : '0.00x'}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                <Zap className="h-4 w-4" />
+                <span>Menor Custo por Lead (CPL)</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mt-2 truncate">
+                {lowestCplCampaign?.name || 'N/A'}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+                Empresa: {lowestCplCampaign?.client?.name || 'N/A'}
+              </p>
+              <div className="mt-3 text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                {lowestCplCampaign ? formatMoney((lowestCplCampaign.spend || 0) / (lowestCplCampaign.conversions || 1)) : 'R$ 0,00'}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                <TrendingUp className="h-4 w-4" />
+                <span>Faturamento Total Gerado</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mt-2 truncate">
+                {formatMoney(totalRevenue)}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+                Lucro Líquido Real: {formatMoney(netProfit)}
+              </p>
+              <div className="mt-3 text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                {avgROAS.toFixed(2)}x ROAS Médio
+              </div>
+            </div>
+          </section>
+
+          {/* Ranking Table */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-zinc-800/90 dark:bg-zinc-900/60 space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Ranking de Performance por Campanha</h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400">Classificação ordenada por maior ROAS e eficiência de conversão.</p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 font-medium">
+                    <th className="py-2.5 px-3">Posição / Campanha</th>
+                    <th className="py-2.5 px-3">Empresa</th>
+                    <th className="py-2.5 px-3">Investimento</th>
+                    <th className="py-2.5 px-3">Leads</th>
+                    <th className="py-2.5 px-3">CPL Médio</th>
+                    <th className="py-2.5 px-3">Receita</th>
+                    <th className="py-2.5 px-3">ROAS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
+                  {benchmarkCampaigns.map((c, index) => {
+                    const spend = c.spend || 0;
+                    const conv = c.conversions || 0;
+                    const rev = c.revenue || 0;
+                    const cpl = conv > 0 ? spend / conv : 0;
+                    const roas = spend > 0 ? rev / spend : 0;
+
+                    return (
+                      <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-zinc-950/40 transition">
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-2">
+                            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${
+                              index === 0 ? 'bg-amber-500 text-white' : index === 1 ? 'bg-slate-400 text-white' : index === 2 ? 'bg-amber-700 text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400'
+                            }`}>
+                              {index + 1}
+                            </span>
+                            <span className="font-semibold text-slate-900 dark:text-white">{c.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 text-slate-600 dark:text-zinc-400">{c.client?.name || 'N/A'}</td>
+                        <td className="py-3 px-3 font-medium text-slate-900 dark:text-white">{formatMoney(spend)}</td>
+                        <td className="py-3 px-3 font-semibold text-emerald-600 dark:text-emerald-400">{formatNumber(conv)}</td>
+                        <td className="py-3 px-3 text-slate-700 dark:text-zinc-300">{formatMoney(cpl)}</td>
+                        <td className="py-3 px-3 font-semibold text-slate-900 dark:text-white">{formatMoney(rev)}</td>
+                        <td className="py-3 px-3">
+                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+                            roas >= 2 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
+                          }`}>
+                            {roas.toFixed(2)}x
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* =========================================================================
+          ABA 3: VISÃO GERAL DA AGÊNCIA (GRÁFICOS, DISTRIBUIÇÃO & ATIVIDADES)
           ========================================================================= */}
       {activeTab === 'agency' && (
         <div className="space-y-6">
@@ -1216,7 +1391,7 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
                   className="shadcn-input font-mono text-xs"
                 />
                 <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1">
-                  Token gerado no Meta for Developers / Graph API Explorer com permissões <code>ads_read</code> e <code>read_insights</code>.
+                  Token com permissões <code>ads_read</code> e <code>read_insights</code>.
                 </p>
               </div>
 

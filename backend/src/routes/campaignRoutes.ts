@@ -655,4 +655,139 @@ router.post('/:id/sync-meta', async (req: Request, res: Response): Promise<void>
   }
 });
 
+// Ad Studio: Gerar Criativos, Copies e Roteiros de Anúncios com Sofia, Bruno e Roberto
+router.post('/:id/generate-ad-creatives', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const { id } = req.params;
+
+    const campaign = await prisma.campaign.findFirst({
+      where: { id, tenantId },
+      include: {
+        client: {
+          include: {
+            resources: true,
+            knowledgeFiles: {
+              where: { status: 'READY' },
+              select: { fileName: true, extractedText: true },
+              take: 8,
+            },
+          },
+        },
+      },
+    });
+
+    if (!campaign) {
+      res.status(404).json({ error: 'Campanha não encontrada.' });
+      return;
+    }
+
+    const specialists = await getActiveSpecialistsForTenant(tenantId);
+    const copywriter = specialists.find((item) => item.roleKey === 'COPYWRITER');
+    const designer = specialists.find((item) => item.roleKey === 'DESIGNER');
+    const strategist = specialists.find((item) => item.roleKey === 'STRATEGIST');
+
+    const prompt = `Você é a Sofia Martins (Copywriter de Resposta Direta), o Bruno Castro (Diretor de Arte & Criativos) e o Roberto Mendes (Estrategista Chefe).
+Sua missão: Criar o pacote definitivo de criativos, copies, ganchos e roteiros de anúncios para a campanha abaixo.
+
+### 🏢 CONTEXTO DO CLIENTE / EMPRESA:
+- Empresa: ${campaign.client.name}
+- Segmento: ${campaign.client.segment || 'Não informado'}
+- Público-Alvo: ${campaign.client.targetAudience || campaign.audience || 'Não informado'}
+- Oferta Principal: ${campaign.client.productsOffers || campaign.offer || 'Não informado'}
+- Tom de Marca: ${campaign.client.brandVoice || 'Profissional e Persuasivo'}
+- Diferenciais: ${campaign.client.description || 'Não informado'}
+
+### 🎯 BRIEFING DA CAMPANHA:
+- Nome: ${campaign.name}
+- Objetivo: ${campaign.objective}
+- Canais de Mídia: ${campaign.channels || 'Meta Ads (Facebook & Instagram), TikTok, Google'}
+- Orçamento: ${campaign.budget || 'N/A'}
+- Estratégia Aprovada: ${campaign.strategy ? campaign.strategy.slice(0, 1500) : 'Estratégia padrão'}
+
+### 📦 PACOTE DE ENTREGAS OBRIGATÓRIO (Estruture em Markdown limpo e organizado):
+
+## 1. 🪝 5 GANCHOS / HOOKS DE ALTA RETENÇÃO (Para os primeiros 3 segundos ou Títulos de Anúncio)
+- **Gancho 1 (Padrão de Interrupção / Choque):** ...
+- **Gancho 2 (Dor Específica / Identificação Imediata):** ...
+- **Gancho 3 (Curiosidade / Segredo Revelado):** ...
+- **Gancho 4 (Desejo / Transformação Rápida):** ...
+- **Gancho 5 (Prova Social / Estatística Impactante):** ...
+
+## 2. 📝 3 VARIAÇÕES DE COPY COMPLETAS PARA ANÚNCIOS (Meta Ads / Instagram)
+- **Variação A (Estrutura AIDA - Atenção, Interesse, Desejo, Ação):**
+  - Texto completo com formatação, emojis moderados e CTA clara.
+- **Variação B (Estrutura PAS - Problema, Agitação, Solução):**
+  - Foco na dor e na urgência da solução.
+- **Variação C (Estrutura Storytelling & Conexão):**
+  - História de transformação ou caso prático realista.
+
+## 3. 🎬 2 ROTEIROS DE VÍDEO DINÂMICOS (Reels / TikTok / Stories - 30 a 45 segundos)
+- **Roteiro 1 (Vídeo Direto ao Ponto - "Você sabia que..."):**
+  - [0-3s]: Cena & Fala do Gancho
+  - [3-15s]: Desenvolvimento do Problema
+  - [15-30s]: Apresentação da Oferta & Benefícios
+  - [30-40s]: Chamada para Ação (CTA)
+- **Roteiro 2 (Vídeo Quebra de Objeção / Comparativo):**
+  - Estrutura completa com indicações de texto na tela e ângulo de câmera.
+
+## 4. 🎨 BRIEFING VISUAL PARA O DESIGNER (Criativos Estáticos e Carrosséis)
+- **Arte Estática 1 (Foco na Oferta):** Sugestão de imagem/foto, cores de contraste, texto principal da imagem (máx 20% da tela) e botão sugerido.
+- **Carrossel de 4 Telas (Foco em Conteúdo + Venda):**
+  - Tela 1 (Capa com Gancho): ...
+  - Tela 2 (O Erro Comum): ...
+  - Tela 3 (A Solução / Método): ...
+  - Tela 4 (Chamada Final / CTA): ...
+
+## 5. 💬 3 OPÇÕES DE BOTÕES & CTAs FINAIS
+- CTAs de alta taxa de conversão testadas para o nicho.`;
+
+    const result = await generateText({
+      provider: copywriter?.provider || strategist?.provider || 'openai',
+      model: copywriter?.model || strategist?.model || 'gpt-4o',
+      temperature: 0.6,
+      tenantId,
+      taskType: 'war_room',
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é um time de ponta de copywriters de resposta direta e diretores de arte. Escreva anúncios persuasivos, magnéticos, profissionais e prontos para publicar.',
+        },
+        { role: 'user', content: prompt },
+      ],
+    });
+
+    const updated = await prisma.campaign.update({
+      where: { id },
+      data: {
+        adCreatives: result.text,
+        adCreativesGeneratedAt: new Date(),
+      },
+      include: {
+        client: { select: { id: true, name: true, segment: true } },
+      },
+    });
+
+    await writeAuditLog({
+      tenantId,
+      userId: req.user?.userId,
+      action: 'CAMPAIGN_AD_CREATIVES_GENERATED',
+      entity: 'Campaign',
+      entityId: id,
+      metadata: { provider: result.provider },
+    }).catch(() => undefined);
+
+    res.json({
+      success: true,
+      data: serializeCampaign(updated),
+      adCreatives: result.text,
+      generatedAt: updated.adCreativesGeneratedAt,
+      provider: result.provider,
+    });
+  } catch (error: any) {
+    console.error('[Ad Studio Generation Error]:', error);
+    res.status(500).json({ error: error?.message || 'Falha ao gerar anúncios e criativos.' });
+  }
+});
+
 export default router;

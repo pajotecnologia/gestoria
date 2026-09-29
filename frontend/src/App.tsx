@@ -18,6 +18,7 @@ import {
   Sparkles, 
   Sun,
   Users, 
+  Wand2,
   X
 } from 'lucide-react';
 
@@ -32,6 +33,7 @@ import { AuditLogViewer } from './components/AuditLogViewer';
 import { ClientContextManager } from './components/ClientContextManager';
 import { CampaignManager } from './components/CampaignManager';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
+import { AdStudio } from './components/AdStudio';
 import { CommandPalette } from './components/CommandPalette';
 import { APP_VERSION, RELEASE_HISTORY } from './version';
 import {
@@ -62,7 +64,7 @@ export const App: React.FC = () => {
   });
 
   // Navegação Principal (Padrão: Analytics no estilo Apex)
-  const [currentView, setCurrentView] = useState<'analytics' | 'clients' | 'campaigns' | 'warroom' | 'agents' | 'specialists' | 'ai' | 'users' | 'audit'>('analytics');
+  const [currentView, setCurrentView] = useState<'analytics' | 'clients' | 'campaigns' | 'adstudio' | 'warroom' | 'agents' | 'specialists' | 'ai' | 'users' | 'audit'>('analytics');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [releaseModalOpen, setReleaseModalOpen] = useState(false);
@@ -161,19 +163,20 @@ export const App: React.FC = () => {
 
   const navigationGroups = [
     {
-      title: 'VISÃO GERAL',
+      title: 'VISÃO GERAL & PERFORMANCE',
       items: [
         { id: 'analytics', label: 'Painel & Métricas', icon: BarChart3, badge: 'Tempo Real' },
-        { id: 'clients', label: 'Empresas & Clientes', icon: Building2 },
         { id: 'campaigns', label: 'Campanhas & Estratégias', icon: FolderKanban },
+        { id: 'adstudio', label: 'Ad Creative Studio', icon: Wand2, badge: 'Novo' },
+        { id: 'clients', label: 'Context Hub & Clientes', icon: Building2 },
       ]
     },
     {
       title: 'INTELIGÊNCIA ARTIFICIAL',
       items: [
         { id: 'warroom', label: 'Mesa Redonda Multi-IA', icon: MessageSquare, badge: 'Ctrl+M' },
-        { id: 'agents', label: 'Agentes WhatsApp', icon: Radio },
         { id: 'specialists', label: 'Equipe de Especialistas', icon: Sparkles },
+        { id: 'agents', label: 'Canais WhatsApp', icon: Radio },
       ]
     },
     ...(user?.role === 'AGENCY_ADMIN' ? [
@@ -744,6 +747,8 @@ export const App: React.FC = () => {
                   <ClientContextManager jwtToken={token} />
                 ) : currentView === 'campaigns' ? (
                   <CampaignManager jwtToken={token} />
+                ) : currentView === 'adstudio' ? (
+                  <AdStudio jwtToken={token} />
                 ) : currentView === 'warroom' ? (
                   <WarRoomChat jwtToken={token} />
                 ) : currentView === 'agents' ? (
