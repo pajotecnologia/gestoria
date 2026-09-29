@@ -452,9 +452,16 @@ export async function generateImage(
 
   // Fallback para geração instantânea FLUX em alta resolução com dimensões corretas
   try {
-    const seed = options?.seed || Math.floor(Math.random() * 1000000);
-    // Limpa pontuação excessiva para evitar falha no endpoint
-    const safePrompt = cleanPrompt.replace(/[\n\r\t]+/g, ' ').slice(0, 400);
+    const seed = options?.seed || Math.floor(Math.random() * 900000) + 100000;
+    // Remove acentos e caracteres especiais para URL 100% segura e compatível
+    const safePrompt = cleanPrompt
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9\s,.-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 300);
+
     const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}`;
     if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'flux', model: 'flux.1-schnell' });
     return { url: fluxUrl, provider: 'flux' };

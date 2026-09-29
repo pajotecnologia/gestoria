@@ -815,17 +815,37 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
     const requestedFormat: '1:1' | '9:16' | '16:9' = ['1:1', '9:16', '16:9'].includes(format) ? format : '1:1';
     const count = Math.min(Math.max(Number(quantity) || 1, 1), 4);
 
-    // Refina o prompt com dados de marca e estilo de alta conversão
-    const enhancedPrompt = [
-      `High-converting professional marketing ad visual: ${prompt.trim()}`,
-      campaign.client.brandVoice ? `Style: ${campaign.client.brandVoice}` : '',
-      'Ultra high resolution, 8k, modern commercial advertising photography, cinematic lighting, sleek aesthetic, clean layout',
-    ].filter(Boolean).join(', ');
+    // Otimiza o prompt para inglês com foco em fotografia publicitária de alto padrão
+    let visualPromptInEnglish = prompt.trim();
+    try {
+      const translationRes = await generateText({
+        provider: 'gemini',
+        model: 'gemini-2.5-flash',
+        temperature: 0.6,
+        tenantId,
+        taskType: 'war_room',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an award-winning advertising art director and DALL-E/Midjourney/Flux prompt engineer. Convert the user marketing campaign idea into a vivid, photorealistic English visual prompt for commercial advertising. Describe subjects, studio lighting, colors, mood, textures, 8k resolution. Output ONLY the English prompt in one paragraph, no quotes, no conversational filler.'
+          },
+          {
+            role: 'user',
+            content: `Campaign: ${campaign.name}. Business: ${campaign.client.name} (${campaign.client.segment || 'Business'}). Objective: ${campaign.objective}. Idea: ${prompt}`
+          }
+        ]
+      });
+      if (translationRes?.text?.trim()) {
+        visualPromptInEnglish = translationRes.text.trim();
+      }
+    } catch {
+      visualPromptInEnglish = `High-converting commercial advertising photography: ${prompt.trim()}, 8k, modern aesthetic, cinematic studio lighting, premium design`;
+    }
 
     const images = await Promise.all(
       Array.from({ length: count }).map(async (_, idx) => {
         const seed = Math.floor(Math.random() * 900000) + 100000 + idx * 777;
-        const result = await generateImage(enhancedPrompt, tenantId, { format: requestedFormat, seed });
+        const result = await generateImage(visualPromptInEnglish, tenantId, { format: requestedFormat, seed });
         return {
           id: `${Date.now()}_${idx}`,
           imageUrl: result.url,
