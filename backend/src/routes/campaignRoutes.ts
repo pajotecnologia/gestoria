@@ -686,8 +686,22 @@ router.post('/:id/generate-ad-creatives', async (req: Request, res: Response): P
     const copywriter = specialists.find((item) => item.roleKey === 'COPYWRITER');
     const designer = specialists.find((item) => item.roleKey === 'DESIGNER');
     const strategist = specialists.find((item) => item.roleKey === 'STRATEGIST');
+    const videomaker = specialists.find((item) => item.roleKey === 'VIDEOMAKER');
 
-    const prompt = `Você é a Sofia Martins (Copywriter de Resposta Direta), o Bruno Castro (Diretor de Arte & Criativos) e o Roberto Mendes (Estrategista Chefe).
+    const copywriterName = copywriter?.name || 'Camila Rocha';
+    const designerName = designer?.name || 'Lucas Viana';
+    const strategistName = strategist?.name || 'Dr. Arthur Valente';
+    const videomakerName = videomaker?.name || 'Gabriel Sato';
+
+    const prompt = `Você representa o squad de especialistas de elite da agência:
+- ✍️ Copywriting de Resposta Direta: ${copywriterName} (${copywriter?.title || 'Copywriter Sênior'})
+- 🎨 Direção de Arte & Visual: ${designerName} (${designer?.title || 'Diretor de Arte'})
+- 🎯 Estratégia & Posicionamento: ${strategistName} (${strategist?.title || 'Estrategista Chefe'})
+- 🎬 Roteiros de Vídeo & Reels: ${videomakerName} (${videomaker?.title || 'Roteirista de Vídeos'})
+
+${copywriter?.systemPrompt ? `### DIRETRIZES ESPECÍFICAS DE COPYWRITING (${copywriterName}):\n${copywriter.systemPrompt}\n` : ''}
+${designer?.systemPrompt ? `### DIRETRIZES ESPECÍFICAS DE DESIGN & ESTÉTICA (${designerName}):\n${designer.systemPrompt}\n` : ''}
+
 Sua missão: Criar o pacote definitivo de criativos, copies, ganchos e roteiros de anúncios para a campanha abaixo.
 
 ### 🏢 CONTEXTO DO CLIENTE / EMPRESA:

@@ -32,6 +32,7 @@ interface GeneratedImageItem {
 export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   const [clients, setClients] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [specialists, setSpecialists] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -51,11 +52,13 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [c, p] = await Promise.all([
+      const [c, p, s] = await Promise.all([
         fetch(apiUrl('/api/clients'), { headers: { Authorization: 'Bearer ' + jwtToken } }).then(r => r.json()),
         fetch(apiUrl('/api/campaigns'), { headers: { Authorization: 'Bearer ' + jwtToken } }).then(r => r.json()),
+        fetch(apiUrl('/api/specialists'), { headers: { Authorization: 'Bearer ' + jwtToken } }).then(r => r.json()).catch(() => ({ data: [] })),
       ]);
       setClients(c.data || []);
+      setSpecialists(s.data || []);
       const campList = p.data || [];
       setCampaigns(campList);
       if (campList.length > 0 && !selectedCampaignId) {
@@ -205,6 +208,11 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
     ? campaigns.filter(c => c.clientId === selectedClientId)
     : campaigns;
 
+  const copywriter = specialists.find(s => s.roleKey === 'COPYWRITER');
+  const designer = specialists.find(s => s.roleKey === 'DESIGNER');
+  const copywriterName = copywriter?.name || 'Camila Rocha';
+  const designerName = designer?.name || 'Lucas Viana';
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -215,11 +223,11 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
               Ad Studio: Criativos, Copies & Imagens com IA
             </h1>
             <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-500 dark:text-indigo-400">
-              Sofia & Bruno IA
+              {copywriterName} & {designerName}
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-            Gere ganchos magnéticos (hooks), copies completas (AIDA/PAS), roteiros para Reels/TikTok e pacotes de imagens de alta conversão.
+            Gere ganchos magnéticos, copies (AIDA/PAS), roteiros de vídeo e pacotes de imagens usando as personas e diretrizes da sua <b>Equipe de Especialistas</b>.
           </p>
         </div>
 
