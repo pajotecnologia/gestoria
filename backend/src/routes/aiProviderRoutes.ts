@@ -125,6 +125,7 @@ router.post('/:id/test', async (req: Request, res: Response): Promise<void> => {
     });
 
     const latencyMs = Date.now() - startTime;
+    const replyText = result.text.trim();
 
     await prisma.aiProviderAccount.update({
       where: { id: account.id },
@@ -133,9 +134,12 @@ router.post('/:id/test', async (req: Request, res: Response): Promise<void> => {
 
     res.json({
       success: true,
+      latencyMs,
+      replyPreview: replyText,
       data: {
         latencyMs,
-        reply: result.text.trim(),
+        reply: replyText,
+        replyPreview: replyText,
         provider: account.provider,
         model: account.model,
         message: `Conectado com sucesso em ${latencyMs}ms!`
@@ -160,7 +164,7 @@ router.post('/:id/test', async (req: Request, res: Response): Promise<void> => {
 });
 
 // Testar credencial antes de salvar (teste rápido do formulário)
-router.post('/test-unsaved', async (req: Request, res: Response): Promise<void> => {
+const handleTestUnsaved = async (req: Request, res: Response): Promise<void> => {
   const { provider, model, apiKey } = req.body;
   if (!provider || !apiKey) {
     res.status(400).json({ error: 'Provedor e Chave/URL são obrigatórios para o teste.' });
@@ -176,12 +180,16 @@ router.post('/test-unsaved', async (req: Request, res: Response): Promise<void> 
     });
 
     const latencyMs = Date.now() - startTime;
+    const replyText = result.text.trim();
 
     res.json({
       success: true,
+      latencyMs,
+      replyPreview: replyText,
       data: {
         latencyMs,
-        reply: result.text.trim(),
+        reply: replyText,
+        replyPreview: replyText,
         message: `Conexão validada com sucesso em ${latencyMs}ms!`
       }
     });
@@ -195,7 +203,10 @@ router.post('/test-unsaved', async (req: Request, res: Response): Promise<void> 
       message: `Falha na validação (${latencyMs}ms): ${errMsg}`
     });
   }
-});
+};
+
+router.post('/test-unsaved', handleTestUnsaved);
+router.post('/test-connection', handleTestUnsaved);
 
 router.get('/:id/health', async (req: Request, res: Response): Promise<void> => {
   const account = await prisma.aiProviderAccount.findFirst({

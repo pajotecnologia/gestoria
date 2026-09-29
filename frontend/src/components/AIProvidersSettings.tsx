@@ -168,15 +168,17 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
           headers: { Authorization: `Bearer ${jwtToken}` }
         });
         const data = await res.json();
-        if (res.ok && data.success) {
-          setModalTestResult({ success: true, message: `Conexão bem sucedida! Latência: ${data.latencyMs}ms. Resposta: "${data.replyPreview}"` });
+        if (res.ok && (data.success || data.data)) {
+          const latency = data.data?.latencyMs ?? data.latencyMs ?? 0;
+          const reply = data.data?.reply ?? data.data?.replyPreview ?? data.replyPreview ?? data.data?.message ?? 'Conexão OK';
+          setModalTestResult({ success: true, message: `Conexão bem sucedida! Latência: ${latency}ms. Resposta: "${reply}"` });
         } else {
-          setModalTestResult({ success: false, message: data.error || data.details || 'Falha no teste de conexão.' });
+          setModalTestResult({ success: false, message: data.error || data.details || data.message || 'Falha no teste de conexão.' });
         }
         return;
       }
 
-      const res = await fetch(apiUrl('/api/ai-providers/test-connection'), {
+      const res = await fetch(apiUrl('/api/ai-providers/test-unsaved'), {
         method: 'POST',
         headers: { Authorization: `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -186,10 +188,12 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         })
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        setModalTestResult({ success: true, message: `Conexão bem sucedida! Latência: ${data.latencyMs}ms. Resposta da IA: "${data.replyPreview}"` });
+      if (res.ok && (data.success || data.data)) {
+        const latency = data.data?.latencyMs ?? data.latencyMs ?? 0;
+        const reply = data.data?.reply ?? data.data?.replyPreview ?? data.replyPreview ?? data.data?.message ?? 'Conexão OK';
+        setModalTestResult({ success: true, message: `Conexão bem sucedida! Latência: ${latency}ms. Resposta da IA: "${reply}"` });
       } else {
-        setModalTestResult({ success: false, message: data.error || data.details || 'Falha no teste de conexão.' });
+        setModalTestResult({ success: false, message: data.error || data.details || data.message || 'Falha no teste de conexão.' });
       }
     } catch (err: any) {
       setModalTestResult({ success: false, message: err.message || 'Erro ao testar conexão.' });
@@ -208,15 +212,17 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok && (data.success || data.data)) {
+        const latency = data.data?.latencyMs ?? data.latencyMs ?? 0;
+        const reply = data.data?.reply ?? data.data?.replyPreview ?? data.replyPreview ?? data.data?.message ?? 'Conexão OK';
         setTestResults(prev => ({
           ...prev,
-          [id]: { success: true, latencyMs: data.latencyMs, message: `Online! Latência: ${data.latencyMs}ms. Resposta: "${data.replyPreview}"` }
+          [id]: { success: true, latencyMs: latency, message: `Online! Latência: ${latency}ms. Resposta: "${reply}"` }
         }));
       } else {
         setTestResults(prev => ({
           ...prev,
-          [id]: { success: false, message: data.error || data.details || 'Falha no teste.' }
+          [id]: { success: false, message: data.error || data.details || data.message || 'Falha no teste.' }
         }));
       }
     } catch (err: any) {
