@@ -10,7 +10,10 @@ import {
   Download,
   Wand2,
   Eye,
-  Layers
+  Layers,
+  RefreshCw,
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
 import { exportReportToPdf } from '../utils/pdfExport';
@@ -20,9 +23,10 @@ interface GeneratedImageItem {
   url: string;
   prompt: string;
   title: string;
-  format: string;
+  format: '1:1' | '9:16' | '16:9';
   provider: string;
   createdAt: string;
+  hasError?: boolean;
 }
 
 export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
@@ -37,6 +41,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   // Estados de Geração de Imagem com IA
   const [imagePrompt, setImagePrompt] = useState<string>('');
   const [imageFormat, setImageFormat] = useState<'1:1' | '9:16' | '16:9'>('1:1');
+  const [imageQuantity, setImageQuantity] = useState<number>(3);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImageItem[]>([]);
   const [previewModalUrl, setPreviewModalUrl] = useState<string | null>(null);
@@ -69,7 +74,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   // Atualiza o prompt inicial de imagem quando muda de campanha
   useEffect(() => {
     if (selectedCampaign) {
-      const defaultIdea = `Anúncio profissional de alta conversão para ${selectedCampaign.name}. Empresa: ${selectedCampaign.client?.name || 'Marca'}. Objetivo: ${selectedCampaign.objective}. Visual moderno, iluminação de estúdio comercial, estética premium e limpa.`;
+      const defaultIdea = `Anúncio profissional de alta conversão para ${selectedCampaign.name}. Empresa: ${selectedCampaign.client?.name || 'Marca'}. Objetivo: ${selectedCampaign.objective}. Visual moderno, iluminação de estúdio comercial, estética premium.`;
       setImagePrompt(defaultIdea);
     }
   }, [selectedCampaignId]);
@@ -102,8 +107,13 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
     }
   };
 
-  const handleGenerateImage = async () => {
-    if (!selectedCampaignId || !imagePrompt.trim()) return;
+  const handleGenerateImages = async (customPrompt?: string, customFormat?: '1:1' | '9:16' | '16:9') => {
+    if (!selectedCampaignId) return;
+    const promptToUse = (customPrompt || imagePrompt).trim();
+    if (!promptToUse) return;
+
+    const formatToUse = customFormat || imageFormat;
+
     setImageGenerating(true);
     try {
       const res = await fetch(apiUrl(`/api/campaigns/${selectedCampaignId}/generate-ad-image`), {
@@ -113,31 +123,48 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt: imagePrompt.trim(),
+          prompt: promptToUse,
           title: `Arte: ${selectedCampaign?.name || 'Campanha'}`,
-          format: imageFormat,
+          format: formatToUse,
+          quantity: imageQuantity,
         }),
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Falha ao gerar imagem.');
+      if (!res.ok) throw new Error(json.error || 'Falha ao gerar imagens.');
 
-      const newImage: GeneratedImageItem = {
-        id: String(Date.now()),
-        url: json.imageUrl,
-        prompt: json.prompt,
-        title: json.title,
-        format: json.format || imageFormat,
-        provider: json.provider || 'IA Visual',
+      const newImagesList: GeneratedImageItem[] = (json.images || [json]).map((img: any, i: number) => ({
+        id: String(Date.now() + i),
+        url: img.imageUrl,
+        prompt: img.prompt,
+        title: img.title || `Variação ${i + 1}`,
+        format: img.format || formatToUse,
+        provider: img.provider || 'Flux',
         createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
+        hasError: false,
+      }));
 
-      setGeneratedImages(prev => [newImage, ...prev]);
+      setGeneratedImages(prev => [...newImagesList, ...prev]);
     } catch (err: any) {
-      window.alert(err.message || 'Falha na geração da imagem.');
+      window.alert(err.message || 'Falha na geração das imagens.');
     } finally {
       setImageGenerating(false);
     }
+  };
+
+  const handleRegenerateSingleImage = (img: GeneratedImageItem) => {
+    // Regenera substituindo a imagem que falhou ou atualizando com nova seed
+    const newSeed = Math.floor(Math.random() * 900000) + 100000;
+    const cleanPrompt = img.prompt.replace(/[\n\r\t]+/g, ' ').slice(0, 300);
+    const width = img.format === '9:16' ? 720 : img.format === '16:9' ? 1280 : 1024;
+    const height = img.format === '9:16' ? 1280 : img.format === '16:9' ? 720 : 1024;
+    const newUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${newSeed}`;
+
+    setGeneratedImages(prev => prev.map(item => item.id === img.id ? { ...item, url: newUrl, hasError: false } : item));
+  };
+
+  const handleDeleteImage = (id: string) => {
+    setGeneratedImages(prev => prev.filter(item => item.id !== id));
   };
 
   const handleExportPdf = () => {
@@ -159,8 +186,8 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
         },
         ...(generatedImages.length > 0 ? [
           {
-            title: 'Artes e Conceitos Visuais Gerados por IA',
-            content: generatedImages.map((img, i) => `Arte #${i + 1} (${img.format}) - Prompt: ${img.prompt} | Link HD: ${img.url}`).join('\n\n'),
+            title: `Artes e Conceitos Visuais Gerados por IA (${generatedImages.length} imagens)`,
+            content: generatedImages.map((img, i) => `Arte #${i + 1} (${img.format}) - Prompt: ${img.prompt}\nLink Imagem HD: ${img.url}`).join('\n\n'),
             badge: 'Galeria Visual',
           }
         ] : []),
@@ -186,7 +213,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-            Gere ganchos magnéticos (hooks), copies completas (AIDA/PAS), roteiros para Reels/TikTok e imagens de alta conversão para seus anúncios.
+            Gere ganchos magnéticos (hooks), copies completas (AIDA/PAS), roteiros para Reels/TikTok e pacotes de imagens de alta conversão.
           </p>
         </div>
 
@@ -279,7 +306,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
               MÓDULO 1: GERADOR DE IMAGENS DE ANÚNCIOS COM IA (FLUX / DALL-E 3)
               ========================================================================= */}
           <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/5 via-white to-violet-500/5 dark:from-indigo-950/20 dark:via-zinc-900/60 dark:to-violet-950/20 p-5 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 border border-indigo-500/20">
                   <ImageIcon className="h-4 w-4" />
@@ -292,40 +319,59 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
                     </span>
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                    Crie imagens publicitárias realistas e profissionais com 1 clique para alimentar seus criativos no Meta Ads / Instagram.
+                    Gere variações realistas e profissionais em alta resolução com 1 clique para alimentar seus criativos no Meta Ads / Instagram.
                   </p>
                 </div>
               </div>
 
-              {/* Formato do Anúncio */}
-              <div className="flex items-center gap-1.5 self-start sm:self-auto bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
-                <button
-                  type="button"
-                  onClick={() => setImageFormat('1:1')}
-                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition ${
-                    imageFormat === '1:1' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
-                  }`}
-                >
-                  1:1 Feed
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setImageFormat('9:16')}
-                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition ${
-                    imageFormat === '9:16' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
-                  }`}
-                >
-                  9:16 Story/Reels
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setImageFormat('16:9')}
-                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition ${
-                    imageFormat === '16:9' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
-                  }`}
-                >
-                  16:9 Banner
-                </button>
+              {/* Controles de Formato e Quantidade */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Formato do Anúncio */}
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+                  <button
+                    type="button"
+                    onClick={() => setImageFormat('1:1')}
+                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition ${
+                      imageFormat === '1:1' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                    }`}
+                  >
+                    1:1 Feed
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageFormat('9:16')}
+                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition ${
+                      imageFormat === '9:16' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                    }`}
+                  >
+                    9:16 Story
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageFormat('16:9')}
+                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition ${
+                      imageFormat === '16:9' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                    }`}
+                  >
+                    16:9 Banner
+                  </button>
+                </div>
+
+                {/* Quantidade de Variações */}
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+                  {[1, 2, 3, 4].map((qty) => (
+                    <button
+                      key={qty}
+                      type="button"
+                      onClick={() => setImageQuantity(qty)}
+                      className={`px-2 py-1 text-[11px] font-semibold rounded-lg transition ${
+                        imageQuantity === qty ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                      }`}
+                    >
+                      {qty} {qty === 1 ? 'img' : 'vars'}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -336,19 +382,19 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
                   type="text"
                   value={imagePrompt}
                   onChange={(e) => setImagePrompt(e.target.value)}
-                  placeholder="Descreva a imagem que deseja gerar (Ex: Foto profissional de empresária usando o produto com iluminação suave e moderna)..."
-                  className="shadcn-input text-xs pr-20"
+                  placeholder="Descreva a imagem que deseja gerar (Ex: Foto profissional de alta conversão, modelo sorrindo segurando produto, iluminação moderna)..."
+                  className="shadcn-input text-xs"
                 />
               </div>
 
               <button
                 type="button"
                 disabled={imageGenerating || !imagePrompt.trim()}
-                onClick={handleGenerateImage}
+                onClick={() => handleGenerateImages()}
                 className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition cursor-pointer shrink-0"
               >
                 <Wand2 className={`h-4 w-4 ${imageGenerating ? 'animate-spin' : ''}`} />
-                <span>{imageGenerating ? 'Gerando Imagem...' : '🎨 Gerar Imagem com IA'}</span>
+                <span>{imageGenerating ? 'Gerando Imagens...' : `🎨 Gerar ${imageQuantity} Variaç${imageQuantity > 1 ? 'ões' : 'ão'} com IA`}</span>
               </button>
             </div>
 
@@ -358,8 +404,17 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
                     <Layers className="h-3.5 w-3.5 text-indigo-500" />
-                    <span>Imagens Geradas para esta Campanha ({generatedImages.length})</span>
+                    <span>Imagens Geradas ({generatedImages.length})</span>
                   </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setGeneratedImages([])}
+                    className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-rose-500 transition"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    <span>Limpar Galeria</span>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -368,24 +423,63 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
                       key={img.id}
                       className="group relative rounded-2xl border border-slate-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/90 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col"
                     >
-                      <div className="relative aspect-square bg-slate-950 overflow-hidden">
-                        <img 
-                          src={img.url} 
-                          alt={img.title}
-                          className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                        <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md rounded-lg px-2 py-0.5 text-[10px] font-mono text-white">
-                          {img.format} &bull; {img.provider}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setPreviewModalUrl(img.url)}
-                          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 text-white text-xs font-semibold backdrop-blur-xs transition cursor-pointer"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>Ver em Tela Cheia</span>
-                        </button>
+                      <div className={`relative bg-slate-950 overflow-hidden ${img.format === '9:16' ? 'aspect-[9/16] max-h-96' : img.format === '16:9' ? 'aspect-[16/9]' : 'aspect-square'}`}>
+                        {img.hasError ? (
+                          <div className="h-full w-full flex flex-col items-center justify-center p-4 text-center space-y-2 bg-slate-900 text-slate-400">
+                            <AlertCircle className="h-6 w-6 text-rose-400" />
+                            <p className="text-xs font-medium">Erro ao carregar imagem</p>
+                            <button
+                              type="button"
+                              onClick={() => handleRegenerateSingleImage(img)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 text-white text-[10px] font-bold"
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                              <span>Regerar</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <img 
+                              src={img.url} 
+                              alt={img.title}
+                              className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
+                              loading="lazy"
+                              onError={() => {
+                                setGeneratedImages(prev => prev.map(item => item.id === img.id ? { ...item, hasError: true } : item));
+                              }}
+                            />
+                            <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md rounded-lg px-2 py-0.5 text-[10px] font-mono text-white">
+                              {img.format} &bull; {img.provider}
+                            </div>
+                            <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleRegenerateSingleImage(img)}
+                                className="h-7 w-7 rounded-lg bg-black/60 text-white hover:bg-black/80 flex items-center justify-center transition"
+                                title="Regerar esta variação com nova semente"
+                              >
+                                <RefreshCw className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteImage(img.id)}
+                                className="h-7 w-7 rounded-lg bg-black/60 text-white hover:text-rose-400 hover:bg-black/80 flex items-center justify-center transition"
+                                title="Excluir imagem"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModalUrl(img.url)}
+                              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 text-white text-xs font-semibold backdrop-blur-xs transition cursor-pointer"
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span>Ver em Tela Cheia</span>
+                            </button>
+                          </>
+                        )}
                       </div>
 
                       <div className="p-3 flex-1 flex flex-col justify-between space-y-2">

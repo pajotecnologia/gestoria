@@ -367,13 +367,30 @@ export async function generateEmbeddings(input: string[], tenantId?: string): Pr
 
 export async function generateImage(
   prompt: string,
-  tenantId?: string
+  tenantId?: string,
+  options?: { format?: '1:1' | '9:16' | '16:9'; seed?: number }
 ): Promise<{ url: string; provider: 'openai' | 'flux' }> {
   const errors: string[] = [];
   const requestId = tenantId ? await createAiRequest(tenantId, 'image') : null;
 
   // Clean prompt for optimum generation
   const cleanPrompt = prompt.replace(/^["'\s]+|["'\s]+$/g, '').trim();
+
+  // Dimensões otimizadas por formato
+  const format = options?.format || '1:1';
+  let width = 1024;
+  let height = 1024;
+  let dalleSize: '1024x1024' | '1024x1792' | '1792x1024' = '1024x1024';
+
+  if (format === '9:16') {
+    width = 720;
+    height = 1280;
+    dalleSize = '1024x1792';
+  } else if (format === '16:9') {
+    width = 1280;
+    height = 720;
+    dalleSize = '1792x1024';
+  }
 
   if (tenantId) {
     const accounts = await prisma.aiProviderAccount.findMany({
@@ -388,9 +405,9 @@ export async function generateImage(
         const client = new OpenAI({ apiKey: key });
         const response = await client.images.generate({
           model: account.model || 'dall-e-3',
-          prompt: cleanPrompt,
+          prompt: cleanPrompt.slice(0, 1000),
           n: 1,
-          size: '1024x1024',
+          size: dalleSize,
           quality: 'standard',
         });
         const url = response.data?.[0]?.url;
@@ -419,9 +436,9 @@ export async function generateImage(
       const client = new OpenAI({ apiKey: key });
       const response = await client.images.generate({
         model: 'dall-e-3',
-        prompt: cleanPrompt,
+        prompt: cleanPrompt.slice(0, 1000),
         n: 1,
-        size: '1024x1024',
+        size: dalleSize,
         quality: 'standard',
       });
       const url = response.data?.[0]?.url;
@@ -433,10 +450,12 @@ export async function generateImage(
     }
   }
 
-  // Fallback para geração instantânea FLUX em alta resolução
+  // Fallback para geração instantânea FLUX em alta resolução com dimensões corretas
   try {
-    const seed = Math.floor(Math.random() * 1000000);
-    const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=1024&height=1024&nologo=true&model=flux&seed=${seed}`;
+    const seed = options?.seed || Math.floor(Math.random() * 1000000);
+    // Limpa pontuação excessiva para evitar falha no endpoint
+    const safePrompt = cleanPrompt.replace(/[\n\r\t]+/g, ' ').slice(0, 400);
+    const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}`;
     if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'flux', model: 'flux.1-schnell' });
     return { url: fluxUrl, provider: 'flux' };
   } catch (fluxErr: any) {

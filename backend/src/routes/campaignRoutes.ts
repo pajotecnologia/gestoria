@@ -795,7 +795,7 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
   try {
     const tenantId = req.tenantId!;
     const { id } = req.params;
-    const { prompt, title, format } = req.body;
+    const { prompt, title, format, quantity = 1 } = req.body;
 
     if (!prompt || typeof prompt !== 'string') {
       res.status(400).json({ error: 'O prompt visual da imagem é obrigatório.' });
@@ -812,14 +812,31 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
       return;
     }
 
+    const requestedFormat: '1:1' | '9:16' | '16:9' = ['1:1', '9:16', '16:9'].includes(format) ? format : '1:1';
+    const count = Math.min(Math.max(Number(quantity) || 1, 1), 4);
+
     // Refina o prompt com dados de marca e estilo de alta conversão
     const enhancedPrompt = [
       `High-converting professional marketing ad visual: ${prompt.trim()}`,
       campaign.client.brandVoice ? `Style: ${campaign.client.brandVoice}` : '',
-      'Ultra high resolution, 8k, modern commercial advertising photography, cinematic lighting, sleek aesthetic, clean layout, no awkward text artifacts',
+      'Ultra high resolution, 8k, modern commercial advertising photography, cinematic lighting, sleek aesthetic, clean layout',
     ].filter(Boolean).join(', ');
 
-    const result = await generateImage(enhancedPrompt, tenantId);
+    const images = await Promise.all(
+      Array.from({ length: count }).map(async (_, idx) => {
+        const seed = Math.floor(Math.random() * 900000) + 100000 + idx * 777;
+        const result = await generateImage(enhancedPrompt, tenantId, { format: requestedFormat, seed });
+        return {
+          id: `${Date.now()}_${idx}`,
+          imageUrl: result.url,
+          provider: result.provider,
+          prompt: prompt.trim(),
+          title: count > 1 ? `${title || 'Arte do Anúncio'} (Variação ${idx + 1})` : (title || 'Arte do Anúncio'),
+          format: requestedFormat,
+          generatedAt: new Date(),
+        };
+      })
+    );
 
     await writeAuditLog({
       tenantId,
@@ -827,17 +844,19 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
       action: 'CAMPAIGN_AD_IMAGE_GENERATED',
       entity: 'Campaign',
       entityId: id,
-      metadata: { provider: result.provider, title: title || 'Ad Creative Visual' },
+      metadata: { count, format: requestedFormat, title: title || 'Ad Creative Visual' },
     }).catch(() => undefined);
 
     res.json({
       success: true,
-      imageUrl: result.url,
-      provider: result.provider,
-      prompt: prompt.trim(),
-      title: title || 'Arte do Anúncio',
-      format: format || '1:1',
-      generatedAt: new Date(),
+      images,
+      // Retrocompatibilidade para chamadas de imagem única
+      imageUrl: images[0].imageUrl,
+      provider: images[0].provider,
+      prompt: images[0].prompt,
+      title: images[0].title,
+      format: images[0].format,
+      generatedAt: images[0].generatedAt,
     });
   } catch (error: any) {
     console.error('[Ad Studio Image Generation Error]:', error);
