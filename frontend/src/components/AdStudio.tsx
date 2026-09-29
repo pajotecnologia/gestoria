@@ -159,22 +159,35 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
     }
   };
 
-  const handleRegenerateSingleImage = (img: GeneratedImageItem) => {
-    // Regenera com nova semente e prompt visual completo
-    const newSeed = Math.floor(Math.random() * 900000) + 100000;
-    const promptSource = img.englishPrompt || img.prompt;
-    const cleanPrompt = promptSource
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z0-9\s,.-]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 280);
-    const width = img.format === '9:16' ? 720 : img.format === '16:9' ? 1280 : 1024;
-    const height = img.format === '9:16' ? 1280 : img.format === '16:9' ? 720 : 1024;
-    const newUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${newSeed}`;
-
-    setGeneratedImages(prev => prev.map(item => item.id === img.id ? { ...item, url: newUrl, hasError: false } : item));
+  const handleRegenerateSingleImage = async (img: GeneratedImageItem) => {
+    if (!selectedCampaignId) return;
+    try {
+      const res = await fetch(apiUrl(`/api/campaigns/${selectedCampaignId}/generate-ad-image`), {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + jwtToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: img.prompt,
+          title: img.title,
+          format: img.format,
+          quantity: 1,
+          visualStyle,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Falha ao regenerar arte.');
+      const newImg = json.images?.[0] || json;
+      setGeneratedImages(prev => prev.map(item => item.id === img.id ? {
+        ...item,
+        url: newImg.imageUrl,
+        provider: newImg.provider || 'AdStudio Pro',
+        hasError: false,
+      } : item));
+    } catch (e: any) {
+      window.alert(e.message || 'Erro ao regenerar imagem.');
+    }
   };
 
   const handleDeleteImage = (id: string) => {
@@ -681,31 +694,11 @@ const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
   }, [img.url, index]);
 
   const handleImageError = () => {
-    if (retryAttempt < 3) {
-      const nextAttempt = retryAttempt + 1;
-      setRetryAttempt(nextAttempt);
-
-      // Backoff progressivo (1.2s, 2.4s, 3.6s)
-      const delay = nextAttempt * 1200;
+    if (retryAttempt < 2) {
+      setRetryAttempt(prev => prev + 1);
       setTimeout(() => {
-        const newSeed = Math.floor(Math.random() * 900000) + 100000 + nextAttempt * 4444;
-        const promptSource = img.englishPrompt || img.prompt;
-        const cleanPrompt = promptSource
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-zA-Z0-9\s,.-]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .slice(0, 280);
-
-        const width = img.format === '9:16' ? 768 : img.format === '16:9' ? 1344 : 1024;
-        const height = img.format === '9:16' ? 1344 : img.format === '16:9' ? 768 : 1024;
-        
-        // No 3º retry tenta com modelo turbo para garantir resposta instantânea caso o flux esteja sobrecarregado
-        const model = nextAttempt === 3 ? 'turbo' : 'flux';
-        const retryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=${model}&seed=${newSeed}`;
-        setCurrentUrl(retryUrl);
-      }, delay);
+        onRegenerate();
+      }, 800);
     } else {
       setIsError(true);
     }
@@ -715,20 +708,7 @@ const AdImageCardItem: React.FC<AdImageCardItemProps> = ({
     setIsError(false);
     setIsLoaded(false);
     setRetryAttempt(0);
-    const newSeed = Math.floor(Math.random() * 900000) + 100000;
-    const promptSource = img.englishPrompt || img.prompt;
-    const cleanPrompt = promptSource
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z0-9\s,.-]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 280);
-
-    const width = img.format === '9:16' ? 768 : img.format === '16:9' ? 1344 : 1024;
-    const height = img.format === '9:16' ? 1344 : img.format === '16:9' ? 768 : 1024;
-    const retryUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${newSeed}`;
-    setCurrentUrl(retryUrl);
+    onRegenerate();
   };
 
   return (

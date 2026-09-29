@@ -896,7 +896,7 @@ Guidelines:
       const variationPrompt = `${visualPromptInEnglish}, ${angle}`;
       const seed = Math.floor(Math.random() * 800000) + 100000 + idx * 12345;
       
-      const result = await generateImage(variationPrompt, tenantId, { format: requestedFormat, seed });
+      const result = await generateImage(variationPrompt, tenantId, { format: requestedFormat, seed, visualStyle });
       images.push({
         id: `${Date.now()}_${idx}`,
         imageUrl: result.url,
