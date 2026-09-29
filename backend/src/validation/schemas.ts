@@ -44,8 +44,19 @@ export const promptCompileSchema = z.object({
 export const roomCreateSchema = z.object({
   title: text(2, 160),
   topic: text(2, 20000),
-  targetAudience: z.string().trim().max(5000).optional(),
-  objective: z.string().trim().max(5000).optional(),
+  targetAudience: z.string().trim().max(5000).optional().nullable(),
+  objective: z.string().trim().max(5000).optional().nullable(),
+  clientId: z.string().uuid().optional().nullable(),
+  campaignId: z.string().uuid().optional().nullable(),
+});
+
+export const roomUpdateSchema = z.object({
+  title: text(2, 160).optional(),
+  topic: text(2, 20000).optional(),
+  targetAudience: z.string().trim().max(5000).optional().nullable(),
+  objective: z.string().trim().max(5000).optional().nullable(),
+  clientId: z.string().uuid().optional().nullable(),
+  campaignId: z.string().uuid().optional().nullable(),
 });
 
 export const roomMessageSchema = z.object({

@@ -129,6 +129,8 @@ model KnowledgeFile {
 model Room {
   id          String   @id @default(uuid())
   tenantId    String
+  clientId    String?
+  campaignId  String?
   title       String
   topic       String   @db.Text
   targetAudience String? @db.Text
@@ -138,9 +140,13 @@ model Room {
   updatedAt   DateTime @updatedAt
 
   tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  client      Client?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  campaign    Campaign?     @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   messages    RoomMessage[]
 
   @@index([tenantId])
+  @@index([tenantId, clientId])
+  @@index([tenantId, campaignId])
   @@map("rooms")
 }
 
@@ -216,6 +222,7 @@ model Client {
   knowledgeFiles  KnowledgeFile[]
   campaigns       Campaign[]
   resources       ClientResource[]
+  rooms           Room[]
 
   @@index([tenantId, status])
   @@index([tenantId, name])
@@ -264,6 +271,7 @@ model Campaign {
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   agent        Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  rooms        Room[]
 
   @@index([tenantId, clientId, status])
   @@index([tenantId, clientId, isActive])

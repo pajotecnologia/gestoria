@@ -3,7 +3,7 @@ import { generateImage, generateText } from '../services/aiProviderService';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { prisma } from './authRoutes';
 import { validateBody } from '../middlewares/validate';
-import { roomCreateSchema, roomMessageSchema, debateRoundSchema } from '../validation/schemas';
+import { roomCreateSchema, roomUpdateSchema, roomMessageSchema, debateRoundSchema } from '../validation/schemas';
 import { parsePagination } from '../utils/pagination';
 import { assertPlanCapacity, PlanLimitError } from '../services/planLimits';
 import { writeAuditLog } from '../services/auditLog';
@@ -86,20 +86,34 @@ Sua missão: Definir a estrutura técnica de distribuição de mídia para esta 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
+    const clientId = typeof req.query.clientId === 'string' ? req.query.clientId : undefined;
+    const campaignId = typeof req.query.campaignId === 'string' ? req.query.campaignId : undefined;
     const { page, pageSize, skip, take } = parsePagination(req.query as Record<string, unknown>);
     const [rooms, total] = await prisma.$transaction([
       prisma.room.findMany({
-        where: { tenantId },
+        where: {
+          tenantId,
+          ...(clientId ? { clientId } : {}),
+          ...(campaignId ? { campaignId } : {}),
+        },
         select: {
-          id: true, tenantId: true, title: true, topic: true, targetAudience: true,
+          id: true, tenantId: true, clientId: true, campaignId: true, title: true, topic: true, targetAudience: true,
           objective: true, status: true, createdAt: true, updatedAt: true,
+          client: { select: { id: true, name: true, segment: true } },
+          campaign: { select: { id: true, name: true } },
           _count: { select: { messages: true } },
         },
         orderBy: { updatedAt: 'desc' },
         skip,
         take,
       }),
-      prisma.room.count({ where: { tenantId } }),
+      prisma.room.count({
+        where: {
+          tenantId,
+          ...(clientId ? { clientId } : {}),
+          ...(campaignId ? { campaignId } : {}),
+        }
+      }),
     ]);
     res.json({ success: true, data: rooms, pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) } });
   } catch (error: any) {
@@ -111,7 +125,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 router.post('/', validateBody(roomCreateSchema), async (req: Request, res: Response): Promise<void> => {
   try {
     const tenantId = req.tenantId!;
-    const { title, topic, targetAudience, objective } = req.body;
+    const { title, topic, targetAudience, objective, clientId, campaignId } = req.body;
     await assertPlanCapacity(tenantId, 'rooms');
 
     if (!title || !topic) {
@@ -119,9 +133,36 @@ router.post('/', validateBody(roomCreateSchema), async (req: Request, res: Respo
       return;
     }
 
+    let clientInfo = null;
+    if (clientId) {
+      clientInfo = await prisma.client.findFirst({
+        where: { id: clientId, tenantId },
+        select: { id: true, name: true, segment: true }
+      });
+    }
+
+    let campaignInfo = null;
+    if (campaignId) {
+      campaignInfo = await prisma.campaign.findFirst({
+        where: { id: campaignId, tenantId },
+        select: { id: true, name: true }
+      });
+    }
+
+    let initialBriefingContent = `📢 **BRIEFING INICIAL DO PROJETO:**\n\n**Projeto:** ${title}`;
+    if (clientInfo) {
+      initialBriefingContent += `\n**Empresa/Cliente:** ${clientInfo.name}${clientInfo.segment ? ` (${clientInfo.segment})` : ''}`;
+    }
+    if (campaignInfo) {
+      initialBriefingContent += `\n**Campanha:** ${campaignInfo.name}`;
+    }
+    initialBriefingContent += `\n**Objetivo:** ${objective || topic}\n**Público-Alvo:** ${targetAudience || 'A definir pelo Estrategista'}\n\n*Squad, por favor iniciem o planejamento multidisciplinar da campanha.*`;
+
     const room = await prisma.room.create({
       data: {
         tenantId,
+        clientId: clientId || null,
+        campaignId: campaignId || null,
         title,
         topic,
         targetAudience: targetAudience || '',
@@ -131,17 +172,56 @@ router.post('/', validateBody(roomCreateSchema), async (req: Request, res: Respo
             senderType: 'USER',
             agentRole: 'HUMAN',
             senderName: req.user?.email || 'Gestor da Agência',
-            content: `📢 **BRIEFING INICIAL DO PROJETO:**\n\n**Projeto:** ${title}\n**Objetivo:** ${objective || topic}\n**Público-Alvo:** ${targetAudience || 'A definir pelo Estrategista'}\n\n*Squad, por favor iniciem o planejamento multidisciplinar da campanha.*`
+            content: initialBriefingContent
           }
         }
       },
-      include: { messages: true }
+      include: {
+        client: { select: { id: true, name: true, segment: true } },
+        campaign: { select: { id: true, name: true } },
+        messages: true
+      }
     });
 
-    await writeAuditLog({ tenantId, userId: req.user?.userId, action: 'ROOM_CREATED', entity: 'Room', entityId: room.id });
+    await writeAuditLog({ tenantId, userId: req.user?.userId, action: 'ROOM_CREATED', entity: 'Room', entityId: room.id, metadata: { clientId, campaignId, title } });
     res.status(201).json({ success: true, data: room });
   } catch (error: any) {
     if (error instanceof PlanLimitError) { res.status(error.statusCode).json({ error: error.code, resource: error.resource, limit: error.limit, current: error.current }); return; }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Atualizar informações da sala (vincular empresa/campanha, editar tópico)
+router.patch('/:id', validateBody(roomUpdateSchema), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const { id } = req.params;
+    const { title, topic, targetAudience, objective, clientId, campaignId } = req.body;
+
+    const existing = await prisma.room.findFirst({ where: { id, tenantId } });
+    if (!existing) {
+      res.status(404).json({ error: 'Sala de reunião não encontrada.' });
+      return;
+    }
+
+    const updated = await prisma.room.update({
+      where: { id },
+      data: {
+        ...(title !== undefined ? { title } : {}),
+        ...(topic !== undefined ? { topic } : {}),
+        ...(targetAudience !== undefined ? { targetAudience } : {}),
+        ...(objective !== undefined ? { objective } : {}),
+        ...(clientId !== undefined ? { clientId: clientId || null } : {}),
+        ...(campaignId !== undefined ? { campaignId: campaignId || null } : {}),
+      },
+      include: {
+        client: { select: { id: true, name: true, segment: true } },
+        campaign: { select: { id: true, name: true } },
+      }
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -155,6 +235,34 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
     const room = await prisma.room.findFirst({
       where: { id, tenantId },
       include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            segment: true,
+            description: true,
+            targetAudience: true,
+            brandVoice: true,
+            productsOffers: true,
+            goals: true,
+            competitors: true,
+            restrictions: true
+          }
+        },
+        campaign: {
+          select: {
+            id: true,
+            name: true,
+            objective: true,
+            offer: true,
+            audience: true,
+            channels: true,
+            budget: true,
+            period: true,
+            brief: true,
+            strategy: true
+          }
+        },
         messages: { orderBy: { createdAt: 'desc' }, take: 500 }
       }
     });
@@ -215,6 +323,8 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
     const room = await prisma.room.findFirst({
       where: { id, tenantId },
       include: {
+        client: true,
+        campaign: true,
         messages: { orderBy: { createdAt: 'desc' }, take: 500 }
       }
     });
@@ -254,6 +364,34 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
       return;
     }
 
+    // Contexto enriquecido da Empresa/Cliente
+    let companyContext = '';
+    if (room.client) {
+      companyContext = `\n### 🏢 CONTEXTO DA EMPRESA / CLIENTE (${room.client.name}):
+- **Nome do Cliente:** ${room.client.name}
+${room.client.segment ? `- **Segmento / Nicho:** ${room.client.segment}` : ''}
+${room.client.targetAudience ? `- **Público-Alvo da Marca:** ${room.client.targetAudience}` : ''}
+${room.client.brandVoice ? `- **Tom de Voz & Personalidade:** ${room.client.brandVoice}` : ''}
+${room.client.productsOffers ? `- **Produtos & Serviços:** ${room.client.productsOffers}` : ''}
+${room.client.goals ? `- **Objetivos Estratégicos:** ${room.client.goals}` : ''}
+${room.client.competitors ? `- **Concorrentes:** ${room.client.competitors}` : ''}
+${room.client.restrictions ? `- **Restrições / Diretrizes:** ${room.client.restrictions}` : ''}`;
+    }
+
+    // Contexto enriquecido da Campanha
+    let campaignContext = '';
+    if (room.campaign) {
+      campaignContext = `\n### 🎯 CONTEXTO DA CAMPANHA (${room.campaign.name}):
+- **Nome da Campanha:** ${room.campaign.name}
+- **Objetivo da Campanha:** ${room.campaign.objective}
+${room.campaign.offer ? `- **Oferta da Campanha:** ${room.campaign.offer}` : ''}
+${room.campaign.audience ? `- **Público Segmentado:** ${room.campaign.audience}` : ''}
+${room.campaign.channels ? `- **Canais de Distribuição:** ${room.campaign.channels}` : ''}
+${room.campaign.budget ? `- **Orçamento Previsto:** ${room.campaign.budget}` : ''}
+${room.campaign.period ? `- **Período da Campanha:** ${room.campaign.period}` : ''}
+${room.campaign.brief ? `- **Briefing Detalhado:** ${room.campaign.brief}` : ''}`;
+    }
+
     const newMessages = [];
 
     // Carrega histórico para contexto da conversa
@@ -281,7 +419,7 @@ Quando sugerir uma imagem visual ou peça gráfica, descreva detalhadamente a co
 Título: ${room.title}
 Tópico/Briefing: ${room.topic}
 Público-Alvo: ${room.targetAudience || 'Geral'}
-Objetivo: ${room.objective || 'Geral'}
+Objetivo: ${room.objective || 'Geral'}${companyContext}${campaignContext}
 
 ### HISTÓRICO DA DISCUSSÃO ATÉ AGORA:
 ${conversationHistory}
@@ -415,6 +553,8 @@ router.get('/:id/export', async (req: Request, res: Response): Promise<void> => 
     const room = await prisma.room.findFirst({
       where: { id, tenantId },
       include: {
+        client: { select: { name: true, segment: true } },
+        campaign: { select: { name: true } },
         messages: { orderBy: { createdAt: 'asc' } }
       }
     });
@@ -426,6 +566,12 @@ router.get('/:id/export', async (req: Request, res: Response): Promise<void> => 
 
     let markdownPlan = `# 📑 PLANO DE AÇÃO CONSOLIDADO - ${room.title.toUpperCase()}\n\n`;
     markdownPlan += `**Data:** ${new Date().toLocaleDateString('pt-BR')}\n`;
+    if (room.client) {
+      markdownPlan += `**Empresa / Cliente:** ${room.client.name}${room.client.segment ? ` (${room.client.segment})` : ''}\n`;
+    }
+    if (room.campaign) {
+      markdownPlan += `**Campanha:** ${room.campaign.name}\n`;
+    }
     markdownPlan += `**Briefing:** ${room.topic}\n`;
     markdownPlan += `**Público-Alvo:** ${room.targetAudience || 'Não especificado'}\n`;
     markdownPlan += `**Objetivo:** ${room.objective || 'Não especificado'}\n\n`;

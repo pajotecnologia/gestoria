@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Users, 
   Send, 
@@ -18,9 +18,38 @@ import {
   ExternalLink,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Building2,
+  Megaphone,
+  Filter
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
+import { Specialist } from './SpecialistManager';
+
+interface ClientOption {
+  id: string;
+  name: string;
+  segment?: string | null;
+  targetAudience?: string | null;
+  brandVoice?: string | null;
+  productsOffers?: string | null;
+  goals?: string | null;
+  description?: string | null;
+}
+
+interface CampaignOption {
+  id: string;
+  clientId: string;
+  name: string;
+  objective: string;
+  offer?: string | null;
+  audience?: string | null;
+  channels?: string | null;
+  budget?: string | null;
+  period?: string | null;
+  brief?: string | null;
+  strategy?: string | null;
+}
 
 interface Room {
   id: string;
@@ -28,6 +57,10 @@ interface Room {
   topic: string;
   targetAudience?: string;
   objective?: string;
+  clientId?: string | null;
+  campaignId?: string | null;
+  client?: { id: string; name: string; segment?: string | null } | null;
+  campaign?: { id: string; name: string } | null;
   createdAt: string;
   _count?: { messages: number };
 }
@@ -128,13 +161,13 @@ const ROLE_BADGES: Record<string, { label: string; tag: string; icon: any; gradi
   }
 };
 
-import { Specialist } from './SpecialistManager';
-
 export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isModal }) => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [messages, setMessages] = useState<RoomMessage[]>([]);
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
+  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [roomsPagination, setRoomsPagination] = useState<Pagination>({ page: 1, pageSize: 50, total: 0, totalPages: 0 });
   const [roomError, setRoomError] = useState('');
@@ -144,8 +177,13 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
   const [generatingMessageId, setGeneratingMessageId] = useState<string | null>(null);
   const [callingRole, setCallingRole] = useState<string | null>(null);
 
+  // Filtro de empresa na barra lateral
+  const [filterClientId, setFilterClientId] = useState<string>('ALL');
+
   // Modal de Criação de Nova Sala
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
   const [newTitle, setNewTitle] = useState('');
   const [newTopic, setNewTopic] = useState('');
   const [newAudience, setNewAudience] = useState('');
@@ -183,19 +221,50 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
     }
   };
 
-  const fetchRooms = async (page = 1) => {
+  const fetchClientsAndCampaigns = async () => {
+    try {
+      const [resClients, resCampaigns] = await Promise.all([
+        fetch(apiUrl('/api/clients'), { headers: { Authorization: `Bearer ${jwtToken}` } }),
+        fetch(apiUrl('/api/campaigns'), { headers: { Authorization: `Bearer ${jwtToken}` } })
+      ]);
+      const dataClients = await resClients.json();
+      const dataCampaigns = await resCampaigns.json();
+
+      if (dataClients.success && Array.isArray(dataClients.data)) {
+        setClients(dataClients.data);
+      }
+      if (dataCampaigns.success && Array.isArray(dataCampaigns.data)) {
+        setCampaigns(dataCampaigns.data);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar clientes e campanhas:', err);
+    }
+  };
+
+  const fetchRooms = async (page = 1, clientId?: string) => {
     setLoadingRooms(true);
     setRoomError('');
     try {
-      const res = await fetch(apiUrl(`/api/rooms?page=${page}&pageSize=50`), {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        pageSize: '50'
+      });
+      if (clientId && clientId !== 'ALL') {
+        queryParams.set('clientId', clientId);
+      }
+
+      const res = await fetch(apiUrl(`/api/rooms?${queryParams.toString()}`), {
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       const data = await res.json();
       if (data.success) {
         setRooms(data.data);
         if (data.pagination) setRoomsPagination(data.pagination);
-        if (data.data.length > 0 && !selectedRoom) {
+        if (data.data.length > 0 && (!selectedRoom || !data.data.some((r: Room) => r.id === selectedRoom.id))) {
           loadRoom(data.data[0]);
+        } else if (data.data.length === 0) {
+          setSelectedRoom(null);
+          setMessages([]);
         }
       }
     } catch (err) {
@@ -217,6 +286,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
         throw new Error(data.error || 'Não foi possível carregar a sala.');
       }
       if (data.success) {
+        setSelectedRoom(data.data);
         setMessages(data.data.messages || []);
       }
     } catch (err) {
@@ -224,6 +294,55 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
     } finally {
       setLoadingMessages(false);
       setTimeout(scrollToBottom, 100);
+    }
+  };
+
+  // Campanhas disponíveis para o cliente selecionado no modal
+  const modalAvailableCampaigns = useMemo(() => {
+    if (!selectedClientId) return campaigns;
+    return campaigns.filter(c => c.clientId === selectedClientId);
+  }, [campaigns, selectedClientId]);
+
+  // Handler de seleção de Empresa no Modal de Nova Sala
+  const handleClientChange = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setSelectedCampaignId('');
+
+    if (clientId) {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        if (!newAudience && client.targetAudience) {
+          setNewAudience(client.targetAudience);
+        }
+        if (!newTitle) {
+          setNewTitle(`Planejamento Estratégico - ${client.name}`);
+        }
+      }
+    }
+  };
+
+  // Handler de seleção de Campanha no Modal de Nova Sala
+  const handleCampaignChange = (campaignId: string) => {
+    setSelectedCampaignId(campaignId);
+
+    if (campaignId) {
+      const camp = campaigns.find(c => c.id === campaignId);
+      if (camp) {
+        // Se a empresa ainda não estiver definida, ajusta para a empresa da campanha
+        if (!selectedClientId && camp.clientId) {
+          setSelectedClientId(camp.clientId);
+        }
+
+        const client = clients.find(c => c.id === (camp.clientId || selectedClientId));
+        const clientName = client ? client.name : '';
+
+        setNewTitle(`Campanha: ${camp.name}${clientName ? ` (${clientName})` : ''}`);
+        if (camp.objective) setNewObjective(camp.objective);
+        if (camp.audience) setNewAudience(camp.audience);
+        if (camp.brief || camp.offer) {
+          setNewTopic(camp.brief || camp.offer || camp.objective);
+        }
+      }
     }
   };
 
@@ -243,7 +362,9 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
           title: newTitle,
           topic: newTopic,
           targetAudience: newAudience,
-          objective: newObjective
+          objective: newObjective,
+          clientId: selectedClientId || null,
+          campaignId: selectedCampaignId || null,
         })
       });
       const data = await res.json();
@@ -253,11 +374,16 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
         setNewTopic('');
         setNewAudience('');
         setNewObjective('');
-        await fetchRooms();
+        setSelectedClientId('');
+        setSelectedCampaignId('');
+        await fetchRooms(1, filterClientId);
         loadRoom(data.data);
+      } else {
+        alert(data.error || 'Erro ao criar sala de reunião.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err.message || 'Erro ao criar sala de reunião.');
     } finally {
       setCreateLoading(false);
     }
@@ -303,7 +429,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
           setSelectedRoom(null);
           setMessages([]);
         }
-        await fetchRooms();
+        await fetchRooms(1, filterClientId);
       } else {
         alert(data.error || 'Erro ao excluir projeto.');
       }
@@ -420,9 +546,14 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
   };
 
   useEffect(() => {
-    fetchRooms();
+    fetchRooms(1, filterClientId);
     fetchSpecialists();
+    fetchClientsAndCampaigns();
   }, [jwtToken]);
+
+  useEffect(() => {
+    fetchRooms(1, filterClientId);
+  }, [filterClientId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -564,15 +695,35 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
       {/* Main Grid Layout */}
       <div className="flex-1 flex overflow-hidden min-w-0">
         {/* Sidebar Esquerda: Projetos & Squad */}
-        <div className="w-72 shrink-0 border-r border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/60 p-3.5 flex flex-col justify-between hidden md:flex min-w-0">
+        <div className="w-80 shrink-0 border-r border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/60 p-3.5 flex flex-col justify-between hidden md:flex min-w-0">
           <div className="space-y-3 flex-1 overflow-hidden flex flex-col min-w-0">
             <div className="flex items-center justify-between px-1 shrink-0">
               <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
-                Projetos & Campanhas
+                Salas de Reunião
               </span>
               <span className="rounded-full bg-slate-200 dark:bg-zinc-800 px-2 py-0.2 text-[10px] font-semibold text-slate-600 dark:text-zinc-400">
                 {rooms.length}
               </span>
+            </div>
+
+            {/* Filtro por Empresa */}
+            <div className="relative">
+              <div className="flex items-center gap-1.5 mb-1 text-[11px] font-medium text-slate-600 dark:text-zinc-400">
+                <Filter className="h-3 w-3 text-indigo-500" />
+                <span>Filtrar por Empresa:</span>
+              </div>
+              <select
+                value={filterClientId}
+                onChange={(e) => setFilterClientId(e.target.value)}
+                className="shadcn-input text-xs py-1.5 px-2 w-full bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 rounded-lg cursor-pointer"
+              >
+                <option value="ALL">🏢 Todas as Empresas</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {c.segment ? `(${c.segment})` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {roomError && (
@@ -585,8 +736,15 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
               {loadingRooms ? (
                 <div className="text-xs text-slate-400 p-3 text-center">Carregando salas...</div>
               ) : rooms.length === 0 ? (
-                <div className="text-xs text-slate-400 p-4 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
-                  Nenhuma sala criada.
+                <div className="text-xs text-slate-400 p-4 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl space-y-2">
+                  <p>Nenhuma sala encontrada.</p>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingRoom(true)}
+                    className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold hover:underline"
+                  >
+                    + Criar nova reunião
+                  </button>
                 </div>
               ) : (
                 rooms.map((room) => {
@@ -595,30 +753,48 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
                     <div
                       key={room.id}
                       onClick={() => loadRoom(room)}
-                      className={`group w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
+                      className={`group w-full text-left p-2.5 rounded-xl border transition-all flex flex-col gap-1.5 cursor-pointer ${
                         isSelected
                           ? 'bg-indigo-600/10 border-indigo-500/40 text-indigo-900 dark:text-white shadow-xs'
                           : 'bg-white dark:bg-zinc-900/60 border-slate-200/80 dark:border-zinc-800/80 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900 hover:text-slate-900 dark:hover:text-zinc-200'
                       }`}
                     >
-                      <div className="flex items-start gap-2.5 min-w-0 flex-1 pr-1.5">
-                        <MessageSquare className={`h-4 w-4 shrink-0 mt-0.5 ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
-                        <div className="truncate">
+                      <div className="flex items-start justify-between gap-2 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <MessageSquare className={`h-4 w-4 shrink-0 ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
                           <p className={`text-xs font-semibold truncate ${isSelected ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-800 dark:text-zinc-200'}`}>
                             {room.title}
                           </p>
-                          <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">{room.topic}</p>
                         </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteRoom(room.id, room.title, e)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-500/10 transition shrink-0 cursor-pointer"
+                          title="Excluir projeto"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteRoom(room.id, room.title, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-500/10 transition shrink-0 cursor-pointer"
-                        title="Excluir projeto"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      {/* Badges de Empresa & Campanha */}
+                      {(room.client || room.campaign) && (
+                        <div className="flex items-center flex-wrap gap-1 mt-0.5">
+                          {room.client && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 text-[10px] font-medium text-blue-600 dark:text-blue-400 border border-blue-500/20 max-w-[150px] truncate">
+                              <Building2 className="h-2.5 w-2.5 shrink-0" />
+                              <span className="truncate">{room.client.name}</span>
+                            </span>
+                          )}
+                          {room.campaign && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-purple-500/10 text-[10px] font-medium text-purple-600 dark:text-purple-400 border border-purple-500/20 max-w-[150px] truncate">
+                              <Megaphone className="h-2.5 w-2.5 shrink-0" />
+                              <span className="truncate">{room.campaign.name}</span>
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">{room.topic}</p>
                     </div>
                   );
                 })
@@ -630,7 +806,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
                 <button
                   type="button"
                   disabled={roomsPagination.page <= 1 || loadingRooms}
-                  onClick={() => fetchRooms(roomsPagination.page - 1)}
+                  onClick={() => fetchRooms(roomsPagination.page - 1, filterClientId)}
                   className="flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[10px] text-slate-700 disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300"
                 >
                   <ChevronLeft className="h-3 w-3" />
@@ -642,7 +818,7 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
                 <button
                   type="button"
                   disabled={roomsPagination.page >= roomsPagination.totalPages || loadingRooms}
-                  onClick={() => fetchRooms(roomsPagination.page + 1)}
+                  onClick={() => fetchRooms(roomsPagination.page + 1, filterClientId)}
                   className="flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[10px] text-slate-700 disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300"
                 >
                   <span>Próx.</span>
@@ -708,6 +884,40 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
 
         {/* Chat / Feed Principal */}
         <div className="flex-1 flex flex-col min-w-0 bg-slate-100/40 dark:bg-zinc-950/40">
+          {/* Header Contextual da Sala Selecionada */}
+          {selectedRoom && (
+            <div className="px-4 py-2 bg-slate-50 dark:bg-zinc-950/90 border-b border-slate-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center flex-wrap gap-2 min-w-0">
+                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  {selectedRoom.title}
+                </span>
+
+                {selectedRoom.client && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-[11px] font-semibold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50">
+                    <Building2 className="h-3 w-3" />
+                    <span>{selectedRoom.client.name}</span>
+                    {selectedRoom.client.segment && (
+                      <span className="text-[10px] opacity-75 font-normal">({selectedRoom.client.segment})</span>
+                    )}
+                  </span>
+                )}
+
+                {selectedRoom.campaign && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-[11px] font-semibold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50">
+                    <Megaphone className="h-3 w-3" />
+                    <span>Campanha: {selectedRoom.campaign.name}</span>
+                  </span>
+                )}
+
+                {selectedRoom.objective && (
+                  <span className="text-[11px] text-slate-500 dark:text-zinc-400 hidden lg:inline-block truncate max-w-xs">
+                    • <b>Objetivo:</b> {selectedRoom.objective}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Barra Superior de Invocação de Agentes */}
           <div className="px-4 py-2.5 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
             <div className="flex items-center flex-wrap gap-1.5 min-w-0 flex-1">
@@ -923,12 +1133,15 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
       {/* Modal de Criação de Sala */}
       {isCreatingRoom && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4">
+          <div className="w-full max-w-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Nova Sala de Campanha</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Users className="h-4 w-4 text-indigo-500" />
+                  <span>Nova Sala de Reunião & Campanha</span>
+                </h3>
                 <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                  Defina o briefing inicial para iniciar a colaboração do squad de IA.
+                  Selecione a empresa e a campanha para alimentar automaticamente a inteligência dos especialistas.
                 </p>
               </div>
               <button
@@ -941,48 +1154,99 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
             </div>
 
             <form onSubmit={handleCreateRoom} className="space-y-3.5">
+              {/* Seleção de Empresa / Cliente */}
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
+                    <Building2 className="h-3.5 w-3.5 text-blue-500" />
+                    <span>Empresa / Cliente</span>
+                  </label>
+                  <select
+                    value={selectedClientId}
+                    onChange={(e) => handleClientChange(e.target.value)}
+                    className="shadcn-input text-xs py-2 w-full bg-white dark:bg-zinc-900 cursor-pointer"
+                  >
+                    <option value="">🏢 Geral (Sem Empresa Fixa)</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.segment ? `• ${c.segment}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Seleção de Campanha */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
+                    <Megaphone className="h-3.5 w-3.5 text-purple-500" />
+                    <span>Campanha Vinculada</span>
+                  </label>
+                  <select
+                    value={selectedCampaignId}
+                    onChange={(e) => handleCampaignChange(e.target.value)}
+                    className="shadcn-input text-xs py-2 w-full bg-white dark:bg-zinc-900 cursor-pointer"
+                  >
+                    <option value="">🎯 Geral (Nova Ideação / Estratégia)</option>
+                    {modalAvailableCampaigns.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {selectedClientId && (
+                <div className="rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/40 p-2.5 text-[11px] text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                  <Sparkles className="h-4 w-4 shrink-0 text-blue-500 mt-0.5" />
+                  <div>
+                    <b>Contexto Integrado:</b> O squad receberá todo o perfil de marca, público e posicionamento da empresa selecionada durante os debates.
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Nome do Projeto *</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Nome da Sala / Projeto *</label>
                 <input
                   type="text"
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Ex: Campanha Black Friday - Lumina Clinic"
+                  placeholder="Ex: Lançamento Coleção Outono - Lumina"
                   className="shadcn-input"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Briefing / Tópico Principal *</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Briefing / Tópico Principal da Reunião *</label>
                 <textarea
                   rows={3}
                   required
                   value={newTopic}
                   onChange={(e) => setNewTopic(e.target.value)}
-                  placeholder="Ex: Pacote especial com 30% de desconto para agendamentos pelo WhatsApp."
+                  placeholder="Ex: Campanha de atração com foco em ofertas de 30% no WhatsApp e criativos para feed/reels."
                   className="shadcn-input resize-y"
                 />
               </div>
 
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Público-Alvo</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Público-Alvo Específico</label>
                   <input
                     type="text"
                     value={newAudience}
                     onChange={(e) => setNewAudience(e.target.value)}
-                    placeholder="Ex: Homens e Mulheres 25-45"
+                    placeholder="Ex: Mulheres 25-45 anos, classe A/B"
                     className="shadcn-input"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Objetivo</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Objetivo da Reunião</label>
                   <input
                     type="text"
                     value={newObjective}
                     onChange={(e) => setNewObjective(e.target.value)}
-                    placeholder="Ex: Agendamentos WhatsApp"
+                    placeholder="Ex: Gerar leads qualificados"
                     className="shadcn-input"
                   />
                 </div>
