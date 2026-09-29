@@ -64,7 +64,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
   const [editCustomModelMode, setEditCustomModelMode] = useState(false);
   const [message, setMessage] = useState('');
   const [usage, setUsage] = useState<UsageSummary | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(true);
 
   // Estados de Teste de Conexão Live
   const [testingId, setTestingId] = useState<string | null>(null);
@@ -302,19 +302,69 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
 
       {/* Formulário de Cadastro de Novo Provedor */}
       {showForm && (
-        <form onSubmit={add} className="shadcn-card space-y-4 animate-in fade-in duration-150">
+        <form onSubmit={add} className="shadcn-card space-y-4 border-2 border-indigo-500/30 bg-white dark:bg-zinc-900 shadow-md animate-in fade-in duration-150">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Cadastrar Provedor de IA</h3>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Novo Provedor de IA</h3>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400">Preencha as credenciais da API para adicionar à rede de modelos do sistema.</p>
+              </div>
             </div>
             <button 
               type="button" 
               onClick={() => setShowForm(false)} 
-              className="flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900"
+              className="flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 transition cursor-pointer"
             >
               <X className="h-3.5 w-3.5" />
-              <span>Fechar</span>
+              <span>Ocultar</span>
+            </button>
+          </div>
+
+          {/* Atalhos Rápidos de Provedores */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">Atalhos rápidos:</span>
+            <button
+              type="button"
+              onClick={() => {
+                setForm({ name: 'Google Gemini 3.8', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: form.apiKey, priority: 100 });
+                setCustomModelMode(false);
+              }}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
+            >
+              ⚡ Google Gemini
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setForm({ name: 'OpenAI GPT-4o', provider: 'openai', model: 'gpt-4o', apiKey: form.apiKey, priority: 100 });
+                setCustomModelMode(false);
+              }}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
+            >
+              🤖 OpenAI GPT-4o
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setForm({ name: 'Groq Llama 3.3', provider: 'groq', model: 'llama-3.3-70b-versatile', apiKey: form.apiKey, priority: 100 });
+                setCustomModelMode(false);
+              }}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
+            >
+              🚀 Groq LPU
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setForm({ name: 'Ollama Hermes 3 Local', provider: 'ollama', model: 'hermes3:8b', apiKey: 'http://localhost:11434', priority: 100 });
+                setCustomModelMode(false);
+              }}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
+            >
+              🦙 Ollama Local
             </button>
           </div>
 
@@ -390,7 +440,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
               <input
                 required
                 type="text"
-                placeholder={form.provider === 'ollama' ? 'http://ollama:11434 ou https://...' : 'AIzaSy... ou sk-...'}
+                placeholder={form.provider === 'ollama' ? 'http://ollama:11434 ou http://localhost:11434' : 'AIzaSy... ou sk-...'}
                 value={form.apiKey}
                 onChange={e => setForm({ ...form, apiKey: e.target.value })}
                 className="shadcn-input"
@@ -411,30 +461,34 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-zinc-800">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
             <button
               type="button"
               disabled={formTestLoading || !form.apiKey.trim()}
               onClick={handleTestUnsaved}
-              className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 transition disabled:opacity-40 cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 transition disabled:opacity-40 cursor-pointer"
             >
-              <Zap className="h-3.5 w-3.5" />
-              <span>{formTestLoading ? 'Testando Conexão...' : 'Testar Conexão'}</span>
+              <Zap className="h-4 w-4" />
+              <span>{formTestLoading ? 'Testando Conexão...' : 'Testar Conexão em Tempo Real'}</span>
             </button>
 
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition"
+                onClick={() => {
+                  setForm({ name: '', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: '', priority: 100 });
+                  setFormTestResult(null);
+                }}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 transition cursor-pointer"
               >
-                Cancelar
+                Limpar
               </button>
               <button
                 type="submit"
-                className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 shadow transition cursor-pointer"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-500/25 transition cursor-pointer"
               >
-                Cadastrar Provedor
+                <Plus className="h-4 w-4" />
+                <span>Cadastrar Provedor de IA</span>
               </button>
             </div>
           </div>
