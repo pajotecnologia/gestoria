@@ -78,12 +78,21 @@ export const App: React.FC = () => {
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Atalho global Ctrl+K / Cmd+K
+  // Atalhos globais de teclado: Ctrl+K (Busca/Comandos) e Ctrl+M (Mesa Redonda)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+K ou Cmd+K para Command Palette
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      // Ctrl+M, Cmd+M ou Alt+M para abrir a Mesa Redonda Multi-IA diretamente
+      if (((e.metaKey || e.ctrlKey || e.altKey) && e.key.toLowerCase() === 'm')) {
+        e.preventDefault();
+        setWarRoomModalOpen((prev) => !prev);
+        return;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -162,7 +171,7 @@ export const App: React.FC = () => {
     {
       title: 'INTELIGÊNCIA ARTIFICIAL',
       items: [
-        { id: 'warroom', label: 'Mesa Redonda Multi-IA', icon: MessageSquare, badge: 'Multi-Agentes' },
+        { id: 'warroom', label: 'Mesa Redonda Multi-IA', icon: MessageSquare, badge: 'Ctrl+M' },
         { id: 'agents', label: 'Agentes WhatsApp', icon: Radio },
         { id: 'specialists', label: 'Equipe de Especialistas', icon: Sparkles },
       ]
