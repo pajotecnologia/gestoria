@@ -16,7 +16,9 @@ import {
   MessageSquare,
   Trash2,
   ExternalLink,
-  RefreshCw
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
 
@@ -413,47 +415,109 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
     scrollToBottom();
   }, [messages]);
 
+  // Renderizador Inteligente de Conteúdo de Mensagem com Destaques
+  const renderMessageContent = (text: string) => {
+    if (!text) return null;
+
+    // Processar parágrafos e formatações básicas
+    const lines = text.split('\n');
+    return (
+      <div className="space-y-2 text-xs leading-relaxed">
+        {lines.map((line, idx) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={idx} className="h-1.5" />;
+
+          // Títulos ou seções em destaque
+          if (trimmed.startsWith('###') || trimmed.startsWith('##') || (trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length < 80)) {
+            const cleanTitle = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '');
+            return (
+              <div key={idx} className="font-bold text-slate-900 dark:text-white text-xs pt-1.5 pb-0.5 flex items-center gap-1.5 border-b border-slate-200/60 dark:border-zinc-800/60">
+                <Sparkles className="h-3 w-3 text-indigo-500" />
+                <span>{cleanTitle}</span>
+              </div>
+            );
+          }
+
+          // Itens de Lista com Marcador
+          if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || /^\d+\.\s/.test(trimmed)) {
+            const content = trimmed.replace(/^[-*]\s+|\d+\.\s+/, '');
+            const formatted = content.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={pIdx} className="font-semibold text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
+              }
+              return part;
+            });
+
+            return (
+              <div key={idx} className="flex items-start gap-2 pl-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                <span className="text-slate-700 dark:text-zinc-300">{formatted}</span>
+              </div>
+            );
+          }
+
+          // Texto com Negritos Inline
+          const formatted = trimmed.split(/(\*\*.*?\*\*)/g).map((part, pIdx) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return <strong key={pIdx} className="font-semibold text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
+            }
+            return part;
+          });
+
+          return (
+            <p key={idx} className="text-slate-700 dark:text-zinc-300">
+              {formatted}
+            </p>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
-    <div className="w-full bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[82vh]">
-      {/* Top Header */}
-      <div className="px-6 py-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="p-2.5 bg-gradient-to-tr from-indigo-600 to-purple-600 text-white rounded-2xl shadow-lg shadow-indigo-600/30">
-            <Users className="w-5 h-5" />
+    <div className="shadcn-card p-0 w-full max-w-full min-w-0 flex flex-col h-[calc(100vh-140px)] min-h-[640px] overflow-hidden">
+      {/* Top Header do War Room */}
+      <div className="px-5 py-3.5 border-b border-slate-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/20">
+            <Users className="h-5 w-5" />
           </div>
-          <div>
-            <h1 className="text-base font-bold text-white tracking-tight flex items-center space-x-2">
-              <span>Mesa Redonda de Agentes Especialistas (War Room)</span>
-              <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full">
-                Multi-Agent Squad
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                Mesa Redonda Multi-Agente (War Room)
+              </h1>
+              <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shrink-0">
+                Squad Autônomo
               </span>
-            </h1>
-            <p className="text-xs text-slate-400">
-              Estrategista, Copywriter, Designer, Roteirista de Vídeo e Gestora de Tráfego criando juntos.
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
+              Debate interdisciplinar entre Estrategista, Copywriter, Designer, Roteirista e Tráfego.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2 shrink-0">
           {selectedRoom && (
             <>
               <button
                 type="button"
                 onClick={handleExportPlan}
-                className="flex items-center space-x-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl border border-slate-700 transition"
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition cursor-pointer"
+                title="Exportar plano da campanha em Markdown"
               >
-                <Download className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Exportar Plano (.md)</span>
+                <Download className="h-3.5 w-3.5 text-indigo-500" />
+                <span className="hidden sm:inline">Exportar (.md)</span>
               </button>
 
               <button
                 type="button"
                 onClick={(e) => handleDeleteRoom(selectedRoom.id, selectedRoom.title, e)}
-                className="flex items-center space-x-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-medium rounded-xl border border-rose-500/30 transition"
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 text-xs font-medium text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 transition cursor-pointer"
                 title="Excluir este projeto"
               >
-                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                <span>Excluir Projeto</span>
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Excluir</span>
               </button>
             </>
           )}
@@ -461,152 +525,133 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
           <button
             type="button"
             onClick={() => setIsCreatingRoom(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition"
+            className="flex h-9 items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 px-3.5 text-xs font-semibold text-white shadow-md shadow-indigo-500/20 transition cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>Nova Sala de Projeto</span>
+            <Plus className="h-4 w-4" />
+            <span>Nova Sala</span>
           </button>
         </div>
       </div>
 
-      {/* Seletor de salas para mobile */}
-      <div className="md:hidden border-b border-slate-800 bg-slate-950/80 p-3 overflow-x-auto">
-        <div className="flex items-center gap-2 min-w-max">
-          {rooms.map((room) => (
-            <div key={room.id} className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => loadRoom(room)}
-                className={`px-3 py-2 rounded-xl border text-left max-w-56 ${
-                  selectedRoom?.id === room.id
-                    ? 'bg-indigo-600/15 border-indigo-500/40 text-white'
-                    : 'bg-slate-900 border-slate-800 text-slate-400'
-                }`}
-              >
-                <p className="text-xs font-semibold truncate">{room.title}</p>
-                <p className="text-[10px] text-slate-500 truncate">{room.topic}</p>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => handleDeleteRoom(room.id, room.title, e)}
-                className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-rose-400 hover:bg-rose-500/20 transition"
-                title="Excluir projeto"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Layout */}
+      {/* Main Grid Layout */}
       <div className="flex-1 flex overflow-hidden min-w-0">
-        {/* Sidebar Esquerda: Lista de Salas */}
-        <div className="w-72 shrink-0 bg-slate-950/60 border-r border-slate-800 p-4 flex flex-col justify-between hidden md:flex">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+        {/* Sidebar Esquerda: Projetos & Squad */}
+        <div className="w-72 shrink-0 border-r border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950/60 p-3.5 flex flex-col justify-between hidden md:flex min-w-0">
+          <div className="space-y-3 flex-1 overflow-hidden flex flex-col min-w-0">
+            <div className="flex items-center justify-between px-1 shrink-0">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                 Projetos & Campanhas
               </span>
-              <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">
+              <span className="rounded-full bg-slate-200 dark:bg-zinc-800 px-2 py-0.2 text-[10px] font-semibold text-slate-600 dark:text-zinc-400">
                 {rooms.length}
               </span>
             </div>
 
             {roomError && (
-              <div className="mb-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-2 text-[10px] text-rose-300">
+              <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2 text-[10px] text-rose-600 dark:text-rose-400">
                 {roomError}
               </div>
             )}
-            <div className="space-y-1.5 overflow-y-auto max-h-[60vh] pr-1">
-              {loadingRooms ? (
-                <div className="text-xs text-slate-500 p-3">Carregando salas...</div>
-              ) : rooms.length === 0 ? (
-                <div className="text-xs text-slate-500 p-3 text-center">Nenhum projeto ativo.</div>
-              ) : (
-                rooms.map((room) => (
-                  <div
-                    key={room.id}
-                    onClick={() => loadRoom(room)}
-                    className={`group w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
-                      selectedRoom?.id === room.id
-                        ? 'bg-indigo-600/15 border-indigo-500/40 text-white'
-                        : 'bg-slate-900/40 border-slate-800/80 text-slate-400 hover:bg-slate-900 hover:text-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-start space-x-2.5 min-w-0 flex-1 pr-2">
-                      <MessageSquare className="w-4 h-4 shrink-0 text-indigo-400 mt-0.5" />
-                      <div className="truncate">
-                        <p className="text-xs font-semibold text-white truncate">{room.title}</p>
-                        <p className="text-[10px] text-slate-500 truncate mt-0.5">{room.topic}</p>
-                      </div>
-                    </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteRoom(room.id, room.title, e)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition shrink-0"
-                      title="Excluir projeto"
+            <div className="space-y-1.5 overflow-y-auto flex-1 pr-1">
+              {loadingRooms ? (
+                <div className="text-xs text-slate-400 p-3 text-center">Carregando salas...</div>
+              ) : rooms.length === 0 ? (
+                <div className="text-xs text-slate-400 p-4 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                  Nenhuma sala criada.
+                </div>
+              ) : (
+                rooms.map((room) => {
+                  const isSelected = selectedRoom?.id === room.id;
+                  return (
+                    <div
+                      key={room.id}
+                      onClick={() => loadRoom(room)}
+                      className={`group w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-600/10 border-indigo-500/40 text-indigo-900 dark:text-white shadow-xs'
+                          : 'bg-white dark:bg-zinc-900/60 border-slate-200/80 dark:border-zinc-800/80 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-900 hover:text-slate-900 dark:hover:text-zinc-200'
+                      }`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))
+                      <div className="flex items-start gap-2.5 min-w-0 flex-1 pr-1.5">
+                        <MessageSquare className={`h-4 w-4 shrink-0 mt-0.5 ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
+                        <div className="truncate">
+                          <p className={`text-xs font-semibold truncate ${isSelected ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-800 dark:text-zinc-200'}`}>
+                            {room.title}
+                          </p>
+                          <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">{room.topic}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteRoom(room.id, room.title, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-500/10 transition shrink-0 cursor-pointer"
+                        title="Excluir projeto"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
+
             {roomsPagination.totalPages > 1 && (
-              <div className="pt-2 flex items-center justify-between gap-2">
+              <div className="pt-2 flex items-center justify-between gap-1 border-t border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
                   disabled={roomsPagination.page <= 1 || loadingRooms}
                   onClick={() => fetchRooms(roomsPagination.page - 1)}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-[10px] text-slate-300 disabled:opacity-40"
+                  className="flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[10px] text-slate-700 disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300"
                 >
-                  Anterior
+                  <ChevronLeft className="h-3 w-3" />
+                  <span>Ant.</span>
                 </button>
-                <span className="text-[10px] text-slate-500">
+                <span className="text-[10px] text-slate-400 font-mono">
                   {roomsPagination.page}/{roomsPagination.totalPages}
                 </span>
                 <button
                   type="button"
                   disabled={roomsPagination.page >= roomsPagination.totalPages || loadingRooms}
                   onClick={() => fetchRooms(roomsPagination.page + 1)}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-[10px] text-slate-300 disabled:opacity-40"
+                  className="flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[10px] text-slate-700 disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300"
                 >
-                  Próxima
+                  <span>Próx.</span>
+                  <ChevronRight className="h-3 w-3" />
                 </button>
               </div>
             )}
           </div>
 
           {/* Squad Roster */}
-          <div className="bg-slate-900/80 border border-slate-800/80 p-3 rounded-2xl space-y-2">
-            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Squad de Especialistas Convocados
+          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-zinc-800 space-y-2">
+            <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider block px-1">
+              Especialistas Disponíveis
             </span>
-            {/* Lista dos Especialistas na Sidebar */}
-            <div className="space-y-1.5 text-[11px] max-h-48 overflow-y-auto pr-1">
+            <div className="space-y-1 text-[11px] max-h-36 overflow-y-auto pr-1">
               {specialists.length === 0 ? (
                 <>
-                  <div className="flex items-center space-x-2 text-blue-400">
-                    <BrainCircuit className="w-3.5 h-3.5" />
-                    <span>Dr. Arthur (Estratégia)</span>
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/60 text-slate-700 dark:text-zinc-300">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                      <span className="truncate">Dr. Arthur (Estratégia)</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-blue-500 font-semibold">@Estrategista</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-emerald-400">
-                    <PenTool className="w-3.5 h-3.5" />
-                    <span>Camila Rocha (Copywriting)</span>
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/60 text-slate-700 dark:text-zinc-300">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="truncate">Camila (Copywriting)</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-emerald-500 font-semibold">@Copywriter</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-purple-400">
-                    <Palette className="w-3.5 h-3.5" />
-                    <span>Lucas Viana (Design & Arte)</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-amber-400">
-                    <Video className="w-3.5 h-3.5" />
-                    <span>Gabriel Sato (Roteiro de Vídeos)</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-cyan-400">
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    <span>Renata Dias (Tráfego Pago)</span>
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/60 text-slate-700 dark:text-zinc-300">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="h-2 w-2 rounded-full bg-purple-500" />
+                      <span className="truncate">Lucas (Design & Arte)</span>
+                    </div>
+                    <span className="text-[9px] font-mono text-purple-500 font-semibold">@Designer</span>
                   </div>
                 </>
               ) : (
@@ -616,13 +661,13 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                     <div
                       key={spec.roleKey}
                       onClick={() => handleTriggerDebateRound(spec.roleKey)}
-                      className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-800/80 cursor-pointer transition text-slate-300 hover:text-white"
+                      className="flex items-center justify-between p-1.5 rounded-lg bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800/60 text-slate-700 dark:text-zinc-300 hover:border-indigo-500/40 cursor-pointer transition"
                     >
-                      <div className="flex items-center space-x-2 truncate">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
                         <span className="truncate">{spec.name}</span>
                       </div>
-                      <span className="text-[9px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                      <span className="text-[9px] font-mono text-indigo-500 dark:text-indigo-400 font-semibold">
                         {display.tag}
                       </span>
                     </div>
@@ -634,131 +679,75 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
         </div>
 
         {/* Chat / Feed Principal */}
-        <div className="flex-1 flex flex-col min-w-0 bg-slate-900/30">
-          {/* Barra de Ações Rápidas do Squad */}
-          <div className="px-4 sm:px-6 py-2.5 bg-slate-950/70 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
-            <div className="flex items-center flex-wrap gap-1.5 min-w-0 flex-1 py-0.5">
-              <span className="text-slate-400 text-[11px] font-medium mr-1 shrink-0">Chamar Especialista:</span>
-              {specialists.length === 0 ? (
-                <>
+        <div className="flex-1 flex flex-col min-w-0 bg-slate-100/40 dark:bg-zinc-950/40">
+          {/* Barra Superior de Invocação de Agentes */}
+          <div className="px-4 py-2.5 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+            <div className="flex items-center flex-wrap gap-1.5 min-w-0 flex-1">
+              <span className="text-slate-500 dark:text-zinc-400 text-[11px] font-semibold mr-1 shrink-0">
+                Chamar Especialista:
+              </span>
+              {(specialists.length === 0 ? [
+                { roleKey: 'STRATEGIST', label: '@Arthur (Estratégia)', color: 'text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10' },
+                { roleKey: 'COPYWRITER', label: '@Camila (Copy)', color: 'text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10' },
+                { roleKey: 'DESIGNER', label: '@Lucas (Design)', color: 'text-purple-600 dark:text-purple-400 border-purple-500/30 bg-purple-500/10' },
+                { roleKey: 'VIDEOMAKER', label: '@Gabriel (Vídeo)', color: 'text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10' },
+                { roleKey: 'TRAFFIC_MANAGER', label: '@Renata (Tráfego)', color: 'text-cyan-600 dark:text-cyan-400 border-cyan-500/30 bg-cyan-500/10' },
+              ] : specialists.map(s => ({
+                roleKey: s.roleKey,
+                label: getSpecialistDisplay(s).buttonLabel,
+                color: 'text-indigo-600 dark:text-indigo-400 border-indigo-500/30 bg-indigo-500/10'
+              }))).map((spec) => {
+                const isCurrent = callingRole === spec.roleKey;
+                return (
                   <button
+                    key={spec.roleKey}
                     type="button"
                     disabled={isDebating}
-                    onClick={() => handleTriggerDebateRound('STRATEGIST')}
-                    className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                      callingRole === 'STRATEGIST'
-                        ? 'bg-blue-600 text-white border-blue-400 shadow-md animate-pulse'
-                        : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-blue-500/30'
+                    onClick={() => handleTriggerDebateRound(spec.roleKey)}
+                    className={`px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      isCurrent
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm animate-pulse'
+                        : `${spec.color} hover:opacity-80`
                     }`}
                   >
-                    {callingRole === 'STRATEGIST' && <Loader2 className="w-3 h-3 animate-spin" />}
-                    <span>@Dr. Arthur (Estrategista)</span>
+                    {isCurrent && <Loader2 className="h-3 w-3 animate-spin" />}
+                    <span>{spec.label}</span>
                   </button>
-                  <button
-                    type="button"
-                    disabled={isDebating}
-                    onClick={() => handleTriggerDebateRound('COPYWRITER')}
-                    className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                      callingRole === 'COPYWRITER'
-                        ? 'bg-emerald-600 text-white border-emerald-400 shadow-md animate-pulse'
-                        : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                    }`}
-                  >
-                    {callingRole === 'COPYWRITER' && <Loader2 className="w-3 h-3 animate-spin" />}
-                    <span>@Camila (Copywriter)</span>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isDebating}
-                    onClick={() => handleTriggerDebateRound('DESIGNER')}
-                    className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                      callingRole === 'DESIGNER'
-                        ? 'bg-purple-600 text-white border-purple-400 shadow-md animate-pulse'
-                        : 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border-purple-500/30'
-                    }`}
-                  >
-                    {callingRole === 'DESIGNER' && <Loader2 className="w-3 h-3 animate-spin" />}
-                    <span>@Lucas (Designer)</span>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isDebating}
-                    onClick={() => handleTriggerDebateRound('VIDEOMAKER')}
-                    className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                      callingRole === 'VIDEOMAKER'
-                        ? 'bg-amber-600 text-white border-amber-400 shadow-md animate-pulse'
-                        : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30'
-                    }`}
-                  >
-                    {callingRole === 'VIDEOMAKER' && <Loader2 className="w-3 h-3 animate-spin" />}
-                    <span>@Gabriel (Roteirista)</span>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isDebating}
-                    onClick={() => handleTriggerDebateRound('TRAFFIC_MANAGER')}
-                    className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                      callingRole === 'TRAFFIC_MANAGER'
-                        ? 'bg-cyan-600 text-white border-cyan-400 shadow-md animate-pulse'
-                        : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
-                    }`}
-                  >
-                    {callingRole === 'TRAFFIC_MANAGER' && <Loader2 className="w-3 h-3 animate-spin" />}
-                    <span>@Renata (Tráfego)</span>
-                  </button>
-                </>
-              ) : (
-                specialists.map((spec) => {
-                  const display = getSpecialistDisplay(spec);
-                  const isCurrent = callingRole === spec.roleKey;
-                  return (
-                    <button
-                      key={spec.roleKey}
-                      type="button"
-                      disabled={isDebating}
-                      onClick={() => handleTriggerDebateRound(spec.roleKey)}
-                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                        isCurrent
-                          ? 'bg-indigo-600 text-white border-indigo-400 shadow-md animate-pulse'
-                          : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white border-indigo-500/30'
-                      }`}
-                      title={spec.title}
-                    >
-                      {isCurrent && <Loader2 className="w-3 h-3 animate-spin" />}
-                      <span>{display.buttonLabel}</span>
-                    </button>
-                  );
-                })
-              )}
+                );
+              })}
             </div>
 
             <button
               type="button"
               disabled={isDebating || !selectedRoom}
               onClick={() => handleTriggerDebateRound()}
-              className="shrink-0 flex items-center space-x-1.5 px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition whitespace-nowrap"
+              className="shrink-0 flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-500/20 transition cursor-pointer whitespace-nowrap"
             >
               {isDebating && !callingRole ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Squad em Reunião...</span>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Squad Criando...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Iniciar Rodada Completa do Squad</span>
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Iniciar Rodada Completa</span>
                 </>
               )}
             </button>
           </div>
 
-          {/* Feed de Mensagens */}
-          <div className="flex-1 p-6 overflow-y-auto space-y-6">
+          {/* Feed de Mensagens do Chat */}
+          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
             {loadingMessages ? (
-              <div className="text-center py-20 text-slate-500 text-xs">Carregando reunião...</div>
+              <div className="text-center py-20 text-slate-400 text-xs">Carregando mensagens da sala...</div>
             ) : messages.length === 0 ? (
-              <div className="text-center py-20 text-slate-500 text-xs">
-                Inicie a reunião clicando em <b>"Iniciar Rodada Completa do Squad"</b> ou envie uma mensagem abaixo.
+              <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400 dark:text-zinc-500">
+                <Users className="h-10 w-10 text-indigo-500/40 mb-3" />
+                <p className="text-sm font-semibold text-slate-700 dark:text-zinc-300">Sala de Reunião Pronta</p>
+                <p className="text-xs max-w-sm mt-1">
+                  Clique em <b>"Iniciar Rodada Completa"</b> ou envie uma instrução abaixo para convocar o squad.
+                </p>
               </div>
             ) : (
               messages.map((msg) => {
@@ -771,112 +760,98 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                 return (
                   <div
                     key={msg.id}
-                    className={`flex items-start space-x-3.5 ${isHuman ? 'justify-end' : 'justify-start'}`}
+                    className={`flex items-start gap-3 ${isHuman ? 'justify-end' : 'justify-start'}`}
                   >
                     {!isHuman && (
-                      <div className={`w-9 h-9 rounded-2xl bg-gradient-to-tr ${badge.gradient} flex items-center justify-center text-white shadow-lg shrink-0 mt-0.5`}>
-                        <IconComponent className="w-5 h-5" />
+                      <div className={`h-9 w-9 rounded-xl bg-gradient-to-tr ${badge.gradient} flex items-center justify-center text-white shadow-md shrink-0 mt-0.5`}>
+                        <IconComponent className="h-4 w-4" />
                       </div>
                     )}
 
-                    <div className={`max-w-2xl rounded-2xl p-4 border shadow-xl ${
+                    <div className={`max-w-2xl rounded-2xl p-4 border shadow-sm ${
                       isHuman
-                        ? 'bg-indigo-600 text-white border-indigo-500/50 rounded-tr-sm'
-                        : 'bg-slate-950/90 text-slate-200 border-slate-800 rounded-tl-sm'
+                        ? 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800/50 rounded-tr-xs'
+                        : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 rounded-tl-xs'
                     }`}>
-                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/10 text-xs">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-white">{msg.senderName}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${badge.textColor} ${badge.borderColor} bg-slate-900/50`}>
+                      <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100 dark:border-zinc-800/80 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 dark:text-white">{msg.senderName}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${badge.textColor} ${badge.borderColor} bg-slate-50 dark:bg-zinc-950 font-medium`}>
                             {badge.label}
                           </span>
                         </div>
-                        <span className="text-[10px] opacity-60">
+                        <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono">
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
 
-                      {/* Conteúdo em Texto */}
-                      <div className="text-xs leading-relaxed whitespace-pre-wrap font-sans">
-                        {msg.content}
-                      </div>
+                      {/* Renderizador Formatado e Inteligente */}
+                      {renderMessageContent(msg.content)}
 
-                      {/* Botão de Gerar Imagem Sob Demanda se o Especialista sugeriu um Prompt */}
+                      {/* Botão de Gerar Imagem */}
                       {!msg.imageUrl && hasPrompt && !isHuman && (
-                        <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
-                          <span className="text-[11px] text-purple-300 flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                            <span>Prompt visual detectado nesta sugestão</span>
+                        <div className="mt-3 pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3">
+                          <span className="text-[11px] text-purple-600 dark:text-purple-400 flex items-center gap-1.5 font-medium">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            <span>Prompt de arte visual identificado</span>
                           </span>
                           <button
                             type="button"
                             disabled={isGeneratingThis}
                             onClick={() => handleGenerateImageForMessage(msg.id, extractPrompt(msg.content))}
-                            className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 text-white text-[11px] font-semibold rounded-xl shadow-md transition cursor-pointer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 text-white text-[11px] font-bold rounded-xl shadow-sm transition cursor-pointer"
                           >
                             {isGeneratingThis ? (
                               <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 <span>Renderizando Arte...</span>
                               </>
                             ) : (
                               <>
-                                <Palette className="w-3.5 h-3.5" />
-                                <span>🎨 Gerar Imagem Agora</span>
+                                <Palette className="h-3.5 w-3.5" />
+                                <span>🎨 Gerar Imagem da Campanha</span>
                               </>
                             )}
                           </button>
                         </div>
                       )}
 
-                      {/* Exibição da Imagem Gerada com Botão de Download */}
+                      {/* Exibição da Imagem Gerada */}
                       {msg.imageUrl && (
-                        <div className="mt-4 p-3 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-3">
-                          <div className="flex items-center justify-between px-1">
-                            <span className="text-[11px] font-semibold text-purple-400 flex items-center space-x-1.5">
-                              <ImageIcon className="w-4 h-4 text-pink-400" />
+                        <div className="mt-3.5 p-3 bg-slate-50 dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-zinc-800 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                              <ImageIcon className="h-4 w-4" />
                               <span>Arte Visual Gerada pela IA</span>
                             </span>
 
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleDownloadImage(msg.imageUrl!, `Arte_Campanha_${msg.id.slice(0, 8)}.jpg`)}
-                                className="flex items-center space-x-1 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-medium transition cursor-pointer shadow"
-                                title="Baixar arquivo da imagem diretamente no computador"
+                                className="flex items-center gap-1 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-semibold transition cursor-pointer shadow-xs"
                               >
-                                <Download className="w-3 h-3" />
-                                <span>Baixar Imagem</span>
+                                <Download className="h-3 w-3" />
+                                <span>Baixar</span>
                               </button>
 
                               <a
                                 href={msg.imageUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="flex items-center space-x-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] transition"
-                                title="Ver imagem em tamanho real"
+                                className="flex items-center gap-1 px-2 py-1 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 rounded-lg text-[10px] transition"
                               >
-                                <ExternalLink className="w-3 h-3" />
+                                <ExternalLink className="h-3 w-3" />
                                 <span>Abrir</span>
                               </a>
-
-                              <button
-                                type="button"
-                                disabled={isGeneratingThis}
-                                onClick={() => handleGenerateImageForMessage(msg.id, extractPrompt(msg.content))}
-                                className="p-1 text-slate-400 hover:text-white rounded transition"
-                                title="Gerar outra versão desta arte"
-                              >
-                                <RefreshCw className={`w-3.5 h-3.5 ${isGeneratingThis ? 'animate-spin text-purple-400' : ''}`} />
-                              </button>
                             </div>
                           </div>
 
-                          <div className="relative rounded-xl overflow-hidden border border-slate-800 group">
+                          <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-black/10">
                             <img
                               src={msg.imageUrl}
                               alt="Arte da Campanha"
-                              className="w-full max-h-96 object-contain bg-black/40 rounded-xl"
+                              className="w-full max-h-96 object-contain rounded-xl"
                             />
                           </div>
                         </div>
@@ -884,8 +859,8 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
                     </div>
 
                     {isHuman && (
-                      <div className="w-9 h-9 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 shadow-lg shrink-0 mt-0.5">
-                        <User className="w-5 h-5" />
+                      <div className="h-9 w-9 rounded-xl bg-slate-200 dark:bg-zinc-800 flex items-center justify-center text-slate-700 dark:text-zinc-300 shadow-sm shrink-0 mt-0.5">
+                        <User className="h-4 w-4" />
                       </div>
                     )}
                   </div>
@@ -895,22 +870,22 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input de Mensagem do Gestor */}
-          <div className="p-4 bg-slate-950 border-t border-slate-800">
-            <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
+          {/* Input de Mensagem */}
+          <div className="p-3.5 bg-white dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800">
+            <form onSubmit={handleSendMessage} className="flex items-center gap-2.5">
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Dê uma instrução para o squad ou faça uma pergunta (Ex: @Designer, crie uma arte minimalista)..."
-                className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                placeholder="Instrua o squad ou pergunte (Ex: @Designer, elabore um criativo minimalista para feed)..."
+                className="shadcn-input flex-1 py-2.5"
               />
               <button
                 type="submit"
                 disabled={!inputMessage.trim() || isDebating}
-                className="p-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl shadow-lg shadow-indigo-600/30 transition cursor-pointer"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white shadow-md shadow-indigo-500/20 transition cursor-pointer shrink-0"
               >
-                <Send className="w-4 h-4" />
+                <Send className="h-4 w-4" />
               </button>
             </form>
           </div>
@@ -919,73 +894,84 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken }) => {
 
       {/* Modal de Criação de Sala */}
       {isCreatingRoom && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 text-slate-100 shadow-2xl">
-            <h3 className="text-base font-bold text-white mb-1">Criar Nova Sala de Reunião / Campanha</h3>
-            <p className="text-xs text-slate-400 mb-6">
-              Defina o briefing inicial para que o squad de especialistas inicie o desenvolvimento.
-            </p>
-
-            <form onSubmit={handleCreateRoom} className="space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-2xl p-6 text-slate-900 dark:text-slate-100 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Nome do Projeto / Campanha</label>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Nova Sala de Campanha</h3>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                  Defina o briefing inicial para iniciar a colaboração do squad de IA.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreatingRoom(false)}
+                className="text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateRoom} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Nome do Projeto *</label>
                 <input
                   type="text"
                   required
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Ex: Campanha Black Friday - Clínica Lumina"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  placeholder="Ex: Campanha Black Friday - Lumina Clinic"
+                  className="shadcn-input"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Briefing / Tópico Principal</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Briefing / Tópico Principal *</label>
                 <textarea
                   rows={3}
                   required
                   value={newTopic}
                   onChange={(e) => setNewTopic(e.target.value)}
-                  placeholder="Ex: Lançamento de pacote de harmonização facial com 30% de desconto nos primeiros 50 agendamentos."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500"
+                  placeholder="Ex: Pacote especial com 30% de desconto para agendamentos pelo WhatsApp."
+                  className="shadcn-input resize-y"
                 />
               </div>
 
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Público-Alvo</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Público-Alvo</label>
                   <input
                     type="text"
                     value={newAudience}
                     onChange={(e) => setNewAudience(e.target.value)}
-                    placeholder="Ex: Mulheres de 25 a 50 anos"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    placeholder="Ex: Homens e Mulheres 25-45"
+                    className="shadcn-input"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Objetivo de Conversão</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Objetivo</label>
                   <input
                     type="text"
                     value={newObjective}
                     onChange={(e) => setNewObjective(e.target.value)}
-                    placeholder="Ex: Agendamentos no WhatsApp"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    placeholder="Ex: Agendamentos WhatsApp"
+                    className="shadcn-input"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setIsCreatingRoom(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition"
+                  className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white hover:bg-indigo-500 shadow transition cursor-pointer"
                 >
                   {createLoading ? 'Criando...' : 'Iniciar Reunião'}
                 </button>
