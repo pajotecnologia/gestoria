@@ -809,7 +809,7 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
   try {
     const tenantId = req.tenantId!;
     const { id } = req.params;
-    const { prompt, title, format, quantity = 1 } = req.body;
+    const { prompt, title, format, quantity = 1, visualStyle = 'brazilian_people' } = req.body;
 
     if (!prompt || typeof prompt !== 'string') {
       res.status(400).json({ error: 'O prompt visual da imagem é obrigatório.' });
@@ -829,19 +829,50 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
     const requestedFormat: '1:1' | '9:16' | '16:9' = ['1:1', '9:16', '16:9'].includes(format) ? format : '1:1';
     const count = Math.min(Math.max(Number(quantity) || 1, 1), 4);
 
-    // Otimiza o prompt para inglês com foco em fotografia publicitária brasileira e pessoas reais
+    const STYLE_CONFIG: Record<string, { prefix: string; focus: string; negative: string }> = {
+      brazilian_people: {
+        prefix: 'Authentic Brazilian commercial advertising RAW photography',
+        focus: 'featuring real everyday Brazilian people, Latin American ethnicity, diverse warm skin tones, natural hair, authentic Brazilian lifestyle and smiles, realistic human skin pores, shot on 85mm lens f/1.8',
+        negative: 'Asian, Japanese, anime, manga, porcelain doll skin, pale skin, cartoon, 3d render, cgi, illustration, fake drawing',
+      },
+      brazilian_business: {
+        prefix: 'Professional Brazilian corporate commercial advertising photography',
+        focus: 'real Brazilian executives and entrepreneurs in a modern office, diverse Latin American professionals, natural skin textures, elegant corporate attire, sharp commercial studio lighting',
+        negative: 'Asian, Japanese, anime, manga, 3d render, cartoon, cgi, doll face',
+      },
+      brazilian_retail: {
+        prefix: 'Vibrant Brazilian retail advertising lifestyle photography',
+        focus: 'authentic Brazilian customers and families enjoying products, lively natural Brazilian ambiance, warm daylight, high energy commercial marketing shot',
+        negative: 'Asian, Japanese, anime, manga, cartoon, 3d render, cgi',
+      },
+      product_only: {
+        prefix: 'High-end commercial product photography',
+        focus: 'minimalist clean advertising studio backdrop, soft commercial softbox lighting, 8k crisp details, ultra-sharp focus on the product, no people',
+        negative: 'people, human, faces, Asian, anime, cartoon, 3d render, cgi, blurry',
+      },
+    };
+
+    const styleInfo = STYLE_CONFIG[visualStyle] || STYLE_CONFIG.brazilian_people;
+
+    // Otimiza o prompt para inglês com foco estrito em fotografia publicitária brasileira
     let visualPromptInEnglish = prompt.trim();
     try {
       const translationRes = await generateText({
         provider: 'gemini',
         model: 'gemini-2.5-flash',
-        temperature: 0.6,
+        temperature: 0.4,
         tenantId,
         taskType: 'war_room',
         messages: [
           {
             role: 'system',
-            content: 'You are an award-winning commercial advertising art director for Brazilian and Latin American campaigns. Convert the user marketing idea into a photorealistic, ultra-realistic commercial advertising visual prompt. When people or models are depicted, explicitly specify authentic Brazilian / Latin American people with diverse, natural features, warm skin tones, realistic skin texture, genuine expressions and modern commercial studio lighting. Strictly avoid anime, avoid East Asian doll-like features, avoid CGI or 3D cartoon looks unless requested. Output ONLY the descriptive English prompt in one concise paragraph.'
+            content: `You are an award-winning Brazilian Art Director creating prompts for photorealistic commercial advertising campaigns in Brazil.
+Strict Rules:
+1. Target the Brazilian market exclusively.
+2. When people are depicted, ALWAYS describe them explicitly as authentic Brazilian / Latin American individuals with diverse natural skin tones (moreno, pardo, mixed, warm undertones), real human skin textures, and genuine expressions.
+3. STRICTLY PROHIBIT East Asian, Japanese, anime, manga, doll-like porcelain skin, or 3D CGI cartoon aesthetics.
+4. Style focus: ${styleInfo.focus}.
+5. Write the final prompt in descriptive English in one detailed paragraph, starting with "${styleInfo.prefix}". Explicitly append negative constraints: "Avoid: ${styleInfo.negative}".`
           },
           {
             role: 'user',
@@ -853,7 +884,7 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
         visualPromptInEnglish = translationRes.text.trim();
       }
     } catch {
-      visualPromptInEnglish = `Authentic Brazilian commercial advertising photography: ${prompt.trim()}, natural Latin American models, realistic skin texture, 8k, modern aesthetic, cinematic studio lighting, premium marketing design`;
+      visualPromptInEnglish = `${styleInfo.prefix}: ${prompt.trim()}, ${styleInfo.focus}, 8k, cinematic commercial lighting. Avoid: ${styleInfo.negative}`;
     }
 
     const VARIATION_ANGLES = [
@@ -878,6 +909,7 @@ router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promi
         englishPrompt: variationPrompt,
         title: count > 1 ? `${title || 'Arte do Anúncio'} (Variação ${idx + 1})` : (title || 'Arte do Anúncio'),
         format: requestedFormat,
+        visualStyle,
         generatedAt: new Date(),
       });
       // Delay entre gerações para escalonar requisições e garantir estabilidade

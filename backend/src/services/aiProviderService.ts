@@ -460,7 +460,7 @@ export async function generateImage(
       .replace(/[^a-zA-Z0-9\s,.-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 300);
+      .slice(0, 800);
 
     const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt)}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}`;
     if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'flux', model: 'flux.1-schnell' });

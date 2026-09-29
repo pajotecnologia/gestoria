@@ -44,6 +44,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   const [imagePrompt, setImagePrompt] = useState<string>('');
   const [imageFormat, setImageFormat] = useState<'1:1' | '9:16' | '16:9'>('1:1');
   const [imageQuantity, setImageQuantity] = useState<number>(3);
+  const [visualStyle, setVisualStyle] = useState<'brazilian_people' | 'brazilian_business' | 'brazilian_retail' | 'product_only'>('brazilian_people');
   const [imageGenerating, setImageGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImageItem[]>([]);
   const [previewModalUrl, setPreviewModalUrl] = useState<string | null>(null);
@@ -78,7 +79,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   // Atualiza o prompt inicial de imagem quando muda de campanha
   useEffect(() => {
     if (selectedCampaign) {
-      const defaultIdea = `Anúncio profissional de alta conversão para ${selectedCampaign.name}. Empresa: ${selectedCampaign.client?.name || 'Marca'}. Objetivo: ${selectedCampaign.objective}. Visual moderno, iluminação de estúdio comercial, estética premium.`;
+      const defaultIdea = `Anúncio profissional de alta conversão para ${selectedCampaign.name}. Empresa: ${selectedCampaign.client?.name || 'Marca'}. Objetivo: ${selectedCampaign.objective}. Visual moderno, pessoas brasileiras reais, iluminação de estúdio comercial, estética premium.`;
       setImagePrompt(defaultIdea);
     }
   }, [selectedCampaignId]);
@@ -131,6 +132,7 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
           title: `Arte: ${selectedCampaign?.name || 'Campanha'}`,
           format: formatToUse,
           quantity: imageQuantity,
+          visualStyle,
         }),
       });
 
@@ -409,6 +411,71 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
                       {qty} {qty === 1 ? 'Imagem' : 'Imagens'}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Estilo & Contexto Brasileiro 100% Brasil */}
+              <div className="md:col-span-2 pt-2 border-t border-slate-200/70 dark:border-zinc-800">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+                    Estilo Visual & Público (Foco no Brasil 🇧🇷)
+                  </label>
+                  <span className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400">
+                    Traços e demografia brasileira autêntica
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-slate-200/60 dark:bg-zinc-950 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={() => setVisualStyle('brazilian_people')}
+                    className={`py-2 px-2 text-xs font-semibold rounded-lg transition cursor-pointer text-center flex flex-col items-center gap-0.5 ${
+                      visualStyle === 'brazilian_people'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <span>🇧🇷 Pessoas & Famílias</span>
+                    <span className="text-[9px] opacity-80 font-normal">Pessoas reais do Brasil</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVisualStyle('brazilian_business')}
+                    className={`py-2 px-2 text-xs font-semibold rounded-lg transition cursor-pointer text-center flex flex-col items-center gap-0.5 ${
+                      visualStyle === 'brazilian_business'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <span>🏢 Negócios & B2B</span>
+                    <span className="text-[9px] opacity-80 font-normal">Corporativo nacional</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVisualStyle('brazilian_retail')}
+                    className={`py-2 px-2 text-xs font-semibold rounded-lg transition cursor-pointer text-center flex flex-col items-center gap-0.5 ${
+                      visualStyle === 'brazilian_retail'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <span>🛍️ Varejo & Consumo</span>
+                    <span className="text-[9px] opacity-80 font-normal">Ofertas e alta energia</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVisualStyle('product_only')}
+                    className={`py-2 px-2 text-xs font-semibold rounded-lg transition cursor-pointer text-center flex flex-col items-center gap-0.5 ${
+                      visualStyle === 'product_only'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <span>📦 Apenas Produto</span>
+                    <span className="text-[9px] opacity-80 font-normal">Estúdio sem pessoas</span>
+                  </button>
                 </div>
               </div>
             </div>
