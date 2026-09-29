@@ -32,7 +32,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const now = new Date();
     const startDate = getStartDate(period, now);
 
-    const [clients, campaigns, users, previousUsers, activeCampaigns, aiRequests, recentActivity, campaignStatusRows, campaignMetrics] = await prisma.$transaction([
+    const [clients, campaigns, users, previousUsers, activeCampaigns, aiRequests, recentActivity, campaignStatusRows] = await prisma.$transaction([
       prisma.client.findMany({ where: { tenantId, createdAt: { gte: startDate } }, select: { createdAt: true } }),
       prisma.campaign.findMany({ where: { tenantId, createdAt: { gte: startDate } }, select: { createdAt: true } }),
       prisma.user.count({ where: { tenantId } }),
@@ -49,7 +49,16 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         where: { tenantId },
         select: { status: true },
       }),
-      prisma.campaign.aggregate({
+    ]);
+
+    let totalSpend = 0;
+    let totalRevenue = 0;
+    let totalConversions = 0;
+    let totalClicks = 0;
+    let totalImpressions = 0;
+
+    try {
+      const campaignMetrics = await prisma.campaign.aggregate({
         where: { tenantId },
         _sum: {
           spend: true,
@@ -58,14 +67,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           clicks: true,
           impressions: true,
         },
-      }),
-    ]);
-
-    const totalSpend = campaignMetrics._sum.spend || 0;
-    const totalRevenue = campaignMetrics._sum.revenue || 0;
-    const totalConversions = campaignMetrics._sum.conversions || 0;
-    const totalClicks = campaignMetrics._sum.clicks || 0;
-    const totalImpressions = campaignMetrics._sum.impressions || 0;
+      });
+      totalSpend = campaignMetrics._sum.spend || 0;
+      totalRevenue = campaignMetrics._sum.revenue || 0;
+      totalConversions = campaignMetrics._sum.conversions || 0;
+      totalClicks = campaignMetrics._sum.clicks || 0;
+      totalImpressions = campaignMetrics._sum.impressions || 0;
+    } catch {
+      // Caso as novas colunas ainda estejam sendo migradas
+    }
 
     const buckets = new Map<string, { label: string; clients: number; campaigns: number; aiRequests: number }>();
     const bucketCount = period === '12m' ? 12 : period === '30d' ? 30 : 7;

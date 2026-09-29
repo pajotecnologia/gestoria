@@ -1,0 +1,11 @@
+-- AlterTable
+ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "spend" DOUBLE PRECISION DEFAULT 0;
+ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "impressions" INTEGER DEFAULT 0;
+ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "clicks" INTEGER DEFAULT 0;
+ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "conversions" INTEGER DEFAULT 0;
+ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "revenue" DOUBLE PRECISION DEFAULT 0;
+ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "aiDiagnostic" TEXT;
+ALTER TABLE "campaigns" ADD COLUMN IF NOT EXISTS "aiDiagnosticAt" TIMESTAMP(3);
+
+-- CreateIndex
+CREATE INDEX IF NOT EXISTS "campaigns_tenantId_createdAt_idx" ON "campaigns"("tenantId", "createdAt");
