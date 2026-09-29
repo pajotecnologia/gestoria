@@ -484,8 +484,8 @@ export const AnalyticsDashboard: React.FC<{ jwtToken: string }> = ({ jwtToken })
         headers: { Authorization: 'Bearer ' + jwtToken }
       });
       const j = await r.json();
-      if (r.ok && j.data) {
-        setCampaigns(j.data);
+      if (r.ok) {
+        setCampaigns(Array.isArray(j.data) ? j.data : (Array.isArray(j) ? j : []));
       }
     } catch {
       // Ignora erro silenciosamente

@@ -78,11 +78,11 @@ export const ExecutiveReports: React.FC<ExecutiveReportsProps> = ({ jwtToken }) 
       ]);
       if (clientsRes.ok) {
         const cData = await clientsRes.json();
-        setClients(cData);
+        setClients(Array.isArray(cData) ? cData : (Array.isArray(cData?.data) ? cData.data : []));
       }
       if (campaignsRes.ok) {
         const cpData = await campaignsRes.json();
-        setCampaigns(cpData);
+        setCampaigns(Array.isArray(cpData) ? cpData : (Array.isArray(cpData?.data) ? cpData.data : []));
       }
     } catch (err) {
       console.error('Erro ao carregar dados para relatórios:', err);
@@ -92,14 +92,17 @@ export const ExecutiveReports: React.FC<ExecutiveReportsProps> = ({ jwtToken }) 
   };
 
   // Filtragem de campanhas
-  const filteredCampaigns = campaigns.filter(c => {
+  const safeCampaigns = Array.isArray(campaigns) ? campaigns : [];
+  const safeClients = Array.isArray(clients) ? clients : [];
+
+  const filteredCampaigns = safeCampaigns.filter(c => {
     const matchClient = selectedClientId === 'all' || c.clientId === selectedClientId;
     const matchCamp = selectedCampaignId === 'all' || c.id === selectedCampaignId;
     return matchClient && matchCamp;
   });
 
-  const selectedClient = clients.find(c => c.id === selectedClientId);
-  const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
+  const selectedClient = safeClients.find(c => c.id === selectedClientId);
+  const selectedCampaign = safeCampaigns.find(c => c.id === selectedCampaignId);
 
   // Cálculos agregados para KPIs
   const totalSpend = filteredCampaigns.reduce((sum, c) => sum + (c.metrics?.spend || 0), 0);
