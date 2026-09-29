@@ -40,6 +40,7 @@ interface CommandPaletteProps {
   onClose: () => void;
   onSelectView: (view: any) => void;
   onOpenReleases: () => void;
+  onOpenHelp?: () => void;
   onLogout: () => void;
   userRole?: string;
 }
@@ -49,6 +50,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onClose,
   onSelectView,
   onOpenReleases,
+  onOpenHelp,
   onLogout,
   userRole
 }) => {
@@ -62,7 +64,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       actions: [
         { id: 'analytics', label: 'Painel & Métricas', desc: 'Métricas, KPIs, Benchmarking e evolução operacional em tempo real', icon: BarChart3, view: 'analytics' },
         { id: 'campaigns', label: 'Campanhas & Estratégias', desc: 'Ciclo de vida, briefings e estratégias compiladas de campanhas', icon: FolderKanban, view: 'campaigns' },
-        { id: 'adstudio', label: 'Ad Creative Studio', desc: 'Gerador de Hooks, Copies (AIDA/PAS), Roteiros e Briefings Visuais de Anúncios', icon: Wand2, view: 'adstudio' },
+        { id: 'adstudio', label: 'Ad Creative Studio', desc: 'Gerador de Hooks, Copies (AIDA/PAS), Roteiros e Imagens de Anúncios com IA', icon: Wand2, view: 'adstudio' },
         { id: 'clients', label: 'Context Hub & Clientes', desc: 'Gestão de empresas e base de conhecimento contextual RAG', icon: Building2, view: 'clients' },
       ]
     },
@@ -85,8 +87,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       }
     ] : []),
     {
-      category: 'Sistema',
+      category: 'Sistema & Ajuda',
       actions: [
+        ...(onOpenHelp ? [{ id: 'help', label: 'Guia do Gestor IA (Passo a Passo)', desc: 'Aprenda o fluxo ideal de criação de campanhas e análise de métricas', icon: Sparkles, custom: onOpenHelp }] : []),
         { 
           id: 'theme', 
           label: theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro', 

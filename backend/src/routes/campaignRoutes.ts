@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from './authRoutes';
 import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { writeAuditLog } from '../services/auditLog';
-import { generateText } from '../services/aiProviderService';
+import { generateText, generateImage } from '../services/aiProviderService';
 import { getActiveSpecialistsForTenant } from './specialistRoutes';
 import { getCampaignLifecycleStatus, validateCampaignPeriod } from '../services/campaignLifecycle';
 
@@ -787,6 +787,61 @@ Sua missão: Criar o pacote definitivo de criativos, copies, ganchos e roteiros 
   } catch (error: any) {
     console.error('[Ad Studio Generation Error]:', error);
     res.status(500).json({ error: error?.message || 'Falha ao gerar anúncios e criativos.' });
+  }
+});
+
+// Ad Studio: Gerar Imagem do Criativo com DALL-E 3 / Flux
+router.post('/:id/generate-ad-image', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = req.tenantId!;
+    const { id } = req.params;
+    const { prompt, title, format } = req.body;
+
+    if (!prompt || typeof prompt !== 'string') {
+      res.status(400).json({ error: 'O prompt visual da imagem é obrigatório.' });
+      return;
+    }
+
+    const campaign = await prisma.campaign.findFirst({
+      where: { id, tenantId },
+      include: { client: true },
+    });
+
+    if (!campaign) {
+      res.status(404).json({ error: 'Campanha não encontrada.' });
+      return;
+    }
+
+    // Refina o prompt com dados de marca e estilo de alta conversão
+    const enhancedPrompt = [
+      `High-converting professional marketing ad visual: ${prompt.trim()}`,
+      campaign.client.brandVoice ? `Style: ${campaign.client.brandVoice}` : '',
+      'Ultra high resolution, 8k, modern commercial advertising photography, cinematic lighting, sleek aesthetic, clean layout, no awkward text artifacts',
+    ].filter(Boolean).join(', ');
+
+    const result = await generateImage(enhancedPrompt, tenantId);
+
+    await writeAuditLog({
+      tenantId,
+      userId: req.user?.userId,
+      action: 'CAMPAIGN_AD_IMAGE_GENERATED',
+      entity: 'Campaign',
+      entityId: id,
+      metadata: { provider: result.provider, title: title || 'Ad Creative Visual' },
+    }).catch(() => undefined);
+
+    res.json({
+      success: true,
+      imageUrl: result.url,
+      provider: result.provider,
+      prompt: prompt.trim(),
+      title: title || 'Arte do Anúncio',
+      format: format || '1:1',
+      generatedAt: new Date(),
+    });
+  } catch (error: any) {
+    console.error('[Ad Studio Image Generation Error]:', error);
+    res.status(500).json({ error: error?.message || 'Falha ao gerar imagem do anúncio.' });
   }
 });
 

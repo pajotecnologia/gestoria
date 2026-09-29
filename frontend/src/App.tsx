@@ -7,6 +7,7 @@ import {
   ChevronLeft, 
   ChevronRight, 
   FolderKanban, 
+  HelpCircle,
   History, 
   LogOut, 
   Menu, 
@@ -34,6 +35,7 @@ import { ClientContextManager } from './components/ClientContextManager';
 import { CampaignManager } from './components/CampaignManager';
 import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 import { AdStudio } from './components/AdStudio';
+import { HelpGuideModal } from './components/HelpGuideModal';
 import { CommandPalette } from './components/CommandPalette';
 import { APP_VERSION, RELEASE_HISTORY } from './version';
 import {
@@ -70,6 +72,7 @@ export const App: React.FC = () => {
   const [releaseModalOpen, setReleaseModalOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [warRoomModalOpen, setWarRoomModalOpen] = useState(false);
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
 
   // Estados de Auth
   const [isRegistering, setIsRegistering] = useState(false);
@@ -571,6 +574,17 @@ export const App: React.FC = () => {
                 <Search className="h-4 w-4" />
               </button>
 
+              {/* Help & Guide Button (?) */}
+              <button
+                type="button"
+                onClick={() => setHelpModalOpen(true)}
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 transition cursor-pointer shadow-xs"
+                title="Como Usar o Sistema (Passo a Passo)"
+              >
+                <HelpCircle className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+                <span className="hidden sm:inline">Como Usar</span>
+              </button>
+
               {/* System Version Changelog Pill */}
               <button
                 type="button"
@@ -729,6 +743,13 @@ export const App: React.FC = () => {
             </DialogContent>
           </Dialog>
 
+          {/* Guia Passo a Passo do Sistema */}
+          <HelpGuideModal
+            isOpen={helpModalOpen}
+            onClose={() => setHelpModalOpen(false)}
+            onNavigateToView={(v) => handleViewChange(v)}
+          />
+
           {/* =========================================================================
               ÁREA PRINCIPAL DE CONTEÚDO ANIMADA (FRAMER MOTION)
               ========================================================================= */}
@@ -798,6 +819,17 @@ export const App: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Command Palette (Ctrl+K) */}
+        <CommandPalette
+          isOpen={commandPaletteOpen}
+          onClose={() => setCommandPaletteOpen(false)}
+          onSelectView={(v) => handleViewChange(v)}
+          onOpenReleases={() => setReleaseModalOpen(true)}
+          onOpenHelp={() => setHelpModalOpen(true)}
+          onLogout={handleLogout}
+          userRole={user?.role}
+        />
       </div>
     </TooltipProvider>
   );
