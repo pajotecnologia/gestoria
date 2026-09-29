@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.3.0';
+export const APP_VERSION = '1.4.0';
 
 export type ReleaseItem = {
   version: string;
@@ -8,6 +8,18 @@ export type ReleaseItem = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: '1.4.0',
+    date: '29/09/2026',
+    title: 'Motor Fotográfico do Brasil (1080p/4K), Geração em Lote no Ad Studio & Help Interativo',
+    changes: [
+      'Motor de Imagens Publicitárias 100% Brasil: Pessoas reais, famílias, executivos B2B e varejo com demografia autêntica e sem distorções.',
+      'Geração Simultânea de Imagens no Ad Studio: Seleção de 1, 2, 3 ou 4 variações por vez nos formatos 1:1 Feed, 9:16 Story/Reels e 16:9 Banner.',
+      'Resolução de Alta Definição (1080p/4K): Eliminação total de instabilidades e oscilações, com integração prioritária ao DALL-E 3.',
+      'Central de Ajuda & Guia Passo a Passo (Help Modal): Passo a passo interativo de 6 fases para dominar o fluxo de criação e gestão da agência.',
+      'Sincronização Dinâmica com a Equipe de Especialistas: Camila Rocha (Copy), Lucas Viana (Design), Dr. Arthur Valente (Estratégia) e Renata Dias (Tráfego).',
+    ],
+  },
   {
     version: '1.3.0',
     date: '29/09/2026',
