@@ -134,6 +134,20 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
     }
   };
 
+  useEffect(() => {
+    void load();
+  }, [jwtToken]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showForm) {
+        resetForm();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showForm]);
+
   const open = async (id: string) => {
     try {
       const res = await fetch(apiUrl('/api/clients/' + id + '/context'), {

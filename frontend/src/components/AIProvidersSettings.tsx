@@ -57,24 +57,29 @@ export const PROVIDER_MODELS: Record<string, Array<{ id: string; name: string }>
   ],
 };
 
+const emptyForm = {
+  name: '',
+  provider: 'gemini',
+  model: 'gemini-3.8-flash',
+  apiKey: '',
+  priority: 100,
+  enabled: true
+};
+
 export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   const [accounts, setAccounts] = useState<ProviderAccount[]>([]);
-  const [form, setForm] = useState({ name: '', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: '', priority: 100 });
+  const [editingAccount, setEditingAccount] = useState<ProviderAccount | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState(emptyForm);
   const [customModelMode, setCustomModelMode] = useState(false);
-  const [editCustomModelMode, setEditCustomModelMode] = useState(false);
   const [message, setMessage] = useState('');
   const [usage, setUsage] = useState<UsageSummary | null>(null);
-  const [showForm, setShowForm] = useState(true);
 
   // Estados de Teste de Conexão Live
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latencyMs?: number }>>({});
-  const [formTestLoading, setFormTestLoading] = useState(false);
-  const [formTestResult, setFormTestResult] = useState<{ success: boolean; message: string } | null>(null);
-
-  // Modal de Edição
-  const [editingAccount, setEditingAccount] = useState<ProviderAccount | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', provider: 'gemini', model: '', apiKey: '', priority: 100, enabled: true });
+  const [modalTestLoading, setModalTestLoading] = useState(false);
+  const [modalTestResult, setModalTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const load = async () => {
     try {
@@ -106,16 +111,71 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
     void loadUsage();
   }, [jwtToken]);
 
-  const handleTestUnsaved = async () => {
-    if (!form.apiKey.trim()) {
-      setFormTestResult({ success: false, message: 'Informe a API Key / URL antes de testar.' });
+  // Fechar modal ao pressionar ESC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
+  const handleOpenCreate = () => {
+    setEditingAccount(null);
+    setForm(emptyForm);
+    setCustomModelMode(false);
+    setModalTestResult(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (account: ProviderAccount) => {
+    setEditingAccount(account);
+    setForm({
+      name: account.name,
+      provider: account.provider,
+      model: account.model,
+      apiKey: '',
+      priority: account.priority,
+      enabled: account.enabled
+    });
+    setCustomModelMode(false);
+    setModalTestResult(null);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingAccount(null);
+    setModalTestResult(null);
+  };
+
+  const handleTestInModal = async () => {
+    if (!form.apiKey.trim() && !editingAccount) {
+      setModalTestResult({ success: false, message: 'Informe a API Key / URL antes de testar.' });
       return;
     }
 
-    setFormTestLoading(true);
-    setFormTestResult(null);
+    setModalTestLoading(true);
+    setModalTestResult(null);
 
     try {
+      // Se for edição e não digitou nova chave, testa o provedor existente
+      if (editingAccount && !form.apiKey.trim()) {
+        const res = await fetch(apiUrl(`/api/ai-providers/${editingAccount.id}/test`), {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${jwtToken}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setModalTestResult({ success: true, message: `Conexão bem sucedida! Latência: ${data.latencyMs}ms. Resposta: "${data.replyPreview}"` });
+        } else {
+          setModalTestResult({ success: false, message: data.error || data.details || 'Falha no teste de conexão.' });
+        }
+        return;
+      }
+
       const res = await fetch(apiUrl('/api/ai-providers/test-connection'), {
         method: 'POST',
         headers: { Authorization: `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
@@ -127,14 +187,14 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setFormTestResult({ success: true, message: `Conexão bem sucedida! Latência: ${data.latencyMs}ms. Resposta da IA: "${data.replyPreview}"` });
+        setModalTestResult({ success: true, message: `Conexão bem sucedida! Latência: ${data.latencyMs}ms. Resposta da IA: "${data.replyPreview}"` });
       } else {
-        setFormTestResult({ success: false, message: data.error || data.details || 'Falha no teste de conexão.' });
+        setModalTestResult({ success: false, message: data.error || data.details || 'Falha no teste de conexão.' });
       }
     } catch (err: any) {
-      setFormTestResult({ success: false, message: err.message || 'Erro ao testar conexão.' });
+      setModalTestResult({ success: false, message: err.message || 'Erro ao testar conexão.' });
     } finally {
-      setFormTestLoading(false);
+      setModalTestLoading(false);
     }
   };
 
@@ -169,57 +229,34 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
     }
   };
 
-  const add = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(apiUrl('/api/ai-providers'), {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Não foi possível cadastrar o provedor.');
+      if (editingAccount) {
+        const res = await fetch(apiUrl(`/api/ai-providers/${editingAccount.id}`), {
+          method: 'PUT',
+          headers: { Authorization: `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Não foi possível atualizar o provedor.');
 
-      setForm({ name: '', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: '', priority: 100 });
-      setFormTestResult(null);
-      setShowForm(false);
-      setMessage(`Provedor '${data.data?.name}' cadastrado com sucesso!`);
+        setMessage(`Provedor '${data.data?.name}' atualizado com sucesso!`);
+      } else {
+        const res = await fetch(apiUrl('/api/ai-providers'), {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Não foi possível cadastrar o provedor.');
+
+        setMessage(`Provedor '${data.data?.name}' cadastrado com sucesso!`);
+      }
+
+      handleCloseModal();
       await load();
       await loadUsage();
-    } catch (err: any) {
-      setMessage(err.message);
-    }
-  };
-
-  const handleOpenEdit = (account: ProviderAccount) => {
-    setEditingAccount(account);
-    setEditForm({
-      name: account.name,
-      provider: account.provider,
-      model: account.model,
-      apiKey: '',
-      priority: account.priority,
-      enabled: account.enabled
-    });
-    setEditCustomModelMode(false);
-  };
-
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingAccount) return;
-
-    try {
-      const res = await fetch(apiUrl(`/api/ai-providers/${editingAccount.id}`), {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Não foi possível atualizar o provedor.');
-
-      setEditingAccount(null);
-      setMessage(`Provedor '${data.data?.name}' atualizado com sucesso!`);
-      await load();
     } catch (err: any) {
       setMessage(err.message);
     }
@@ -258,10 +295,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
 
         <button 
           type="button" 
-          onClick={() => {
-            setShowForm(true);
-            setFormTestResult(null);
-          }}
+          onClick={handleOpenCreate}
           className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-400 hover:to-violet-500 cursor-pointer"
         >
           <Plus className="h-4 w-4" /> 
@@ -300,210 +334,6 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         </div>
       )}
 
-      {/* Formulário de Cadastro de Novo Provedor */}
-      {showForm && (
-        <form onSubmit={add} className="shadcn-card space-y-4 border-2 border-indigo-500/30 bg-white dark:bg-zinc-900 shadow-md animate-in fade-in duration-150">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Novo Provedor de IA</h3>
-                <p className="text-[11px] text-slate-500 dark:text-zinc-400">Preencha as credenciais da API para adicionar à rede de modelos do sistema.</p>
-              </div>
-            </div>
-            <button 
-              type="button" 
-              onClick={() => setShowForm(false)} 
-              className="flex h-8 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 transition cursor-pointer"
-            >
-              <X className="h-3.5 w-3.5" />
-              <span>Ocultar</span>
-            </button>
-          </div>
-
-          {/* Atalhos Rápidos de Provedores */}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">Atalhos rápidos:</span>
-            <button
-              type="button"
-              onClick={() => {
-                setForm({ name: 'Google Gemini 3.8', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: form.apiKey, priority: 100 });
-                setCustomModelMode(false);
-              }}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
-            >
-              ⚡ Google Gemini
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setForm({ name: 'OpenAI GPT-4o', provider: 'openai', model: 'gpt-4o', apiKey: form.apiKey, priority: 100 });
-                setCustomModelMode(false);
-              }}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
-            >
-              🤖 OpenAI GPT-4o
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setForm({ name: 'Groq Llama 3.3', provider: 'groq', model: 'llama-3.3-70b-versatile', apiKey: form.apiKey, priority: 100 });
-                setCustomModelMode(false);
-              }}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
-            >
-              🚀 Groq LPU
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setForm({ name: 'Ollama Hermes 3 Local', provider: 'ollama', model: 'hermes3:8b', apiKey: 'http://localhost:11434', priority: 100 });
-                setCustomModelMode(false);
-              }}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
-            >
-              🦙 Ollama Local
-            </button>
-          </div>
-
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Nome Identificador *</label>
-              <input
-                required
-                placeholder="Ex: Gemini Flash Produção"
-                value={form.name}
-                onChange={e => setForm({ ...form, name: e.target.value })}
-                className="shadcn-input"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Provedor *</label>
-              <select
-                value={form.provider}
-                onChange={e => {
-                  const provider = e.target.value;
-                  const defaultModel = (PROVIDER_MODELS[provider] && PROVIDER_MODELS[provider][0]?.id) || 'gpt-4o';
-                  setForm({ ...form, provider, model: defaultModel });
-                  setCustomModelMode(false);
-                }}
-                className="shadcn-input"
-              >
-                <option value="gemini">Google Gemini (Recomendado)</option>
-                <option value="openai">OpenAI (Oficial)</option>
-                <option value="groq">Groq (Velocidade LPU)</option>
-                <option value="ollama">Ollama (Self-Hosted / Local)</option>
-              </select>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300">Modelo *</label>
-                <button
-                  type="button"
-                  onClick={() => setCustomModelMode(!customModelMode)}
-                  className="text-[10px] text-indigo-500 hover:underline dark:text-indigo-400"
-                >
-                  {customModelMode ? 'Ver Lista' : 'Digitar Outro'}
-                </button>
-              </div>
-              {customModelMode ? (
-                <input
-                  required
-                  placeholder="ID do modelo (ex: gemini-3.8-flash)"
-                  value={form.model}
-                  onChange={e => setForm({ ...form, model: e.target.value })}
-                  className="shadcn-input"
-                />
-              ) : (
-                <select
-                  value={form.model}
-                  onChange={e => setForm({ ...form, model: e.target.value })}
-                  className="shadcn-input"
-                >
-                  {(PROVIDER_MODELS[form.provider] || []).map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                {form.provider === 'ollama' ? 'URL do Servidor Ollama' : 'Chave de API (API Key) *'}
-              </label>
-              <input
-                required
-                type="text"
-                placeholder={form.provider === 'ollama' ? 'http://ollama:11434 ou http://localhost:11434' : 'AIzaSy... ou sk-...'}
-                value={form.apiKey}
-                onChange={e => setForm({ ...form, apiKey: e.target.value })}
-                className="shadcn-input"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Prioridade de Rotação (1 = Máxima)</label>
-              <input
-                required
-                type="number"
-                min="1"
-                max="1000"
-                value={form.priority}
-                onChange={e => setForm({ ...form, priority: Number(e.target.value) || 100 })}
-                className="shadcn-input"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
-            <button
-              type="button"
-              disabled={formTestLoading || !form.apiKey.trim()}
-              onClick={handleTestUnsaved}
-              className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 transition disabled:opacity-40 cursor-pointer"
-            >
-              <Zap className="h-4 w-4" />
-              <span>{formTestLoading ? 'Testando Conexão...' : 'Testar Conexão em Tempo Real'}</span>
-            </button>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setForm({ name: '', provider: 'gemini', model: 'gemini-3.8-flash', apiKey: '', priority: 100 });
-                  setFormTestResult(null);
-                }}
-                className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 transition cursor-pointer"
-              >
-                Limpar
-              </button>
-              <button
-                type="submit"
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-500/25 transition cursor-pointer"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Cadastrar Provedor de IA</span>
-              </button>
-            </div>
-          </div>
-
-          {formTestResult && (
-            <div className={`p-3 rounded-xl text-xs border ${formTestResult.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-300'}`}>
-              <div className="flex items-center gap-2">
-                {formTestResult.success ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /> : <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />}
-                <span>{formTestResult.message}</span>
-              </div>
-            </div>
-          )}
-        </form>
-      )}
-
       {/* Lista de Contas Cadastradas */}
       <div className="space-y-4">
         {accounts.length === 0 ? (
@@ -515,7 +345,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
             </p>
             <button 
               type="button" 
-              onClick={() => setShowForm(true)} 
+              onClick={handleOpenCreate} 
               className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
             >
               <Plus className="h-4 w-4" />
@@ -551,68 +381,70 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                         </p>
                       </div>
 
-                      <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-mono text-slate-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
-                        Prioridade {account.priority}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(account)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 transition cursor-pointer"
+                          title="Editar Provedor"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(account.id)}
+                          className="flex h-7 w-7 items-center justify-center rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 dark:text-rose-400 transition cursor-pointer"
+                          title="Remover Provedor"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400">
+                      <span>Prioridade: <strong className="text-slate-800 dark:text-zinc-200">{account.priority}</strong></span>
+                      {account.lastUsedAt && (
+                        <span>Último uso: {new Date(account.lastUsedAt).toLocaleDateString('pt-BR')}</span>
+                      )}
                     </div>
 
                     {testResult && (
-                      <div className={`text-[11px] p-2.5 rounded-xl mt-3 flex items-center gap-2 border ${testResult.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-300'}`}>
-                        {testResult.success ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /> : <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />}
-                        <span className="line-clamp-2">{testResult.message}</span>
-                      </div>
-                    )}
-
-                    {!testResult && account.lastError && (
-                      <div className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 p-2 rounded-xl mt-2 truncate">
-                        ⚠️ Último erro: {account.lastError}
+                      <div className={`mt-3 p-2.5 rounded-xl text-xs border ${
+                        testResult.success 
+                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-300' 
+                          : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-300'
+                      }`}>
+                        <div className="flex items-center gap-1.5">
+                          {testResult.success ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" /> : <AlertCircle className="h-3.5 w-3.5 text-rose-500 shrink-0" />}
+                          <span className="truncate">{testResult.message}</span>
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
+                  <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
                     <button
                       type="button"
                       disabled={isTesting}
                       onClick={() => handleTestExisting(account.id)}
-                      className="flex h-8 items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 transition cursor-pointer"
+                      className="flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:text-amber-500 dark:text-amber-400 transition cursor-pointer disabled:opacity-50"
                     >
-                      <Zap className={`h-3.5 w-3.5 ${isTesting ? 'animate-spin' : ''}`} />
-                      <span>{isTesting ? 'Testando...' : 'Testar'}</span>
+                      <Zap className="h-3.5 w-3.5" />
+                      <span>{isTesting ? 'Testando...' : 'Testar Conexão'}</span>
                     </button>
 
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEdit(account)}
-                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 transition cursor-pointer"
-                        title="Editar"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => void toggle(account.id)}
-                        className={`h-8 w-8 flex items-center justify-center rounded-lg transition cursor-pointer ${
-                          account.enabled 
-                            ? 'text-slate-500 hover:text-amber-500 hover:bg-amber-50 dark:text-zinc-400 dark:hover:text-amber-400 dark:hover:bg-amber-500/10' 
-                            : 'text-emerald-500 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10'
-                        }`}
-                        title={account.enabled ? 'Desativar Provedor' : 'Ativar Provedor'}
-                      >
-                        <Power className="h-3.5 w-3.5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => void remove(account.id)}
-                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:text-zinc-400 dark:hover:text-rose-400 dark:hover:bg-rose-500/10 transition cursor-pointer"
-                        title="Excluir"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggle(account.id)}
+                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
+                        account.enabled
+                          ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
+                          : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm'
+                      }`}
+                    >
+                      <Power className="h-3.5 w-3.5" />
+                      <span>{account.enabled ? 'Desativar' : 'Ativar'}</span>
+                    </button>
                   </div>
                 </div>
               );
@@ -621,140 +453,245 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         )}
       </div>
 
-      {/* Modal de Edição */}
-      {editingAccount && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-zinc-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Editar Provedor de IA</h3>
-              <button
-                type="button"
-                onClick={() => setEditingAccount(null)}
-                className="text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white"
+      {/* =========================================================================
+          MODAL DIALOG POPUP UNIFICADO DE CADASTRO E EDIÇÃO
+          ========================================================================= */}
+      {isModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={handleCloseModal}
+        >
+          <div 
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    {editingAccount ? 'Editar Provedor de IA' : 'Cadastrar Novo Provedor de IA'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400">
+                    {editingAccount 
+                      ? 'Atualize os dados e credenciais do provedor selecionado.' 
+                      : 'Adicione uma nova chave de API para expandir a rede de inteligência do sistema.'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                onClick={handleCloseModal} 
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-900 transition cursor-pointer"
+                title="Fechar (ESC)"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Nome Identificador</label>
-                <input
-                  required
-                  type="text"
-                  value={editForm.name}
-                  onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                  className="shadcn-input"
-                />
+            {/* Atalhos Rápidos (apenas ao criar novo) */}
+            {!editingAccount && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-zinc-400">Atalhos rápidos:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm({ ...form, name: 'Google Gemini 3.8', provider: 'gemini', model: 'gemini-3.8-flash' });
+                    setCustomModelMode(false);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
+                >
+                  ⚡ Google Gemini
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm({ ...form, name: 'OpenAI GPT-4o', provider: 'openai', model: 'gpt-4o' });
+                    setCustomModelMode(false);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
+                >
+                  🤖 OpenAI GPT-4o
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm({ ...form, name: 'Groq Llama 3.3', provider: 'groq', model: 'llama-3.3-70b-versatile' });
+                    setCustomModelMode(false);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
+                >
+                  🚀 Groq LPU
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForm({ ...form, name: 'Ollama Hermes 3 Local', provider: 'ollama', model: 'hermes3:8b', apiKey: 'http://localhost:11434' });
+                    setCustomModelMode(false);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
+                >
+                  🦙 Ollama Local
+                </button>
+              </div>
+            )}
+
+            {/* Formulário do Modal */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Nome Identificador *</label>
+                  <input
+                    required
+                    placeholder="Ex: Gemini Flash Produção"
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    className="shadcn-input"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Provedor *</label>
+                  <select
+                    value={form.provider}
+                    onChange={e => {
+                      const provider = e.target.value;
+                      const defaultModel = (PROVIDER_MODELS[provider] && PROVIDER_MODELS[provider][0]?.id) || 'gpt-4o';
+                      setForm({ ...form, provider, model: defaultModel });
+                      setCustomModelMode(false);
+                    }}
+                    className="shadcn-input"
+                  >
+                    <option value="gemini">Google Gemini (Recomendado)</option>
+                    <option value="openai">OpenAI (Oficial)</option>
+                    <option value="groq">Groq (Velocidade LPU)</option>
+                    <option value="ollama">Ollama (Self-Hosted / Local)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Provedor</label>
-                  <select
-                    value={editForm.provider}
-                    onChange={e => {
-                      const provider = e.target.value;
-                      const defaultModel = (PROVIDER_MODELS[provider] && PROVIDER_MODELS[provider][0]?.id) || 'gpt-4o';
-                      setEditForm({ ...editForm, provider, model: defaultModel });
-                      setEditCustomModelMode(false);
-                    }}
-                    className="shadcn-input"
-                  >
-                    <option value="gemini">Google Gemini</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="groq">Groq</option>
-                    <option value="ollama">Ollama</option>
-                  </select>
-                </div>
-
-                <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300">Modelo</label>
+                    <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300">Modelo *</label>
                     <button
                       type="button"
-                      onClick={() => setEditCustomModelMode(!editCustomModelMode)}
+                      onClick={() => setCustomModelMode(!customModelMode)}
                       className="text-[10px] text-indigo-500 hover:underline dark:text-indigo-400"
                     >
-                      {editCustomModelMode ? 'Ver Lista' : 'Digitar Outro'}
+                      {customModelMode ? 'Ver Lista' : 'Digitar Outro'}
                     </button>
                   </div>
-                  {editCustomModelMode ? (
+                  {customModelMode ? (
                     <input
                       required
-                      type="text"
-                      value={editForm.model}
-                      onChange={e => setEditForm({ ...editForm, model: e.target.value })}
+                      placeholder="ID do modelo (ex: gemini-3.8-flash)"
+                      value={form.model}
+                      onChange={e => setForm({ ...form, model: e.target.value })}
                       className="shadcn-input"
                     />
                   ) : (
                     <select
-                      value={editForm.model}
-                      onChange={e => setEditForm({ ...editForm, model: e.target.value })}
+                      value={form.model}
+                      onChange={e => setForm({ ...form, model: e.target.value })}
                       className="shadcn-input"
                     >
-                      {(PROVIDER_MODELS[editForm.provider] || []).map(m => (
+                      {(PROVIDER_MODELS[form.provider] || []).map(m => (
                         <option key={m.id} value={m.id}>{m.name}</option>
                       ))}
                     </select>
                   )}
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                  Nova Chave de API / URL (Opcional - deixe em branco para manter)
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••••••••••"
-                  value={editForm.apiKey}
-                  onChange={e => setEditForm({ ...editForm, apiKey: e.target.value })}
-                  className="shadcn-input"
-                />
-              </div>
-
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Prioridade</label>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Prioridade de Rotação (1 = Máxima)</label>
                   <input
                     required
                     type="number"
                     min="1"
                     max="1000"
-                    value={editForm.priority}
-                    onChange={e => setEditForm({ ...editForm, priority: Number(e.target.value) || 100 })}
+                    value={form.priority}
+                    onChange={e => setForm({ ...form, priority: Number(e.target.value) || 100 })}
                     className="shadcn-input"
                   />
                 </div>
+              </div>
 
-                <div className="flex items-center pt-6">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                  {form.provider === 'ollama' 
+                    ? 'URL do Servidor Ollama' 
+                    : editingAccount 
+                      ? 'Nova Chave de API (Opcional - deixe em branco para manter a atual)' 
+                      : 'Chave de API (API Key) *'}
+                </label>
+                <input
+                  required={!editingAccount}
+                  type={form.provider === 'ollama' ? 'text' : 'password'}
+                  placeholder={form.provider === 'ollama' ? 'http://ollama:11434 ou http://localhost:11434' : editingAccount ? '••••••••••••••••' : 'AIzaSy... ou sk-...'}
+                  value={form.apiKey}
+                  onChange={e => setForm({ ...form, apiKey: e.target.value })}
+                  className="shadcn-input"
+                />
+              </div>
+
+              {editingAccount && (
+                <div className="pt-1">
                   <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-zinc-300 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={editForm.enabled}
-                      onChange={e => setEditForm({ ...editForm, enabled: e.target.checked })}
+                      checked={form.enabled}
+                      onChange={e => setForm({ ...form, enabled: e.target.checked })}
                       className="rounded accent-indigo-600 h-4 w-4"
                     />
-                    <span>Ativo para uso nas requisições</span>
+                    <span>Ativo para uso nas requisições do sistema</span>
                   </label>
                 </div>
-              </div>
+              )}
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-zinc-800">
+              {modalTestResult && (
+                <div className={`p-3 rounded-xl text-xs border ${
+                  modalTestResult.success 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-300' 
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-300'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {modalTestResult.success ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /> : <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />}
+                    <span>{modalTestResult.message}</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setEditingAccount(null)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition"
+                  disabled={modalTestLoading || (!form.apiKey.trim() && !editingAccount)}
+                  onClick={handleTestInModal}
+                  className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 transition disabled:opacity-40 cursor-pointer"
                 >
-                  Cancelar
+                  <Zap className="h-3.5 w-3.5" />
+                  <span>{modalTestLoading ? 'Testando...' : 'Testar Conexão em Tempo Real'}</span>
                 </button>
-                <button
-                  type="submit"
-                  className="rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white hover:bg-indigo-500 shadow transition cursor-pointer"
-                >
-                  Salvar Alterações
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-500/25 transition cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>{editingAccount ? 'Salvar Alterações' : 'Cadastrar Provedor'}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

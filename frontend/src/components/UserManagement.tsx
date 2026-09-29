@@ -30,6 +30,16 @@ export const UserManagement: React.FC<{ jwtToken: string }> = ({ jwtToken }) => 
     void load(); 
   }, [jwtToken]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showForm) {
+        setShowForm(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showForm]);
+
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
@@ -201,8 +211,14 @@ export const UserManagement: React.FC<{ jwtToken: string }> = ({ jwtToken }) => 
       )}
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setShowForm(false)}
+        >
+          <div 
+            className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="mb-5 flex items-center justify-between border-b border-slate-200 pb-4 dark:border-zinc-800">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">

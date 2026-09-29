@@ -61,6 +61,18 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
     void load(); 
   }, [jwtToken, filterClient, filterStatus]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showForm) {
+        setEditing(null);
+        setForm(emptyForm);
+        setShowForm(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showForm]);
+
   const openEdit = (campaign: any) => {
     setEditing(campaign);
     setShowForm(true);
@@ -195,8 +207,14 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
 
       {/* Modal Dialog Popup de Criação / Edição de Campanha */}
       {showForm && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 space-y-4">
+        <div 
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(false); }}
+        >
+          <div 
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
