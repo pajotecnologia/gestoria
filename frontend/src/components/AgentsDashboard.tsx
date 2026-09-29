@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Plus, QrCode, FileUp, Settings, Trash2, Database } from 'lucide-react';
+import { 
+  Bot, 
+  Plus, 
+  QrCode, 
+  FileUp, 
+  Settings, 
+  Trash2, 
+  Database,
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Radio
+} from 'lucide-react';
 import { WhatsAppConnectModal } from './WhatsAppConnectModal';
 import { KnowledgeBaseManager } from './KnowledgeBaseManager';
 import { AgentConfigForm } from './AgentConfigForm';
@@ -86,9 +98,10 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
               setEditingAgent(null);
               fetchAgents();
             }}
-            className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center space-x-1"
+            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition cursor-pointer"
           >
-            &larr; Voltar para Lista de Agentes
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Voltar para Lista de Agentes</span>
           </button>
         </div>
         <AgentConfigForm
@@ -105,45 +118,55 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
 
   return (
     <div className="space-y-6">
-      {/* Header com Estatísticas */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-zinc-900/80 border border-white/[0.07] p-6 rounded-2xl">
+      {/* Header Unificado */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white">Central de Agentes de IA</h2>
-          <p className="text-xs text-zinc-400 mt-1">
-            Gerencie instâncias de WhatsApp, prompts RTCE e bases de conhecimento para seus clientes.
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+              Agentes WhatsApp & Atendimento
+            </h1>
+            <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-500 dark:text-indigo-400">
+              {agents.length} {agents.length === 1 ? 'agente' : 'agentes'}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
+            Gerencie instâncias de WhatsApp, prompts RTCE e bases de conhecimento para automatizar atendimentos.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => setEditingAgent('new')}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all duration-200 ease-in-out"
+          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-400 hover:to-violet-500 cursor-pointer"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="h-4 w-4" />
           <span>Criar Novo Agente</span>
         </button>
       </div>
 
       {/* Grid de Agentes */}
       {loading ? (
-        <div className="text-center py-20 text-zinc-400 text-sm">Carregando agentes...</div>
+        <div className="py-20 text-center text-xs text-slate-400 dark:text-zinc-500">
+          Carregando agentes...
+        </div>
       ) : agents.length === 0 ? (
-        <div className="text-center py-16 bg-zinc-900/50 border border-white/[0.07] rounded-2xl space-y-4">
-          <Bot className="w-12 h-12 text-zinc-600 mx-auto" />
-          <div>
-            <p className="text-sm font-semibold text-zinc-300">Nenhum agente configurado</p>
-            <p className="text-xs text-zinc-500">Crie seu primeiro agente de IA para conectar ao WhatsApp.</p>
-          </div>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-zinc-800">
+          <Radio className="h-10 w-10 text-slate-400 dark:text-zinc-600 mb-3" />
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200">Nenhum agente configurado</h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 max-w-sm">
+            Crie seu primeiro agente de IA para conectar ao WhatsApp e automatizar conversas inteligentes.
+          </p>
           <button
             type="button"
             onClick={() => setEditingAgent('new')}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-all duration-200 ease-in-out"
+            className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
           >
-            Criar Primeiro Agente
+            <Plus className="h-4 w-4" />
+            <span>Criar Primeiro Agente</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {agents.map((agent) => {
             const isOnline = agent.whatsappStatus === 'CONNECTED';
             const isConnecting = agent.whatsappStatus === 'CONNECTING';
@@ -151,24 +174,24 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
             return (
               <div
                 key={agent.id}
-                className="bg-zinc-900/80 border border-white/[0.07] hover:border-white/[0.10] rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-xl transition-all duration-200 ease-in-out"
+                className="shadcn-card flex flex-col justify-between space-y-4"
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-zinc-800/80 text-zinc-400 border border-white/[0.10]">
-                      {agent.niche}
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 dark:bg-zinc-800/80 dark:text-zinc-300 dark:border-zinc-700">
+                      {agent.niche || 'Geral'}
                     </span>
 
                     {/* Badge de Status WhatsApp */}
-                    <div className="flex items-center space-x-1.5 text-[11px] font-medium">
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold">
                       <span
-                        className={`w-2 h-2 rounded-full ${
-                          isOnline ? 'bg-emerald-500' : isConnecting ? 'bg-amber-500 animate-pulse' : 'bg-rose-500'
+                        className={`h-2 w-2 rounded-full ${
+                          isOnline ? 'bg-emerald-500' : isConnecting ? 'bg-amber-500 animate-pulse' : 'bg-slate-400 dark:bg-zinc-600'
                         }`}
                       />
                       <span
                         className={
-                          isOnline ? 'text-emerald-400' : isConnecting ? 'text-amber-400' : 'text-rose-400'
+                          isOnline ? 'text-emerald-500 dark:text-emerald-400' : isConnecting ? 'text-amber-500 dark:text-amber-400' : 'text-slate-500 dark:text-zinc-400'
                         }
                       >
                         {isOnline ? 'WhatsApp Online' : isConnecting ? 'Aguardando QR' : 'Desconectado'}
@@ -176,62 +199,60 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center space-x-3">
-                    <div className="p-2.5 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
-                      <Bot className="w-6 h-6" />
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-indigo-500/30 text-indigo-500 dark:text-indigo-400">
+                      <Bot className="h-5 w-5" />
                     </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white">{agent.name}</h3>
-                      <p className="text-[11px] text-zinc-400 font-mono">{agent.provider} &bull; {agent.model}</p>
+                    <div className="min-w-0 truncate">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">{agent.name}</h3>
+                      <p className="text-[11px] text-slate-500 dark:text-zinc-400 font-mono truncate">{agent.provider} &bull; {agent.model}</p>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-white/[0.07] flex items-center justify-between text-[11px] text-zinc-400">
-                    <span className="flex items-center space-x-1">
-                      <Database className="w-3.5 h-3.5 text-indigo-400" />
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400">
+                    <span className="flex items-center gap-1">
+                      <Database className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
                       <span>{agent._count?.knowledgeFiles || 0} arquivos RAG</span>
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(agent.id)}
+                      className="text-[11px] text-slate-400 hover:text-rose-500 dark:text-zinc-500 dark:hover:text-rose-400 flex items-center gap-1 transition cursor-pointer"
+                      title="Excluir Agente"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Excluir</span>
+                    </button>
                   </div>
                 </div>
 
                 {/* Ações Rápidas */}
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/[0.07]">
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80">
                   <button
                     type="button"
                     onClick={() => setSelectedAgentForQR(agent)}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
+                    className="flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-medium transition dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
                   >
-                    <QrCode className="w-4 h-4 text-emerald-400 mb-1" />
+                    <QrCode className="h-4 w-4 text-emerald-500 dark:text-emerald-400 mb-1" />
                     <span>WhatsApp</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setSelectedAgentForRAG(agent)}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
+                    className="flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-medium transition dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
                   >
-                    <FileUp className="w-4 h-4 text-indigo-400 mb-1" />
+                    <FileUp className="h-4 w-4 text-indigo-500 dark:text-indigo-400 mb-1" />
                     <span>Base RAG</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setEditingAgent(agent)}
-                    className="flex flex-col items-center justify-center p-2 rounded-lg bg-zinc-800/80 hover:bg-zinc-800/80 text-zinc-200 text-[10px] font-medium transition-all duration-200 ease-in-out"
+                    className="flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-medium transition dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
                   >
-                    <Settings className="w-4 h-4 text-amber-400 mb-1" />
-                    <span>Ajustar</span>
-                  </button>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(agent.id)}
-                    className="text-[10px] text-rose-400/80 hover:text-rose-300 flex items-center space-x-1"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>Excluir Agente</span>
+                    <Settings className="h-4 w-4 text-amber-500 dark:text-amber-400 mb-1" />
+                    <span>Ajustes</span>
                   </button>
                 </div>
               </div>
@@ -240,65 +261,76 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
         </div>
       )}
 
+      {/* Paginação */}
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between gap-3 bg-zinc-900/80 border border-white/[0.07] rounded-2xl px-4 py-3">
-          <span className="text-[11px] text-zinc-400">
+        <div className="flex items-center justify-between gap-3 shadcn-card px-4 py-3">
+          <span className="text-[11px] text-slate-500 dark:text-zinc-400">
             {pagination.total} agentes • Página {pagination.page} de {pagination.totalPages}
           </span>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              disabled={pagination.page <= 1 || loading}
+              disabled={pagination.page <= 1}
               onClick={() => fetchAgents(pagination.page - 1)}
-              className="px-3 py-1.5 rounded-lg border border-white/[0.10] bg-zinc-800/80 text-xs text-zinc-300 disabled:opacity-40"
+              className="flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300"
             >
-              Anterior
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span>Anterior</span>
             </button>
             <button
               type="button"
-              disabled={pagination.page >= pagination.totalPages || loading}
+              disabled={pagination.page >= pagination.totalPages}
               onClick={() => fetchAgents(pagination.page + 1)}
-              className="px-3 py-1.5 rounded-lg border border-white/[0.10] bg-zinc-800/80 text-xs text-zinc-300 disabled:opacity-40"
+              className="flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-700 disabled:opacity-40 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300"
             >
-              Próxima
+              <span>Próxima</span>
+              <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       )}
 
-      {/* Modal Conexão WhatsApp */}
+      {/* Modais de Conexão WhatsApp e Base de Conhecimento */}
       {selectedAgentForQR && (
         <WhatsAppConnectModal
+          isOpen={Boolean(selectedAgentForQR)}
           agentId={selectedAgentForQR.id}
           agentName={selectedAgentForQR.name}
-          isOpen={!!selectedAgentForQR}
+          jwtToken={jwtToken}
           onClose={() => {
             setSelectedAgentForQR(null);
-            fetchAgents();
+            fetchAgents(pagination.page);
           }}
-          jwtToken={jwtToken}
         />
       )}
 
-      {/* Modal Upload RAG */}
       {selectedAgentForRAG && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-xl relative">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedAgentForRAG(null);
-                fetchAgents();
-              }}
-              className="absolute top-4 right-4 text-zinc-400 hover:text-white z-10"
-            >
-              Fechar &times;
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="mb-4 flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-indigo-500" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Base de Conhecimento RAG • {selectedAgentForRAG.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedAgentForRAG(null);
+                  fetchAgents(pagination.page);
+                }}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
             <KnowledgeBaseManager
               agentId={selectedAgentForRAG.id}
               agentName={selectedAgentForRAG.name}
               jwtToken={jwtToken}
-              onChanged={() => fetchAgents()}
+              onChanged={() => fetchAgents(pagination.page)}
             />
           </div>
         </div>

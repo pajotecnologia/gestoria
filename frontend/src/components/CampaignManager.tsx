@@ -1,16 +1,39 @@
 import React, { useEffect, useState } from 'react';
-import { Megaphone, Plus, Sparkles, RefreshCw, Pencil, Power, Search, CalendarDays, Trash2, X } from 'lucide-react';
+import { 
+  Megaphone, 
+  Plus, 
+  Sparkles, 
+  Pencil, 
+  Power, 
+  Search, 
+  CalendarDays, 
+  Trash2, 
+  X
+} from 'lucide-react';
 import { apiUrl } from '../api/client';
 
 export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
   const [clients, setClients] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
-  const emptyForm = { clientId: '', name: '', objective: '', offer: '', audience: '', channels: '', budget: '', period: '', brief: '', isActive: false, startDate: '', endDate: '' };
+  const emptyForm = { 
+    clientId: '', 
+    name: '', 
+    objective: '', 
+    offer: '', 
+    audience: '', 
+    channels: '', 
+    budget: '', 
+    period: '', 
+    brief: '', 
+    isActive: false, 
+    startDate: '', 
+    endDate: '' 
+  };
   const [form, setForm] = useState<any>(emptyForm);
   const [editing, setEditing] = useState<any>(null);
-  const [strategy, setStrategy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [filterClient, setFilterClient] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [search, setSearch] = useState('');
@@ -21,23 +44,38 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
     try {
       const [c, p] = await Promise.all([
         fetch(apiUrl('/api/clients'), { headers: { Authorization: 'Bearer ' + jwtToken } }).then(r => r.json()),
-        fetch(apiUrl('/api/campaigns?' + new URLSearchParams({ ...(filterClient ? { clientId: filterClient } : {}), ...(filterStatus ? { status: filterStatus } : {}), ...(search.trim() ? { search: search.trim() } : {}) }).toString()), { headers: { Authorization: 'Bearer ' + jwtToken } }).then(r => r.json()),
+        fetch(apiUrl('/api/campaigns?' + new URLSearchParams({ 
+          ...(filterClient ? { clientId: filterClient } : {}), 
+          ...(filterStatus ? { status: filterStatus } : {}), 
+          ...(search.trim() ? { search: search.trim() } : {}) 
+        }).toString()), { headers: { Authorization: 'Bearer ' + jwtToken } }).then(r => r.json()),
       ]);
       setClients(c.data || []);
       setCampaigns(p.data || []);
-    } finally { setLoading(false); }
+    } finally { 
+      setLoading(false); 
+    }
   };
 
-  useEffect(() => { load(); }, [jwtToken, filterClient, filterStatus]);
+  useEffect(() => { 
+    void load(); 
+  }, [jwtToken, filterClient, filterStatus]);
 
   const openEdit = (campaign: any) => {
     setEditing(campaign);
     setShowForm(true);
     setForm({
-      clientId: campaign.clientId, name: campaign.name, objective: campaign.objective,
-      offer: campaign.offer || '', audience: campaign.audience || '', channels: campaign.channels || '',
-      budget: campaign.budget || '', period: campaign.period || '', brief: campaign.brief || '',
-      isActive: campaign.isActive, startDate: campaign.startDate ? campaign.startDate.slice(0, 10) : '',
+      clientId: campaign.clientId, 
+      name: campaign.name, 
+      objective: campaign.objective,
+      offer: campaign.offer || '', 
+      audience: campaign.audience || '', 
+      channels: campaign.channels || '',
+      budget: campaign.budget || '', 
+      period: campaign.period || '', 
+      brief: campaign.brief || '',
+      isActive: campaign.isActive, 
+      startDate: campaign.startDate ? campaign.startDate.slice(0, 10) : '',
       endDate: campaign.endDate ? campaign.endDate.slice(0, 10) : '',
     });
   };
@@ -53,20 +91,35 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) { window.alert(data.error || 'Falha ao salvar campanha.'); return; }
+      if (!res.ok) { 
+        window.alert(data.error || 'Falha ao salvar campanha.'); 
+        return; 
+      }
       setEditing(null);
       setForm(emptyForm);
       setShowForm(false);
       await load();
-    } finally { setSaving(false); }
+    } finally { 
+      setSaving(false); 
+    }
   };
 
   const removeCampaign = async (campaign: any) => {
     if (!window.confirm(`Excluir a campanha "${campaign.name}"? Esta ação não poderá ser desfeita.`)) return;
-    const res = await fetch(apiUrl('/api/campaigns/' + campaign.id), { method: 'DELETE', headers: { Authorization: 'Bearer ' + jwtToken } });
+    const res = await fetch(apiUrl('/api/campaigns/' + campaign.id), { 
+      method: 'DELETE', 
+      headers: { Authorization: 'Bearer ' + jwtToken } 
+    });
     const data = await res.json();
-    if (!res.ok) { window.alert(data.error || 'Falha ao excluir campanha.'); return; }
-    if (editing?.id === campaign.id) { setEditing(null); setForm(emptyForm); setShowForm(false); }
+    if (!res.ok) { 
+      window.alert(data.error || 'Falha ao excluir campanha.'); 
+      return; 
+    }
+    if (editing?.id === campaign.id) { 
+      setEditing(null); 
+      setForm(emptyForm); 
+      setShowForm(false); 
+    }
     await load();
   };
 
@@ -74,7 +127,7 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
     const next = !campaign.isActive;
     if (next && (!campaign.startDate || !campaign.endDate)) {
       openEdit(campaign);
-      window.alert('Defina o período de início e fim antes de ativar.');
+      window.alert('Defina a data de início e fim da campanha antes de ativá-la.');
       return;
     }
     const res = await fetch(apiUrl('/api/campaigns/' + campaign.id + '/activation'), {
@@ -83,86 +136,388 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
       body: JSON.stringify({ isActive: next }),
     });
     const data = await res.json();
-    if (!res.ok) { window.alert(data.error || 'Falha ao alterar ativação.'); return; }
+    if (!res.ok) { 
+      window.alert(data.error || 'Falha ao alterar ativação.'); 
+      return; 
+    }
     await load();
   };
 
   const generate = async (id: string) => {
-    const res = await fetch(apiUrl('/api/campaigns/' + id + '/generate-strategy'), {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + jwtToken },
-    });
-    const data = await res.json();
-    if (!res.ok) { window.alert(data.error || 'Falha ao gerar estratégia.'); return; }
-    setStrategy(data.data);
-    await load();
+    setGeneratingId(id);
+    try {
+      const res = await fetch(apiUrl('/api/campaigns/' + id + '/generate-strategy'), {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + jwtToken },
+      });
+      const data = await res.json();
+      if (!res.ok) { 
+        window.alert(data.error || 'Falha ao gerar estratégia.'); 
+        return; 
+      }
+      await load();
+    } finally {
+      setGeneratingId(null);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2"><Megaphone className="w-5 h-5 text-indigo-400" /> Campanhas</h2>
-            <p className="text-xs text-zinc-400 mt-1">Crie o briefing e gere uma estratégia usando o contexto cadastrado da empresa e os materiais indexados.</p>
+      {/* Header Unificado & Ação Primária */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+              Campanhas & Estratégias
+            </h1>
+            <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-500 dark:text-indigo-400">
+              {campaigns.length} {campaigns.length === 1 ? 'campanha' : 'campanhas'}
+            </span>
           </div>
-          <div className="flex items-center gap-2"><button type="button" onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }} className="flex min-h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20"><Plus className="h-4 w-4" /> Nova campanha</button><button type="button" onClick={load} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-white/[0.07] bg-zinc-800/80 text-zinc-300"><RefreshCw className="w-4 h-4" /></button></div>
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
+            Defina briefings estratégicos e gere planos de ação com inteligência artificial baseada no contexto do cliente.
+          </p>
         </div>
+
+        <button 
+          type="button" 
+          onClick={() => { 
+            setEditing(null); 
+            setForm(emptyForm); 
+            setShowForm(true); 
+          }} 
+          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-400 hover:to-violet-500 cursor-pointer"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Nova Campanha</span>
+        </button>
       </div>
 
-      {showForm && <form onSubmit={save} className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-bold text-white">{editing ? 'Editar campanha' : 'Nova campanha'}</h3><button type="button" onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(false); }} className="flex min-h-11 items-center gap-1.5 rounded-xl border border-white/[0.07] bg-zinc-950 px-3 text-xs text-zinc-300 hover:bg-zinc-800"><X className="h-3.5 w-3.5" /> Voltar para campanhas</button></div>
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-          <select required value={form.clientId} onChange={e => setForm({ ...form, clientId: e.target.value })} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white">
-            <option value="">Selecione a empresa *</option>
+      {/* Modal / Formulário de Criação/Edição */}
+      {showForm && (
+        <form onSubmit={save} className="shadcn-card space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-zinc-800">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              {editing ? 'Editar Campanha' : 'Criar Nova Campanha'}
+            </h3>
+            <button 
+              type="button" 
+              onClick={() => { 
+                setEditing(null); 
+                setForm(emptyForm); 
+                setShowForm(false); 
+              }} 
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-900 transition"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>Fechar</span>
+            </button>
+          </div>
+
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Empresa Vinculada *</label>
+              <select 
+                required 
+                value={form.clientId} 
+                onChange={e => setForm({ ...form, clientId: e.target.value })} 
+                className="shadcn-input"
+              >
+                <option value="">Selecione a empresa...</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Nome da Campanha *</label>
+              <input 
+                required 
+                placeholder="Ex: Lançamento Verão 2026" 
+                value={form.name} 
+                onChange={e => setForm({ ...form, name: e.target.value })} 
+                className="shadcn-input" 
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Objetivo Estratégico *</label>
+            <textarea 
+              required 
+              rows={2} 
+              placeholder="Ex: Gerar 150 leads qualificados B2B para o setor de energia solar..." 
+              value={form.objective} 
+              onChange={e => setForm({ ...form, objective: e.target.value })} 
+              className="shadcn-input !h-auto py-2" 
+            />
+          </div>
+
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Oferta Principal / Produto</label>
+              <textarea 
+                rows={2} 
+                placeholder="Ex: Consultoria gratuita + 20% de desconto na adesão" 
+                value={form.offer} 
+                onChange={e => setForm({ ...form, offer: e.target.value })} 
+                className="shadcn-input !h-auto py-2" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Público-Alvo</label>
+              <textarea 
+                rows={2} 
+                placeholder="Ex: Gestores de operações e diretores comerciais" 
+                value={form.audience} 
+                onChange={e => setForm({ ...form, audience: e.target.value })} 
+                className="shadcn-input !h-auto py-2" 
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Canais Desejados</label>
+              <input 
+                placeholder="Ex: WhatsApp, Meta Ads, Google" 
+                value={form.channels} 
+                onChange={e => setForm({ ...form, channels: e.target.value })} 
+                className="shadcn-input" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Orçamento Estimado</label>
+              <input 
+                placeholder="Ex: R$ 5.000,00" 
+                value={form.budget} 
+                onChange={e => setForm({ ...form, budget: e.target.value })} 
+                className="shadcn-input" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Observações de Período</label>
+              <input 
+                placeholder="Ex: 30 dias contínuos" 
+                value={form.period} 
+                onChange={e => setForm({ ...form, period: e.target.value })} 
+                className="shadcn-input" 
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Data de Início</label>
+              <input 
+                type="date" 
+                value={form.startDate} 
+                onChange={e => setForm({ ...form, startDate: e.target.value })} 
+                className="shadcn-input" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300 mb-1">Data de Término</label>
+              <input 
+                type="date" 
+                value={form.endDate} 
+                onChange={e => setForm({ ...form, endDate: e.target.value })} 
+                className="shadcn-input" 
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-zinc-800 dark:bg-zinc-950/60">
+            <div>
+              <p className="text-xs font-semibold text-slate-900 dark:text-white">Ativação Automática</p>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400">Ativa o monitoramento e sincronia com agentes</p>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => setForm({ ...form, isActive: !form.isActive })} 
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                form.isActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-800'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                form.isActive ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button 
+              type="button" 
+              onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(false); }} 
+              className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button 
+              disabled={saving} 
+              type="submit" 
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-semibold text-white shadow hover:bg-indigo-500 disabled:opacity-50 transition cursor-pointer"
+            >
+              {saving ? 'Salvando...' : editing ? 'Salvar Alterações' : 'Criar Campanha'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Barra de Filtros e Busca */}
+      <div className="shadcn-card p-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-zinc-500" />
+            <input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              placeholder="Buscar campanha por nome ou objetivo..." 
+              className="shadcn-input pl-9" 
+            />
+          </div>
+          <select 
+            value={filterClient} 
+            onChange={e => setFilterClient(e.target.value)} 
+            className="shadcn-input"
+          >
+            <option value="">Todas as empresas</option>
             {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <input required placeholder="Nome da campanha *" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" />
-        </div>
-        <textarea required rows={3} placeholder="Objetivo da campanha * — ex.: gerar leads qualificados para..." value={form.objective} onChange={e => setForm({ ...form, objective: e.target.value })} className="w-full bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" />
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-          {[
-            ['offer','Oferta / produto'],['audience','Público que você imagina'],['channels','Canais desejados'],['budget','Orçamento'],['period','Período textual / observações'],['brief','Briefing adicional']
-          ].map(([k,p]) => <textarea key={k} rows={2} placeholder={p} value={(form as any)[k]} onChange={e => setForm({ ...form, [k]: e.target.value })} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" />)}
-        </div>
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-          <label className="text-xs text-zinc-400">Início da campanha<input type="date" value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} className="mt-1 w-full bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" /></label>
-          <label className="text-xs text-zinc-400">Fim da campanha<input type="date" value={form.endDate} onChange={e => setForm({ ...form, endDate: e.target.value })} className="mt-1 w-full bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white" /></label>
-        </div>
-        <div className="flex items-center justify-between border border-white/[0.07] rounded-xl p-3"><div><p className="text-xs font-semibold text-white">ATIVADA</p><p className="text-[11px] text-zinc-500">S/N. Ativação exige período completo.</p></div><button type="button" onClick={() => setForm({ ...form, isActive: !form.isActive })} aria-pressed={form.isActive} className={`relative inline-flex h-7 w-14 items-center rounded-full border transition-all duration-200 ease-in-out ${form.isActive ? 'bg-emerald-600 border-emerald-500' : 'bg-zinc-800/80 border-white/[0.10]'}`}><span className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${form.isActive ? 'translate-x-8' : 'translate-x-1'}`} /></button></div>
-        <button disabled={saving} type="submit" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-2">{editing ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />} {saving ? 'Salvando...' : editing ? 'Salvar ajustes da campanha' : 'Criar campanha'}</button>
-      </form>}
-
-      <div className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-4">
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="relative"><Search className="absolute left-3 top-2.5 w-4 h-4 text-zinc-600" /><input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') load(); }} placeholder="Pesquisar campanha..." className="w-full bg-zinc-950 border border-white/[0.07] rounded-xl pl-9 pr-3 py-2.5 text-xs text-white" /></div>
-          <select value={filterClient} onChange={e => setFilterClient(e.target.value)} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white"><option value="">Todas as empresas</option>{clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-zinc-950 border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-white"><option value="">Todos os status</option><option value="RASCUNHO">Rascunho</option><option value="AGENDADA">Agendada</option><option value="ATIVA">Ativa</option><option value="PAUSADA">Pausada</option><option value="ENCERRADA">Encerrada</option></select>
+          <select 
+            value={filterStatus} 
+            onChange={e => setFilterStatus(e.target.value)} 
+            className="shadcn-input"
+          >
+            <option value="">Todos os status</option>
+            <option value="RASCUNHO">Rascunho</option>
+            <option value="AGENDADA">Agendada</option>
+            <option value="ATIVA">Ativa</option>
+            <option value="PAUSADA">Pausada</option>
+            <option value="ENCERRADA">Encerrada</option>
+          </select>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {loading ? <p className="text-xs text-zinc-500">Carregando...</p> : campaigns.map(c => (
-          <div key={c.id} className="bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-5 transition hover:border-white/[0.12]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold text-white">{c.name}</p>
-                <div className="flex flex-wrap items-center gap-2 mt-1"><span className="text-[11px] text-indigo-400">{c.client?.name}</span><span className="text-[10px] px-2 py-1 rounded-full bg-zinc-800/80 text-zinc-300">{c.lifecycleStatus || c.status}</span></div>
-                <p className="text-xs text-zinc-400 mt-2">{c.objective}</p><p className="text-[11px] text-zinc-500 mt-2"><CalendarDays className="inline w-3.5 h-3.5 mr-1" />{c.startDate ? new Date(c.startDate).toLocaleDateString('pt-BR') : 'Sem início'} — {c.endDate ? new Date(c.endDate).toLocaleDateString('pt-BR') : 'Sem fim'} • ATIVADA: {c.isActive ? 'S' : 'N'}</p>
+      {/* Lista / Grid de Campanhas */}
+      {loading ? (
+        <div className="py-16 text-center text-xs text-slate-400 dark:text-zinc-500">
+          Carregando campanhas...
+        </div>
+      ) : campaigns.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-zinc-800">
+          <Megaphone className="h-10 w-10 text-slate-400 dark:text-zinc-600 mb-3" />
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200">Nenhuma campanha cadastrada</h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 max-w-sm">
+            Crie sua primeira campanha para gerar estratégias completas de marketing com IA.
+          </p>
+          <button 
+            type="button" 
+            onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }} 
+            className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Criar Primeira Campanha</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+          {campaigns.map((c) => {
+            const isGenerating = generatingId === c.id;
+            return (
+              <div key={c.id} className="shadcn-card flex flex-col justify-between space-y-4">
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-slate-900 dark:text-white text-sm">
+                          {c.name}
+                        </h3>
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+                          c.isActive 
+                            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                            : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
+                        }`}>
+                          {c.isActive ? '● Ativa' : 'Pausada'}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-indigo-500 dark:text-indigo-400 font-medium">
+                        {c.client?.name || 'Empresa não vinculada'}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button 
+                        type="button" 
+                        onClick={() => openEdit(c)} 
+                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-800 transition cursor-pointer" 
+                        title="Editar"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => removeCampaign(c)} 
+                        className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:text-zinc-400 dark:hover:text-rose-400 dark:hover:bg-rose-500/10 transition cursor-pointer" 
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="mt-2 text-xs text-slate-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
+                    {c.objective}
+                  </p>
+                </div>
+
+                <div className="border-t border-slate-100 pt-3 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-zinc-400">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    <span>
+                      {c.startDate ? new Date(c.startDate).toLocaleDateString('pt-BR') : 'Sem data'} - {c.endDate ? new Date(c.endDate).toLocaleDateString('pt-BR') : 'Sem data'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => toggleActivation(c)} 
+                      className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium border transition cursor-pointer ${
+                        c.isActive 
+                          ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20' 
+                          : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20'
+                      }`}
+                    >
+                      <Power className="h-3.5 w-3.5" />
+                      <span>{c.isActive ? 'Pausar' : 'Ativar'}</span>
+                    </button>
+
+                    <button 
+                      type="button" 
+                      disabled={isGenerating} 
+                      onClick={() => generate(c.id)} 
+                      className="flex h-8 items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-600 px-3 text-xs font-semibold text-white shadow-sm hover:from-indigo-400 hover:to-violet-500 disabled:opacity-50 transition cursor-pointer"
+                    >
+                      <Sparkles className={`h-3.5 w-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+                      <span>{isGenerating ? 'Gerando...' : 'Gerar Estratégia IA'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Estratégia IA Gerada */}
+                {c.strategy && (
+                  <div className="mt-3 rounded-xl border border-indigo-500/20 bg-indigo-50/50 p-3.5 text-xs dark:border-indigo-500/20 dark:bg-indigo-950/30">
+                    <div className="flex items-center gap-1.5 font-semibold text-indigo-600 dark:text-indigo-300 mb-1">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Estratégia Compilada</span>
+                    </div>
+                    <p className="text-slate-700 dark:text-zinc-300 whitespace-pre-wrap line-clamp-3 text-[11px] leading-relaxed">
+                      {typeof c.strategy === 'string' ? c.strategy : JSON.stringify(c.strategy, null, 2)}
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="flex flex-wrap gap-2 sm:justify-end"><button type="button" onClick={() => openEdit(c)} className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs"><Pencil className="w-3.5 h-3.5" />Editar</button><button type="button" onClick={() => toggleActivation(c)} className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs"><Power className="inline w-3.5 h-3.5 mr-1" />{c.isActive ? 'Desativar' : 'Ativar'}</button><button type="button" onClick={() => generate(c.id)} className="flex min-h-11 items-center gap-2 px-3 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-300 rounded-xl text-xs font-semibold"><Sparkles className="w-3.5 h-3.5" /> Gerar estratégia</button><button type="button" onClick={() => void removeCampaign(c)} className="flex min-h-11 items-center gap-1.5 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 rounded-xl text-xs"><Trash2 className="w-3.5 h-3.5" />Excluir</button></div>
-            </div>
-            {c.strategy && <details className="mt-4 border-t border-white/[0.07] pt-3"><summary className="text-xs text-zinc-300 cursor-pointer">Ver estratégia gerada</summary><pre className="mt-3 whitespace-pre-wrap text-xs text-zinc-300 leading-relaxed font-sans">{c.strategy}</pre></details>}
-          </div>
-        ))}
-      </div>
-
-      {strategy && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="max-w-4xl mx-auto mt-10 bg-zinc-900/80 border border-white/[0.07] rounded-2xl p-6">
-            <div className="flex justify-between items-center"><h3 className="text-lg font-bold text-white">Estratégia gerada — {strategy.name}</h3><button onClick={() => setStrategy(null)} className="text-zinc-400">Fechar ×</button></div>
-            <pre className="mt-5 whitespace-pre-wrap text-xs text-zinc-300 leading-relaxed font-sans">{strategy.strategy}</pre>
-          </div>
+            );
+          })}
         </div>
       )}
     </div>

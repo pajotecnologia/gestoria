@@ -7,7 +7,6 @@ import {
   Link2,
   Upload,
   FileText,
-  RefreshCw,
   ExternalLink,
   Pencil,
   Search,
@@ -302,19 +301,22 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-6 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header Unificado & Ação Primária */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-bold text-white">
-            <Building2 className="h-5 w-5 text-indigo-400" /> Contexto das Empresas
-          </h2>
-          <p className="mt-1 text-xs text-zinc-400">
-            Cadastre empresas, organize contexto, referências e materiais para alimentar campanhas e estratégias.
-          </p>
-          <p className="mt-2 text-xs text-zinc-500">
-            {clients.length} {clients.length === 1 ? 'empresa cadastrada' : 'empresas cadastradas'}
-            {search || statusFilter !== 'ALL' ? ' • ' + filteredClients.length + ' encontradas' : ''}
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+              Empresas & Contexto dos Clientes
+            </h1>
+            <span className="rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-500 dark:text-indigo-400">
+              {clients.length} {clients.length === 1 ? 'empresa' : 'empresas'}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
+            Cadastre empresas, organize o contexto de marca, links de referência e materiais indexados na base RAG.
           </p>
         </div>
+
         <button
           type="button"
           onClick={() => {
@@ -325,9 +327,10 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
             setFeedback(null);
             setShowForm(true);
           }}
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all duration-200 hover:from-indigo-400 hover:to-violet-500"
+          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-400 hover:to-violet-500 cursor-pointer"
         >
-          <Plus className="h-4 w-4" /> Criar Nova Empresa
+          <Plus className="h-4 w-4" /> 
+          <span>Criar Nova Empresa</span>
         </button>
       </div>
 
@@ -337,93 +340,86 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
           className={
             'flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-xs ' +
             (feedback.type === 'success'
-              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-              : 'border-rose-500/20 bg-rose-500/10 text-rose-300')
+              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300'
+              : 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-300')
           }
         >
           <span>{feedback.message}</span>
-          <button type="button" onClick={() => setFeedback(null)} aria-label="Fechar mensagem">
+          <button type="button" onClick={() => setFeedback(null)} aria-label="Fechar mensagem" className="cursor-pointer">
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
       <section className="space-y-4">
-        <div className="flex flex-col gap-3 rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-4 lg:flex-row lg:items-center">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-bold text-zinc-100">Empresas cadastradas</h3>
-            <p className="mt-1 text-[11px] text-zinc-500">Selecione uma empresa para editar seus dados ou gerenciar referências e materiais.</p>
-          </div>
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Pesquisar por empresa, razão social, documento ou segmento..."
-              className="w-full rounded-xl border border-white/[0.07] bg-zinc-950 py-2.5 pl-9 pr-9 text-xs text-white outline-none focus:border-indigo-500"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                aria-label="Limpar pesquisa"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+        {/* Barra de Busca e Filtros */}
+        <div className="shadcn-card p-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Pesquisar por empresa, razão social, documento ou segmento..."
+                className="shadcn-input pl-9"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  aria-label="Limpar pesquisa"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 sm:w-56">
+              <Filter className="h-3.5 w-3.5 text-slate-400 dark:text-zinc-500 shrink-0" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as 'ALL' | ClientStatus)}
+                className="shadcn-input"
               >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+                <option value="ALL">Todos os status</option>
+                <option value="ACTIVE">Ativas</option>
+                <option value="ARCHIVED">Arquivadas</option>
+              </select>
+            </div>
           </div>
-
-          <div className="flex items-center gap-2 lg:w-48">
-            <Filter className="h-4 w-4 text-zinc-500" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | ClientStatus)}
-              className="w-full rounded-xl border border-white/[0.07] bg-zinc-950 px-3 py-2.5 text-xs text-white outline-none focus:border-indigo-500"
-            >
-              <option value="ALL">Todos os status</option>
-              <option value="ACTIVE">Ativas</option>
-              <option value="ARCHIVED">Arquivadas</option>
-            </select>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => void load()}
-            disabled={loading}
-            className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.07] bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-800/80 disabled:opacity-50"
-          >
-            <RefreshCw className={'h-3.5 w-3.5 ' + (loading ? 'animate-spin' : '')} /> Atualizar
-          </button>
         </div>
 
         {loading ? (
-          <div className="rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-8 text-center text-xs text-zinc-500">
+          <div className="py-16 text-center text-xs text-slate-400 dark:text-zinc-500">
             Carregando empresas...
           </div>
         ) : filteredClients.length === 0 ? (
-          <div className="rounded-2xl border border-white/[0.07] bg-zinc-900/80 p-10 text-center">
-            <Building2 className="mx-auto h-8 w-8 text-zinc-600" />
-            <p className="mt-3 text-sm font-semibold text-white">
-              {clients.length === 0 ? 'Nenhuma empresa cadastrada.' : 'Nenhuma empresa encontrada.'}
-            </p>
-            <p className="mx-auto mt-1 max-w-md text-xs text-zinc-500">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-zinc-800">
+            <Building2 className="h-10 w-10 text-slate-400 dark:text-zinc-600 mb-3" />
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200">
+              {clients.length === 0 ? 'Nenhuma empresa cadastrada' : 'Nenhuma empresa encontrada'}
+            </h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 max-w-sm">
               {clients.length === 0
-                ? 'Cadastre sua primeira empresa para começar a criar contextos, campanhas e estratégias.'
-                : 'Tente alterar os termos da pesquisa ou remover os filtros.'}
+                ? 'Cadastre sua primeira empresa para começar a alimentar contextos, bases RAG e campanhas.'
+                : 'Tente alterar os termos da pesquisa ou o filtro de status.'}
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                setSelected(null);
-                setForm(createEmptyForm());
-                setShowForm(true);
-                setFeedback(null);
-              }}
-              className="mx-auto mt-4 flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20"
-            >
-              <Plus className="mr-1 h-4 w-4" /> Criar Nova Empresa
-            </button>
+            {clients.length === 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelected(null);
+                  setForm(createEmptyForm());
+                  setShowForm(true);
+                  setFeedback(null);
+                }}
+                className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
+              >
+                <Plus className="h-4 w-4" /> 
+                <span>Criar Nova Empresa</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
