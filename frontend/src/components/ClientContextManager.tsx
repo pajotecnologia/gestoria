@@ -213,8 +213,14 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
         headers: { Authorization: 'Bearer ' + jwtToken, 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Falha ao salvar empresa.');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        let errMsg = data.error || data.message || 'Falha ao salvar empresa.';
+        if (typeof errMsg === 'object') {
+          errMsg = Object.values(errMsg).flat().join(', ');
+        }
+        throw new Error(errMsg);
+      }
 
       await load();
 

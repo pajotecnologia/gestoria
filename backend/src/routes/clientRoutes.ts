@@ -7,16 +7,45 @@ import { writeAuditLog } from '../services/auditLog';
 const router = Router();
 router.use(tenantMiddleware);
 
+const normalizeUrl = (value: unknown): string | null => {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+};
+
 const optionalUrl = z.preprocess(
-  (value) => {
-    if (typeof value === 'string' && value.trim() === '') return null;
-    return value;
-  },
-  z.string().trim().url().max(500).nullable().optional(),
+  normalizeUrl,
+  z.string().trim().max(500).nullable().optional().refine((val) => {
+    if (!val) return true;
+    try {
+      const u = new URL(val);
+      return Boolean(u.hostname && u.hostname.length > 1);
+    } catch {
+      return false;
+    }
+  }, { message: 'Endereço de website inválido.' }),
+);
+
+const resourceUrl = z.preprocess(
+  normalizeUrl,
+  z.string().trim().max(2000).refine((val) => {
+    if (!val) return false;
+    try {
+      const u = new URL(val);
+      return Boolean(u.hostname && u.hostname.length > 1);
+    } catch {
+      return false;
+    }
+  }, { message: 'URL do link ou recurso inválida.' }),
 );
 
 const clientSchema = z.object({
-  name: z.string().trim().min(2).max(160),
+  name: z.string().trim().min(2, { message: 'O nome da empresa deve ter pelo menos 2 caracteres.' }).max(160),
   legalName: z.string().trim().max(200).optional().nullable(),
   document: z.string().trim().max(40).optional().nullable(),
   segment: z.string().trim().max(120).optional().nullable(),
@@ -35,11 +64,21 @@ const clientSchema = z.object({
 });
 
 const resourceSchema = z.object({
-  title: z.string().trim().min(2).max(160),
-  url: z.string().trim().url().max(2000),
+  title: z.string().trim().min(2, { message: 'O título do recurso deve ter pelo menos 2 caracteres.' }).max(160),
+  url: resourceUrl,
   type: z.enum(['WEBSITE', 'INSTAGRAM', 'FACEBOOK', 'LINKEDIN', 'STORE', 'OTHER']).default('WEBSITE'),
   notes: z.string().trim().max(4000).optional().nullable(),
 });
+
+function formatZodError(error: any): string {
+  if (error?.name === 'ZodError' && Array.isArray(error.issues) && error.issues.length > 0) {
+    return error.issues.map((i: any) => {
+      const field = i.path && i.path.length ? `${i.path.join('.')}: ` : '';
+      return `${field}${i.message}`;
+    }).join('; ');
+  }
+  return error?.message || 'Falha na validação dos dados.';
+}
 
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -92,7 +131,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     });
     res.status(201).json({ success: true, data: client });
   } catch (error: any) {
-    res.status(error?.name === 'ZodError' ? 400 : 500).json({ error: error?.message || 'Falha ao criar cliente.' });
+    res.status(error?.name === 'ZodError' ? 400 : 500).json({ error: formatZodError(error) });
   }
 });
 
@@ -112,7 +151,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
     });
     res.json({ success: true, data: client });
   } catch (error: any) {
-    res.status(error?.name === 'ZodError' ? 400 : 500).json({ error: error?.message || 'Falha ao atualizar cliente.' });
+    res.status(error?.name === 'ZodError' ? 400 : 500).json({ error: formatZodError(error) });
   }
 });
 
@@ -151,7 +190,7 @@ router.post('/:id/resources', async (req: Request, res: Response): Promise<void>
     });
     res.status(201).json({ success: true, data: resource });
   } catch (error: any) {
-    res.status(error?.name === 'ZodError' ? 400 : 500).json({ error: error?.message || 'Falha ao adicionar referência.' });
+    res.status(error?.name === 'ZodError' ? 400 : 500).json({ error: formatZodError(error) });
   }
 });
 
