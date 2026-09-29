@@ -305,34 +305,44 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
           {/* =========================================================================
               MÓDULO 1: GERADOR DE IMAGENS DE ANÚNCIOS COM IA (FLUX / DALL-E 3)
               ========================================================================= */}
-          <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/5 via-white to-violet-500/5 dark:from-indigo-950/20 dark:via-zinc-900/60 dark:to-violet-950/20 p-5 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 dark:text-indigo-400 border border-indigo-500/20">
-                  <ImageIcon className="h-4 w-4" />
+          <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-500/5 via-white to-violet-500/5 dark:from-indigo-950/20 dark:via-zinc-900/60 dark:to-violet-950/20 p-5 sm:p-6 shadow-sm space-y-5">
+            {/* Cabeçalho do Gerador */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-zinc-800/80">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-xs">
+                  <ImageIcon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>Gerador de Imagens & Artes do Anúncio</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      Gerador de Imagens & Artes do Anúncio
+                    </h3>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 font-semibold">
                       Flux / DALL-E 3
                     </span>
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                    Gere variações realistas e profissionais em alta resolução com 1 clique para alimentar seus criativos no Meta Ads / Instagram.
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                    Gere imagens publicitárias realistas e profissionais em alta resolução com 1 clique para campanhas de Meta Ads / Instagram.
                   </p>
                 </div>
               </div>
+            </div>
 
-              {/* Controles de Formato e Quantidade */}
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Formato do Anúncio */}
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+            {/* Linha de Configurações: Formato e Quantidade */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/80 dark:bg-zinc-900/50 p-3.5 rounded-2xl border border-slate-200/70 dark:border-zinc-800">
+              {/* Formato da Arte */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
+                  Formato do Anúncio
+                </label>
+                <div className="grid grid-cols-3 gap-1.5 bg-slate-200/60 dark:bg-zinc-950 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
                   <button
                     type="button"
                     onClick={() => setImageFormat('1:1')}
-                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition ${
-                      imageFormat === '1:1' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                    className={`py-1.5 px-2 text-xs font-semibold rounded-lg transition cursor-pointer text-center ${
+                      imageFormat === '1:1'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     1:1 Feed
@@ -340,62 +350,82 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
                   <button
                     type="button"
                     onClick={() => setImageFormat('9:16')}
-                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition ${
-                      imageFormat === '9:16' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                    className={`py-1.5 px-2 text-xs font-semibold rounded-lg transition cursor-pointer text-center ${
+                      imageFormat === '9:16'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    9:16 Story
+                    9:16 Story / Reels
                   </button>
                   <button
                     type="button"
                     onClick={() => setImageFormat('16:9')}
-                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition ${
-                      imageFormat === '16:9' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                    className={`py-1.5 px-2 text-xs font-semibold rounded-lg transition cursor-pointer text-center ${
+                      imageFormat === '16:9'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     16:9 Banner
                   </button>
                 </div>
+              </div>
 
-                {/* Quantidade de Variações */}
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+              {/* Quantidade de Imagens */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
+                  Quantidade a Gerar
+                </label>
+                <div className="grid grid-cols-4 gap-1.5 bg-slate-200/60 dark:bg-zinc-950 p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
                   {[1, 2, 3, 4].map((qty) => (
                     <button
                       key={qty}
                       type="button"
                       onClick={() => setImageQuantity(qty)}
-                      className={`px-2 py-1 text-[11px] font-semibold rounded-lg transition ${
-                        imageQuantity === qty ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900'
+                      className={`py-1.5 px-1.5 text-xs font-semibold rounded-lg transition cursor-pointer text-center ${
+                        imageQuantity === qty
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      {qty} {qty === 1 ? 'img' : 'vars'}
+                      {qty} {qty === 1 ? 'Imagem' : 'Imagens'}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Prompt de Imagem */}
-            <div className="flex flex-col sm:flex-row gap-2.5">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={imagePrompt}
-                  onChange={(e) => setImagePrompt(e.target.value)}
-                  placeholder="Descreva a imagem que deseja gerar (Ex: Foto profissional de alta conversão, modelo sorrindo segurando produto, iluminação moderna)..."
-                  className="shadcn-input text-xs"
-                />
-              </div>
+            {/* Prompt de Imagem e Botão Principal de Ação */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                Descrição Visual do Anúncio (Prompt de Criação):
+              </label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={imagePrompt}
+                    onChange={(e) => setImagePrompt(e.target.value)}
+                    placeholder="Descreva o conceito da imagem do anúncio..."
+                    className="shadcn-input text-xs"
+                  />
+                </div>
 
-              <button
-                type="button"
-                disabled={imageGenerating || !imagePrompt.trim()}
-                onClick={() => handleGenerateImages()}
-                className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition cursor-pointer shrink-0"
-              >
-                <Wand2 className={`h-4 w-4 ${imageGenerating ? 'animate-spin' : ''}`} />
-                <span>{imageGenerating ? 'Gerando Imagens...' : `🎨 Gerar ${imageQuantity} Variaç${imageQuantity > 1 ? 'ões' : 'ão'} com IA`}</span>
-              </button>
+                <button
+                  type="button"
+                  disabled={imageGenerating || !imagePrompt.trim()}
+                  onClick={() => handleGenerateImages()}
+                  className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 text-xs font-bold text-white shadow-md shadow-indigo-600/25 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition cursor-pointer shrink-0"
+                >
+                  <Wand2 className={`h-4 w-4 ${imageGenerating ? 'animate-spin' : ''}`} />
+                  <span>
+                    {imageGenerating 
+                      ? 'Gerando Imagens...' 
+                      : `Gerar ${imageQuantity} ${imageQuantity === 1 ? 'Imagem' : 'Imagens'} com IA`}
+                  </span>
+                </button>
+              </div>
             </div>
 
             {/* Galeria de Imagens Geradas */}
