@@ -154,16 +154,8 @@ export const AgentsDashboard: React.FC<AgentsDashboardProps> = ({ jwtToken }) =>
           <Radio className="h-10 w-10 text-slate-400 dark:text-zinc-600 mb-3" />
           <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200">Nenhum agente configurado</h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 max-w-sm">
-            Crie seu primeiro agente de IA para conectar ao WhatsApp e automatizar conversas inteligentes.
+            Clique no botão <strong>"+ Criar Novo Agente"</strong> no topo para conectar ao WhatsApp e automatizar conversas inteligentes.
           </p>
-          <button
-            type="button"
-            onClick={() => setEditingAgent('new')}
-            className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Criar Primeiro Agente</span>
-          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

@@ -416,24 +416,9 @@ export const ClientContextManager: React.FC<{ jwtToken: string }> = ({ jwtToken 
             </h3>
             <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 max-w-sm">
               {clients.length === 0
-                ? 'Cadastre sua primeira empresa para começar a alimentar contextos, bases RAG e campanhas.'
+                ? 'Clique no botão "+ Criar Nova Empresa" no topo para organizar diretrizes, links e base de conhecimento.'
                 : 'Tente alterar os termos da pesquisa ou o filtro de status.'}
             </p>
-            {clients.length === 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelected(null);
-                  setForm(createEmptyForm());
-                  setShowForm(true);
-                  setFeedback(null);
-                }}
-                className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
-              >
-                <Plus className="h-4 w-4" /> 
-                <span>Criar Nova Empresa</span>
-              </button>
-            )}
           </div>
         ) : (
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">

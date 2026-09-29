@@ -438,16 +438,8 @@ export const CampaignManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) =>
           <Megaphone className="h-10 w-10 text-slate-400 dark:text-zinc-600 mb-3" />
           <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200">Nenhuma campanha cadastrada</h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 max-w-sm">
-            Crie sua primeira campanha para gerar estratégias completas de marketing com IA.
+            Clique no botão <strong>"+ Nova Campanha"</strong> no topo para estruturar seus briefings e estratégias com IA.
           </p>
-          <button 
-            type="button" 
-            onClick={() => { setEditing(null); setForm(emptyForm); setShowForm(true); }} 
-            className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Criar Primeira Campanha</span>
-          </button>
         </div>
       ) : (
         <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">

@@ -347,16 +347,8 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
             <BrainCircuit className="h-10 w-10 text-slate-400 dark:text-zinc-600 mb-3" />
             <p className="text-sm font-semibold text-slate-800 dark:text-zinc-200">Nenhum provedor de IA cadastrado</p>
             <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 max-w-sm">
-              Cadastre sua chave da OpenAI, Gemini, Groq ou URL do Ollama para alimentar os agentes de IA.
+              Clique em <strong>"+ Cadastrar Provedor"</strong> no topo para adicionar chaves da OpenAI, Gemini, Groq ou URL do Ollama.
             </p>
-            <button 
-              type="button" 
-              onClick={handleOpenCreate} 
-              className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Cadastrar Primeiro Provedor</span>
-            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">

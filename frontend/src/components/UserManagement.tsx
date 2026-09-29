@@ -155,14 +155,9 @@ export const UserManagement: React.FC<{ jwtToken: string }> = ({ jwtToken }) => 
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 p-12 text-center dark:border-zinc-800">
           <Users className="h-10 w-10 text-slate-400 dark:text-zinc-600 mb-3" />
           <p className="text-sm font-semibold text-slate-800 dark:text-zinc-200">Nenhum usuário cadastrado</p>
-          <button 
-            type="button" 
-            onClick={openCreate} 
-            className="mt-4 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-500 transition cursor-pointer"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span>Cadastrar Primeiro Usuário</span>
-          </button>
+          <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400 max-w-sm">
+            Clique no botão <strong>"+ Novo Usuário"</strong> no topo para convidar membros da equipe da agência.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
