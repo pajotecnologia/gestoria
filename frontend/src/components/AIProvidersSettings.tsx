@@ -9,7 +9,10 @@ import {
   X, 
   AlertCircle,
   Sparkles,
-  Plus
+  Plus,
+  Coins,
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import { apiUrl } from '../api/client';
 
@@ -30,12 +33,25 @@ type ProviderAccount = {
   createdAt?: string;
 };
 
+export type ProviderBalanceInfo = {
+  provider: string;
+  status: 'active' | 'no_credits' | 'rate_limit' | 'invalid_key' | 'error';
+  balanceDisplay: string;
+  hasCredits: boolean;
+  totalGranted?: number;
+  totalUsed?: number;
+  totalAvailable?: number;
+  billingUrl?: string;
+  message: string;
+  latencyMs: number;
+};
+
 export const PROVIDER_MODELS: Record<string, Array<{ id: string; name: string }>> = {
   gemini: [
-    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Recomendado - Mais Recente)' },
-    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash (Estável & Rápido)' },
-    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite (Ultra Rápido & Econômico)' },
-    { id: 'gemini-flash-lite-latest', name: 'Gemini Flash Lite (Mais Recente)' },
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Recomendado - Mais Recente)' },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Ultra Rápido & Baixa Latência)' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Estável)' },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Raciocínio Avançado)' },
   ],
   openai: [
     { id: 'gpt-4o', name: 'GPT-4o (Recomendado para Produção)' },
@@ -60,7 +76,7 @@ export const PROVIDER_MODELS: Record<string, Array<{ id: string; name: string }>
 const emptyForm = {
   name: '',
   provider: 'gemini',
-  model: 'gemini-3.8-flash',
+  model: 'gemini-2.5-flash',
   apiKey: '',
   priority: 100,
   enabled: true
@@ -75,11 +91,13 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
   const [message, setMessage] = useState('');
   const [usage, setUsage] = useState<UsageSummary | null>(null);
 
-  // Estados de Teste de Conexão Live
+  // Estados de Saldo e Teste de Conexão Live
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, { success: boolean; message: string; latencyMs?: number }>>({});
+  const [balances, setBalances] = useState<Record<string, ProviderBalanceInfo>>({});
+  const [checkingBalanceId, setCheckingBalanceId] = useState<string | null>(null);
+  const [isCheckingAll, setIsCheckingAll] = useState(false);
   const [modalTestLoading, setModalTestLoading] = useState(false);
-  const [modalTestResult, setModalTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [modalTestResult, setModalTestResult] = useState<ProviderBalanceInfo | null>(null);
 
   const load = async () => {
     try {
@@ -153,7 +171,14 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
 
   const handleTestInModal = async () => {
     if (!form.apiKey.trim() && !editingAccount) {
-      setModalTestResult({ success: false, message: 'Informe a API Key / URL antes de testar.' });
+      setModalTestResult({
+        provider: form.provider,
+        status: 'error',
+        balanceDisplay: 'Chave obrigatória',
+        hasCredits: false,
+        message: 'Informe a API Key / URL antes de testar.',
+        latencyMs: 0
+      });
       return;
     }
 
@@ -161,24 +186,29 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
     setModalTestResult(null);
 
     try {
-      // Se for edição e não digitou nova chave, testa o provedor existente
       if (editingAccount && !form.apiKey.trim()) {
-        const res = await fetch(apiUrl(`/api/ai-providers/${editingAccount.id}/test`), {
+        const res = await fetch(apiUrl(`/api/ai-providers/${editingAccount.id}/balance`), {
           method: 'POST',
           headers: { Authorization: `Bearer ${jwtToken}` }
         });
         const data = await res.json();
-        if (res.ok && (data.success || data.data)) {
-          const latency = data.data?.latencyMs ?? data.latencyMs ?? 0;
-          const reply = data.data?.reply ?? data.data?.replyPreview ?? data.replyPreview ?? data.data?.message ?? 'Conexão OK';
-          setModalTestResult({ success: true, message: `Conexão bem sucedida! Latência: ${latency}ms. Resposta: "${reply}"` });
+        if (res.ok && data.data) {
+          setModalTestResult(data.data);
+          setBalances(prev => ({ ...prev, [editingAccount.id]: data.data }));
         } else {
-          setModalTestResult({ success: false, message: data.error || data.details || data.message || 'Falha no teste de conexão.' });
+          setModalTestResult({
+            provider: form.provider,
+            status: 'error',
+            balanceDisplay: 'Falha no teste',
+            hasCredits: false,
+            message: data.error || 'Falha ao validar provedor.',
+            latencyMs: 0
+          });
         }
         return;
       }
 
-      const res = await fetch(apiUrl('/api/ai-providers/test-unsaved'), {
+      const res = await fetch(apiUrl('/api/ai-providers/check-balance'), {
         method: 'POST',
         headers: { Authorization: `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -188,48 +218,75 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         })
       });
       const data = await res.json();
-      if (res.ok && (data.success || data.data)) {
-        const latency = data.data?.latencyMs ?? data.latencyMs ?? 0;
-        const reply = data.data?.reply ?? data.data?.replyPreview ?? data.replyPreview ?? data.data?.message ?? 'Conexão OK';
-        setModalTestResult({ success: true, message: `Conexão bem sucedida! Latência: ${latency}ms. Resposta da IA: "${reply}"` });
+      if (res.ok && data.balanceInfo) {
+        setModalTestResult(data.balanceInfo);
       } else {
-        setModalTestResult({ success: false, message: data.error || data.details || data.message || 'Falha no teste de conexão.' });
+        setModalTestResult({
+          provider: form.provider,
+          status: 'error',
+          balanceDisplay: 'Falha no teste',
+          hasCredits: false,
+          message: data.error || data.message || 'Falha ao validar credencial.',
+          latencyMs: 0
+        });
       }
     } catch (err: any) {
-      setModalTestResult({ success: false, message: err.message || 'Erro ao testar conexão.' });
+      setModalTestResult({
+        provider: form.provider,
+        status: 'error',
+        balanceDisplay: 'Erro de conexão',
+        hasCredits: false,
+        message: err.message || 'Erro ao conectar com a API.',
+        latencyMs: 0
+      });
     } finally {
       setModalTestLoading(false);
     }
   };
 
+  const handleCheckBalance = async (id: string) => {
+    setCheckingBalanceId(id);
+    try {
+      const res = await fetch(apiUrl(`/api/ai-providers/${id}/balance`), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${jwtToken}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.data) {
+        setBalances(prev => ({ ...prev, [id]: data.data }));
+      }
+    } catch {
+      // ignore
+    } finally {
+      setCheckingBalanceId(null);
+    }
+  };
+
+  const handleCheckAllBalances = async () => {
+    if (accounts.length === 0) return;
+    setIsCheckingAll(true);
+    try {
+      await Promise.allSettled(
+        accounts.filter(a => a.enabled).map(a => handleCheckBalance(a.id))
+      );
+    } finally {
+      setIsCheckingAll(false);
+    }
+  };
+
   const handleTestExisting = async (id: string) => {
     setTestingId(id);
-    setTestResults(prev => ({ ...prev, [id]: { success: false, message: 'Testando conexão...' } }));
-
     try {
       const res = await fetch(apiUrl(`/api/ai-providers/${id}/test`), {
         method: 'POST',
         headers: { Authorization: `Bearer ${jwtToken}` }
       });
       const data = await res.json();
-      if (res.ok && (data.success || data.data)) {
-        const latency = data.data?.latencyMs ?? data.latencyMs ?? 0;
-        const reply = data.data?.reply ?? data.data?.replyPreview ?? data.replyPreview ?? data.data?.message ?? 'Conexão OK';
-        setTestResults(prev => ({
-          ...prev,
-          [id]: { success: true, latencyMs: latency, message: `Online! Latência: ${latency}ms. Resposta: "${reply}"` }
-        }));
-      } else {
-        setTestResults(prev => ({
-          ...prev,
-          [id]: { success: false, message: data.error || data.details || data.message || 'Falha no teste.' }
-        }));
+      if (res.ok && data.balanceInfo) {
+        setBalances(prev => ({ ...prev, [id]: data.balanceInfo }));
       }
-    } catch (err: any) {
-      setTestResults(prev => ({
-        ...prev,
-        [id]: { success: false, message: err.message || 'Erro no teste.' }
-      }));
+    } catch {
+      // ignore
     } finally {
       setTestingId(null);
     }
@@ -295,18 +352,33 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
-            Configure suas chaves do Google Gemini, OpenAI, Groq e Ollama com fallback automático e balanceamento.
+            Configure suas chaves do Google Gemini, OpenAI, Groq e Ollama com verificação de saldo em tempo real e contingência automática.
           </p>
         </div>
 
-        <button 
-          type="button" 
-          onClick={handleOpenCreate}
-          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-400 hover:to-violet-500 cursor-pointer"
-        >
-          <Plus className="h-4 w-4" /> 
-          <span>Cadastrar Provedor</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {accounts.length > 0 && (
+            <button
+              type="button"
+              disabled={isCheckingAll}
+              onClick={handleCheckAllBalances}
+              className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 transition cursor-pointer disabled:opacity-50"
+              title="Consultar saldo e cota de todos os provedores"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 text-indigo-500 ${isCheckingAll ? 'animate-spin' : ''}`} />
+              <span>{isCheckingAll ? 'Consultando...' : 'Checar Saldos'}</span>
+            </button>
+          )}
+
+          <button 
+            type="button" 
+            onClick={handleOpenCreate}
+            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-4 text-xs font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:from-indigo-400 hover:to-violet-500 cursor-pointer"
+          >
+            <Plus className="h-4 w-4" /> 
+            <span>Cadastrar Provedor</span>
+          </button>
+        </div>
       </div>
 
       {/* Métricas Rápidas de Consumo */}
@@ -353,13 +425,13 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {accounts.map(account => {
-              const testResult = testResults[account.id];
-              const isTesting = testingId === account.id;
+              const balance = balances[account.id];
+              const isCheckingThis = checkingBalanceId === account.id || testingId === account.id;
 
               return (
                 <div
                   key={account.id}
-                  className="shadcn-card flex flex-col justify-between space-y-4"
+                  className="shadcn-card flex flex-col justify-between space-y-4 relative overflow-hidden"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-3">
@@ -399,36 +471,93 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                       </div>
                     </div>
 
+                    {/* Bloco de Saldo & Status da Cota em Tempo Real */}
+                    <div className="mt-3.5 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-zinc-800/80 dark:bg-zinc-900/40">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                          <Coins className="h-3.5 w-3.5 text-amber-500" />
+                          <span>Saldo / Cota:</span>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isCheckingThis}
+                          onClick={() => handleCheckBalance(account.id)}
+                          className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition cursor-pointer disabled:opacity-50"
+                          title="Consultar saldo agora"
+                        >
+                          <RefreshCw className={`h-3 w-3 ${isCheckingThis ? 'animate-spin' : ''}`} />
+                          <span>{isCheckingThis ? 'Consultando...' : 'Consultar'}</span>
+                        </button>
+                      </div>
+
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        {balance ? (
+                          <div className="flex flex-col gap-1 w-full">
+                            <div className="flex items-center justify-between">
+                              <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md ${
+                                balance.status === 'active' 
+                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                  : balance.status === 'no_credits'
+                                  ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                                  : balance.status === 'rate_limit'
+                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                  : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                              }`}>
+                                {balance.status === 'active' && <CheckCircle2 className="h-3 w-3" />}
+                                {(balance.status === 'no_credits' || balance.status === 'invalid_key' || balance.status === 'error') && <AlertCircle className="h-3 w-3" />}
+                                {balance.balanceDisplay}
+                              </span>
+                              {balance.latencyMs > 0 && (
+                                <span className="text-[10px] text-slate-400 font-mono">{balance.latencyMs}ms</span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-zinc-400 leading-snug">
+                              {balance.message}
+                            </p>
+                            {balance.billingUrl && !balance.hasCredits && (
+                              <a
+                                href={balance.billingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 underline underline-offset-2"
+                              >
+                                <span>Adicionar créditos na plataforma</span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
+                        ) : account.lastError ? (
+                          <div className="w-full">
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                              <AlertCircle className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{account.lastError}</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 dark:text-zinc-500 italic">
+                            Clique em "Consultar" para verificar saldo/cota
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400">
                       <span>Prioridade: <strong className="text-slate-800 dark:text-zinc-200">{account.priority}</strong></span>
                       {account.lastUsedAt && (
                         <span>Último uso: {new Date(account.lastUsedAt).toLocaleDateString('pt-BR')}</span>
                       )}
                     </div>
-
-                    {testResult && (
-                      <div className={`mt-3 p-2.5 rounded-xl text-xs border ${
-                        testResult.success 
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-300' 
-                          : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-300'
-                      }`}>
-                        <div className="flex items-center gap-1.5">
-                          {testResult.success ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" /> : <AlertCircle className="h-3.5 w-3.5 text-rose-500 shrink-0" />}
-                          <span className="truncate">{testResult.message}</span>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800/80">
                     <button
                       type="button"
-                      disabled={isTesting}
+                      disabled={isCheckingThis}
                       onClick={() => handleTestExisting(account.id)}
                       className="flex items-center gap-1 text-[11px] font-semibold text-amber-600 hover:text-amber-500 dark:text-amber-400 transition cursor-pointer disabled:opacity-50"
                     >
                       <Zap className="h-3.5 w-3.5" />
-                      <span>{isTesting ? 'Testando...' : 'Testar Conexão'}</span>
+                      <span>{isCheckingThis ? 'Testando...' : 'Testar Conexão'}</span>
                     </button>
 
                     <button
@@ -497,7 +626,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                 <button
                   type="button"
                   onClick={() => {
-                    setForm({ ...form, name: 'Google Gemini 3.8', provider: 'gemini', model: 'gemini-3.8-flash' });
+                    setForm({ ...form, name: 'Google Gemini 2.5', provider: 'gemini', model: 'gemini-2.5-flash' });
                     setCustomModelMode(false);
                   }}
                   className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:border-indigo-500 hover:text-indigo-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-indigo-400 dark:hover:text-indigo-400 cursor-pointer transition"
@@ -586,7 +715,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                   {customModelMode ? (
                     <input
                       required
-                      placeholder="ID do modelo (ex: gemini-3.8-flash)"
+                      placeholder="ID do modelo (ex: gemini-2.5-flash)"
                       value={form.model}
                       onChange={e => setForm({ ...form, model: e.target.value })}
                       className="shadcn-input"
@@ -651,15 +780,34 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
               )}
 
               {modalTestResult && (
-                <div className={`p-3 rounded-xl text-xs border ${
-                  modalTestResult.success 
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-300' 
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-300'
+                <div className={`p-3.5 rounded-xl text-xs border ${
+                  modalTestResult.status === 'active' 
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' 
+                    : modalTestResult.status === 'no_credits'
+                    ? 'bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                    : 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
                 }`}>
-                  <div className="flex items-center gap-2">
-                    {modalTestResult.success ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /> : <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />}
-                    <span>{modalTestResult.message}</span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 font-bold">
+                      {modalTestResult.hasCredits ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" /> : <AlertCircle className="h-4 w-4 text-rose-500 shrink-0" />}
+                      <span>{modalTestResult.balanceDisplay}</span>
+                    </div>
+                    {modalTestResult.latencyMs > 0 && (
+                      <span className="text-[10px] opacity-75 font-mono">{modalTestResult.latencyMs}ms</span>
+                    )}
                   </div>
+                  <p className="mt-1 text-[11px] leading-relaxed">{modalTestResult.message}</p>
+                  {modalTestResult.billingUrl && !modalTestResult.hasCredits && (
+                    <a
+                      href={modalTestResult.billingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 underline"
+                    >
+                      <span>Acessar painel de recarga na plataforma</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
                 </div>
               )}
 
@@ -671,7 +819,7 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                   className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 transition disabled:opacity-40 cursor-pointer"
                 >
                   <Zap className="h-3.5 w-3.5" />
-                  <span>{modalTestLoading ? 'Testando...' : 'Testar Conexão em Tempo Real'}</span>
+                  <span>{modalTestLoading ? 'Verificando Saldo...' : 'Testar Conexão & Saldo'}</span>
                 </button>
 
                 <div className="flex items-center gap-2">

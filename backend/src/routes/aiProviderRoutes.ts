@@ -4,7 +4,7 @@ import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { requireRoles } from '../middlewares/authorization';
 import { writeAuditLog } from '../services/auditLog';
 import { encryptCredential, decryptCredential } from '../services/aiCredentialCrypto';
-import { callChat, AiProvider } from '../services/aiProviderService';
+import { callChat, checkProviderBalance, AiProvider } from '../services/aiProviderService';
 import { z } from 'zod';
 
 const router = Router();
@@ -105,7 +105,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// Testar Provedor em tempo real (chamada live com ping)
+// Testar Provedor em tempo real (chamada live com ping e saldo)
 router.post('/:id/test', async (req: Request, res: Response): Promise<void> => {
   const account = await prisma.aiProviderAccount.findFirst({
     where: { id: req.params.id, tenantId: req.tenantId! }
@@ -118,31 +118,28 @@ router.post('/:id/test', async (req: Request, res: Response): Promise<void> => {
   const startTime = Date.now();
   try {
     const rawKey = decryptCredential(account.encryptedKey);
-    const result = await callChat(account.provider as AiProvider, rawKey, {
-      model: account.model,
-      temperature: 0.1,
-      messages: [{ role: 'user', content: 'Diga apenas: Conexão bem-sucedida.' }]
-    });
-
-    const latencyMs = Date.now() - startTime;
-    const replyText = result.text.trim();
-
+    const balanceInfo = await checkProviderBalance(account.provider as AiProvider, rawKey, account.model);
+    
     await prisma.aiProviderAccount.update({
       where: { id: account.id },
-      data: { lastError: null, lastUsedAt: new Date() }
+      data: { 
+        lastError: balanceInfo.hasCredits ? null : balanceInfo.message.slice(0, 500), 
+        lastUsedAt: new Date() 
+      }
     });
 
     res.json({
-      success: true,
-      latencyMs,
-      replyPreview: replyText,
+      success: balanceInfo.hasCredits,
+      latencyMs: balanceInfo.latencyMs,
+      balanceInfo,
       data: {
-        latencyMs,
-        reply: replyText,
-        replyPreview: replyText,
+        latencyMs: balanceInfo.latencyMs,
+        reply: balanceInfo.balanceDisplay,
+        replyPreview: balanceInfo.balanceDisplay,
         provider: account.provider,
         model: account.model,
-        message: `Conectado com sucesso em ${latencyMs}ms!`
+        balanceInfo,
+        message: balanceInfo.message
       }
     });
   } catch (error: any) {
@@ -163,7 +160,41 @@ router.post('/:id/test', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// Testar credencial antes de salvar (teste rápido do formulário)
+// Consultar saldo/cota do provedor cadastrado
+router.post('/:id/balance', async (req: Request, res: Response): Promise<void> => {
+  const account = await prisma.aiProviderAccount.findFirst({
+    where: { id: req.params.id, tenantId: req.tenantId! }
+  });
+  if (!account) {
+    res.status(404).json({ error: 'Provedor de IA não encontrado.' });
+    return;
+  }
+
+  try {
+    const rawKey = decryptCredential(account.encryptedKey);
+    const balanceInfo = await checkProviderBalance(account.provider as AiProvider, rawKey, account.model);
+    
+    await prisma.aiProviderAccount.update({
+      where: { id: account.id },
+      data: { 
+        lastError: balanceInfo.hasCredits ? null : balanceInfo.message.slice(0, 500),
+        lastUsedAt: new Date()
+      }
+    }).catch(() => undefined);
+
+    res.json({
+      success: true,
+      data: balanceInfo
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error?.message || 'Falha ao consultar saldo/cota do provedor.'
+    });
+  }
+});
+
+// Testar credencial antes de salvar (teste rápido do formulário com saldo)
 const handleTestUnsaved = async (req: Request, res: Response): Promise<void> => {
   const { provider, model, apiKey } = req.body;
   if (!provider || !apiKey) {
@@ -171,42 +202,34 @@ const handleTestUnsaved = async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
-  const startTime = Date.now();
   try {
-    const result = await callChat(provider as AiProvider, apiKey.trim(), {
-      model: model || (provider === 'gemini' ? 'gemini-3.8-flash' : provider === 'groq' ? 'llama-3.3-70b-versatile' : provider === 'ollama' ? 'llama3.1' : 'gpt-4o'),
-      temperature: 0.1,
-      messages: [{ role: 'user', content: 'Diga apenas: Conexão bem-sucedida.' }]
-    });
-
-    const latencyMs = Date.now() - startTime;
-    const replyText = result.text.trim();
+    const balanceInfo = await checkProviderBalance(provider as AiProvider, apiKey.trim(), model);
 
     res.json({
-      success: true,
-      latencyMs,
-      replyPreview: replyText,
+      success: balanceInfo.hasCredits,
+      latencyMs: balanceInfo.latencyMs,
+      balanceInfo,
       data: {
-        latencyMs,
-        reply: replyText,
-        replyPreview: replyText,
-        message: `Conexão validada com sucesso em ${latencyMs}ms!`
+        latencyMs: balanceInfo.latencyMs,
+        reply: balanceInfo.balanceDisplay,
+        replyPreview: balanceInfo.balanceDisplay,
+        balanceInfo,
+        message: balanceInfo.message
       }
     });
   } catch (error: any) {
-    const latencyMs = Date.now() - startTime;
     const errMsg = String(error?.response?.data?.error?.message || error?.message || error);
     res.status(400).json({
       success: false,
       error: errMsg,
-      latencyMs,
-      message: `Falha na validação (${latencyMs}ms): ${errMsg}`
+      message: `Falha na validação: ${errMsg}`
     });
   }
 };
 
 router.post('/test-unsaved', handleTestUnsaved);
 router.post('/test-connection', handleTestUnsaved);
+router.post('/check-balance', handleTestUnsaved);
 
 router.get('/:id/health', async (req: Request, res: Response): Promise<void> => {
   const account = await prisma.aiProviderAccount.findFirst({

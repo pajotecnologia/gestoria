@@ -149,7 +149,7 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
 
   const defaultModel =
     provider === 'gemini'
-      ? 'gemini-3.8-flash'
+      ? 'gemini-2.5-flash'
       : provider === 'groq'
       ? 'llama-3.3-70b-versatile'
       : 'gpt-4o';
@@ -159,10 +159,11 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
   // Handle Gemini model candidates if deprecated model name is passed
   const geminiCandidates = [
     modelToUse,
-    'gemini-3.8-flash',
-    'gemini-3.6-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-flash-lite-latest'
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-2.0-flash-lite'
   ];
 
   if (provider === 'gemini') {
@@ -527,3 +528,272 @@ export async function generateImage(
     throw new Error('Falha ao gerar arte publicitária. ' + err?.message);
   }
 }
+
+export interface ProviderBalanceInfo {
+  provider: AiProvider;
+  status: 'active' | 'no_credits' | 'rate_limit' | 'invalid_key' | 'error';
+  balanceDisplay: string;
+  hasCredits: boolean;
+  totalGranted?: number;
+  totalUsed?: number;
+  totalAvailable?: number;
+  billingUrl?: string;
+  message: string;
+  latencyMs: number;
+}
+
+export async function checkProviderBalance(provider: AiProvider, rawKey: string, model?: string): Promise<ProviderBalanceInfo> {
+  const startTime = Date.now();
+  const cleanKey = rawKey.trim();
+
+  if (provider === 'openai') {
+    // 1. Try OpenAI credit_grants / subscription endpoints first
+    try {
+      const billingRes = await axios.get('https://api.openai.com/v1/dashboard/billing/credit_grants', {
+        headers: { Authorization: `Bearer ${cleanKey}` },
+        timeout: 5000
+      });
+      if (billingRes.data && typeof billingRes.data.total_available === 'number') {
+        const totalAvailable = billingRes.data.total_available;
+        const totalUsed = billingRes.data.total_used || 0;
+        const totalGranted = billingRes.data.total_granted || 0;
+        const latencyMs = Date.now() - startTime;
+        const hasCredits = totalAvailable > 0;
+        return {
+          provider,
+          status: hasCredits ? 'active' : 'no_credits',
+          balanceDisplay: `$${totalAvailable.toFixed(2)} USD`,
+          hasCredits,
+          totalGranted,
+          totalUsed,
+          totalAvailable,
+          billingUrl: 'https://platform.openai.com/settings/organization/billing/overview',
+          message: hasCredits ? `Saldo disponível: $${totalAvailable.toFixed(2)} USD` : 'Saldo esgotado ($0.00). Adicione créditos na OpenAI.',
+          latencyMs
+        };
+      }
+    } catch {
+      // If billing dashboard endpoint is forbidden for project keys, fallback to micro-completion ping
+    }
+
+    // 2. Micro completion ping test with OpenAI
+    try {
+      const client = new OpenAI({ apiKey: cleanKey });
+      const testModel = model || 'gpt-4o-mini';
+      await client.chat.completions.create({
+        model: testModel,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 1,
+        temperature: 0
+      });
+      const latencyMs = Date.now() - startTime;
+      return {
+        provider,
+        status: 'active',
+        balanceDisplay: 'Créditos Ativos (OK)',
+        hasCredits: true,
+        billingUrl: 'https://platform.openai.com/settings/organization/billing/overview',
+        message: `Conexão validada em ${latencyMs}ms. Saldo ativo na OpenAI.`,
+        latencyMs
+      };
+    } catch (err: any) {
+      const latencyMs = Date.now() - startTime;
+      const errMsg = String(err?.message || err?.response?.data?.error?.message || err);
+      const status = err?.status || err?.response?.status;
+      
+      if (status === 429 && /credit|quota|billing|insufficient|zero/i.test(errMsg)) {
+        return {
+          provider,
+          status: 'no_credits',
+          balanceDisplay: '$0.00 (Sem Créditos)',
+          hasCredits: false,
+          billingUrl: 'https://platform.openai.com/settings/organization/billing/overview',
+          message: 'Saldo esgotado na OpenAI. Adicione créditos para utilizar a API.',
+          latencyMs
+        };
+      } else if (status === 429) {
+        return {
+          provider,
+          status: 'rate_limit',
+          balanceDisplay: 'Limite por minuto (429)',
+          hasCredits: true,
+          billingUrl: 'https://platform.openai.com/settings/organization/billing/overview',
+          message: 'Limite de requisições por minuto atingido (Rate Limit).',
+          latencyMs
+        };
+      } else if (status === 401) {
+        return {
+          provider,
+          status: 'invalid_key',
+          balanceDisplay: 'Chave Inválida (401)',
+          hasCredits: false,
+          billingUrl: 'https://platform.openai.com/api-keys',
+          message: 'Chave de API incorreta, deletada ou revogada na OpenAI.',
+          latencyMs
+        };
+      }
+      return {
+        provider,
+        status: 'error',
+        balanceDisplay: 'Erro de Conexão',
+        hasCredits: false,
+        message: `Falha: ${errMsg}`,
+        latencyMs
+      };
+    }
+  }
+
+  if (provider === 'gemini') {
+    try {
+      const client = new OpenAI({
+        apiKey: cleanKey,
+        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
+      });
+      const testModel = model || 'gemini-2.5-flash';
+      await client.chat.completions.create({
+        model: testModel,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 1,
+        temperature: 0
+      });
+      const latencyMs = Date.now() - startTime;
+      return {
+        provider,
+        status: 'active',
+        balanceDisplay: 'Cota Disponível (Google AI)',
+        hasCredits: true,
+        billingUrl: 'https://aistudio.google.com/apikey',
+        message: `Conexão validada em ${latencyMs}ms. Google Gemini ativo.`,
+        latencyMs
+      };
+    } catch (err: any) {
+      const latencyMs = Date.now() - startTime;
+      const errMsg = String(err?.message || err?.response?.data?.error?.message || err);
+      const status = err?.status || err?.response?.status;
+      if (status === 429) {
+        return {
+          provider,
+          status: 'rate_limit',
+          balanceDisplay: 'Cota / Limite 429 Excedido',
+          hasCredits: false,
+          billingUrl: 'https://aistudio.google.com/apikey',
+          message: 'Limite de requisições gratuitas por minuto ou diário do Google AI atingido.',
+          latencyMs
+        };
+      } else if (status === 400 || status === 403) {
+        return {
+          provider,
+          status: 'invalid_key',
+          balanceDisplay: 'Chave Inválida / Bloqueada',
+          hasCredits: false,
+          billingUrl: 'https://aistudio.google.com/apikey',
+          message: 'Chave do Google AI Studio inválida ou sem permissão.',
+          latencyMs
+        };
+      }
+      return {
+        provider,
+        status: 'error',
+        balanceDisplay: 'Erro no Google Gemini',
+        hasCredits: false,
+        message: `Falha: ${errMsg}`,
+        latencyMs
+      };
+    }
+  }
+
+  if (provider === 'groq') {
+    try {
+      const client = new OpenAI({
+        apiKey: cleanKey,
+        baseURL: 'https://api.groq.com/openai/v1'
+      });
+      const testModel = model || 'llama-3.3-70b-versatile';
+      await client.chat.completions.create({
+        model: testModel,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 1,
+        temperature: 0
+      });
+      const latencyMs = Date.now() - startTime;
+      return {
+        provider,
+        status: 'active',
+        balanceDisplay: 'Cota Ativa (Groq LPU)',
+        hasCredits: true,
+        billingUrl: 'https://console.groq.com/keys',
+        message: `Conexão validada em ${latencyMs}ms. Velocidade LPU ativa.`,
+        latencyMs
+      };
+    } catch (err: any) {
+      const latencyMs = Date.now() - startTime;
+      const errMsg = String(err?.message || err?.response?.data?.error?.message || err);
+      const status = err?.status || err?.response?.status;
+      if (status === 429) {
+        return {
+          provider,
+          status: 'rate_limit',
+          balanceDisplay: 'Limite por minuto (Groq)',
+          hasCredits: false,
+          billingUrl: 'https://console.groq.com/keys',
+          message: 'Limite de tokens ou requisições da Groq excedido.',
+          latencyMs
+        };
+      }
+      return {
+        provider,
+        status: 'invalid_key',
+        balanceDisplay: 'Erro Groq',
+        hasCredits: false,
+        message: `Falha: ${errMsg}`,
+        latencyMs
+      };
+    }
+  }
+
+  if (provider === 'ollama') {
+    let baseUrl = cleanKey;
+    let authToken = '';
+    if (baseUrl.includes('|')) {
+      const parts = baseUrl.split('|');
+      baseUrl = parts[0].trim();
+      authToken = parts[1].trim();
+    }
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    const headers: Record<string, string> = {};
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+    try {
+      await axios.get(`${cleanBaseUrl}/api/tags`, { headers, timeout: 5000 });
+      const latencyMs = Date.now() - startTime;
+      return {
+        provider,
+        status: 'active',
+        balanceDisplay: 'Servidor Local (Ilimitado)',
+        hasCredits: true,
+        message: `Ollama conectado em ${latencyMs}ms.`,
+        latencyMs
+      };
+    } catch (err: any) {
+      const latencyMs = Date.now() - startTime;
+      return {
+        provider,
+        status: 'error',
+        balanceDisplay: 'Offline / Inacessível',
+        hasCredits: false,
+        message: `Não foi possível conectar ao Ollama (${err?.message || 'ECONNREFUSED'}).`,
+        latencyMs
+      };
+    }
+  }
+
+  return {
+    provider,
+    status: 'error',
+    balanceDisplay: 'Desconhecido',
+    hasCredits: false,
+    message: 'Provedor não suportado para consulta.',
+    latencyMs: 0
+  };
+}
+
