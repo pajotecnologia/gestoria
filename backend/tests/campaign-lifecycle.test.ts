@@ -20,9 +20,9 @@ describe('campaign lifecycle', () => {
     expect(validateCampaignPeriod(date('2026-10-01T00:00:00Z'), date('2026-09-01T00:00:00Z'))).toContain('anterior');
     expect(validateCampaignPeriod(null, null)).toBeNull();
   });
-});
 
   it('treats an exact end instant as still active', () => {
     const end = date('2026-09-30T23:59:59Z');
     expect(getCampaignLifecycleStatus(true, date('2026-09-01T00:00:00Z'), end, end)).toBe('ATIVA');
   });
+});
