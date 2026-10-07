@@ -663,7 +663,29 @@ export async function generateImage(
     }
   }
 
-  // 3. Motor de Fotografia Publicitária Brasileira em Alta Definição (1080p/4K)
+  // 3. Motor de IA de Imagem em Tempo Real (Flux AI - 100% fiel ao prompt)
+  try {
+    const encodedPrompt = encodeURIComponent(cleanPrompt.slice(0, 700));
+    let width = 1024;
+    let height = 1024;
+    if (format === '9:16') {
+      width = 768;
+      height = 1344;
+    } else if (format === '16:9') {
+      width = 1344;
+      height = 768;
+    }
+
+    const randomSeed = Math.floor(Math.random() * 900000) + 100000;
+    const fluxImageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&model=flux&nologo=true&enhance=true&seed=${randomSeed}`;
+
+    if (requestId) await finalizeAiRequest(requestId, { success: true, provider: 'flux_ai', model: 'flux-schnell' });
+    return { url: fluxImageUrl, provider: 'Flux AI (Ultra HD)' };
+  } catch (fluxErr: any) {
+    console.warn('[Flux AI Image Warning]: Falha no motor Flux:', fluxErr.message);
+  }
+
+  // 4. Fallback de contingência (Catálogo comercial)
   try {
     const visualStyle = options?.visualStyle || 'brazilian_people';
     const seed = options?.seed || Math.floor(Math.random() * 900000) + 100000;

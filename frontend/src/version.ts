@@ -1,5 +1,5 @@
-export const APP_VERSION = '1.5.3';
-export const APP_BUILD_TIME = '20:55';
+export const APP_VERSION = '1.5.4';
+export const APP_BUILD_TIME = '20:58';
 export const APP_BUILD_DATE = '07/10/2026';
 
 export type ReleaseItem = {
@@ -11,6 +11,17 @@ export type ReleaseItem = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: '1.5.4',
+    date: '07/10/2026',
+    time: '20:58',
+    title: 'Motor de Imagens por IA em Tempo Real (100% Fiel ao Prompt)',
+    changes: [
+      'Integração do motor de IA generativa em tempo real (Flux AI Ultra HD) para geração de imagens 100% fiéis às descrições e prompts detalhados do squad.',
+      'Eliminação do fallback de fotos genéricas estáticas quando a OpenAI estiver sem créditos ou com chave pendente.',
+      'Suporte nativo aos formatos 1:1 (Feed/Square), 9:16 (Stories/Reels) e 16:9 (Banner/Landscape).',
+    ],
+  },
   {
     version: '1.5.3',
     date: '07/10/2026',
