@@ -1,5 +1,5 @@
-export const APP_VERSION = '1.5.2';
-export const APP_BUILD_TIME = '20:45';
+export const APP_VERSION = '1.5.3';
+export const APP_BUILD_TIME = '20:55';
 export const APP_BUILD_DATE = '07/10/2026';
 
 export type ReleaseItem = {
@@ -11,6 +11,17 @@ export type ReleaseItem = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: '1.5.3',
+    date: '07/10/2026',
+    time: '20:55',
+    title: 'Estabilização do War Room (Mesa Redonda) & Blindagem de Mensagens',
+    changes: [
+      'Tratamento preventivo e autocura contra erros de chave estrangeira (P2003 / foreign key constraint) na criação de mensagens durante debates simultâneos ou salas excluídas.',
+      'Validação atômica e verificação de integridade antes e durante a geração de cada especialista do squad.',
+      'Auto-recuperação no frontend com recarregamento suave de salas ativas ao detectar exclusão ou inconsistência.',
+    ],
+  },
   {
     version: '1.5.2',
     date: '07/10/2026',

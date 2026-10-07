@@ -288,7 +288,7 @@ router.post('/:id/message', validateBody(roomMessageSchema), async (req: Request
 
     const room = await prisma.room.findFirst({ where: { id, tenantId } });
     if (!room) {
-      res.status(404).json({ error: 'Sala não encontrada.' });
+      res.status(404).json({ error: 'Sala de reunião não encontrada ou já excluída.' });
       return;
     }
 
@@ -305,10 +305,14 @@ router.post('/:id/message', validateBody(roomMessageSchema), async (req: Request
     await prisma.room.update({
       where: { id },
       data: { updatedAt: new Date() }
-    });
+    }).catch(() => undefined);
 
     res.status(201).json({ success: true, data: message });
   } catch (error: any) {
+    if (error.code === 'P2003' || error.message?.includes('Foreign key constraint') || error.message?.includes('room_messages_roomId_fkey')) {
+      res.status(404).json({ error: 'A sala de reunião não existe mais ou foi excluída.' });
+      return;
+    }
     res.status(500).json({ error: error.message });
   }
 });
@@ -330,7 +334,7 @@ router.post('/:id/debate-round', validateBody(debateRoundSchema), async (req: Re
     });
 
     if (!room) {
-      res.status(404).json({ error: 'Sala não encontrada.' });
+      res.status(404).json({ error: 'Sala de reunião não encontrada ou já excluída.' });
       return;
     }
 
@@ -398,6 +402,13 @@ ${room.campaign.brief ? `- **Briefing Detalhado:** ${room.campaign.brief}` : ''}
     let conversationHistory = room.messages.map(m => `[${m.senderName} (${m.agentRole})]:\n${m.content}`).join('\n\n');
 
     for (const persona of targetSpecialists) {
+      // Verifica se a sala ainda existe antes de gerar/salvar
+      const roomStillValid = await prisma.room.findUnique({ where: { id } });
+      if (!roomStillValid) {
+        console.warn(`[War Room] Sala ${id} não existe mais. Interrompendo debate.`);
+        break;
+      }
+
       const completion = await generateText({
         provider: persona.provider || 'openai',
         tenantId,
@@ -447,31 +458,43 @@ Agora é a sua vez de contribuir, ${persona.name} (${persona.title}). Construa s
         }
       }
 
-      const savedMessage = await prisma.roomMessage.create({
-        data: {
-          roomId: id,
-          senderType: 'AGENT',
-          agentRole: persona.roleKey,
-          senderName: persona.name,
-          content,
-          imageUrl: generatedImageUrl
+      try {
+        const savedMessage = await prisma.roomMessage.create({
+          data: {
+            roomId: id,
+            senderType: 'AGENT',
+            agentRole: persona.roleKey,
+            senderName: persona.name,
+            content,
+            imageUrl: generatedImageUrl
+          }
+        });
+
+        newMessages.push(savedMessage);
+
+        // Atualiza o histórico em memória para o próximo agente da rodada poder ler
+        conversationHistory += `\n\n[${persona.name} (${persona.roleKey})]:\n${content}`;
+      } catch (saveErr: any) {
+        if (saveErr.code === 'P2003' || saveErr.message?.includes('Foreign key constraint') || saveErr.message?.includes('room_messages_roomId_fkey')) {
+          console.warn(`[War Room] Sala ${id} foi excluída durante a geração. Encerrando.`);
+          break;
         }
-      });
-
-      newMessages.push(savedMessage);
-
-      // Atualiza o histórico em memória para o próximo agente da rodada poder ler
-      conversationHistory += `\n\n[${persona.name} (${persona.roleKey})]:\n${content}`;
+        throw saveErr;
+      }
     }
 
     await prisma.room.update({
       where: { id },
       data: { updatedAt: new Date() }
-    });
+    }).catch(() => undefined);
 
     res.status(200).json({ success: true, data: newMessages });
   } catch (error: any) {
     console.error('[War Room Error]:', error);
+    if (error.code === 'P2003' || error.message?.includes('Foreign key constraint') || error.message?.includes('room_messages_roomId_fkey')) {
+      res.status(404).json({ error: 'A sala de reunião não existe mais ou foi excluída.' });
+      return;
+    }
     res.status(500).json({ error: error.message });
   }
 });

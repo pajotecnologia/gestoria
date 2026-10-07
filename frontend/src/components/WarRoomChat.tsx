@@ -406,9 +406,16 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
         body: JSON.stringify({ content: userText })
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setMessages(prev => [...prev, data.data]);
         setTimeout(scrollToBottom, 100);
+      } else {
+        if (res.status === 404 || data.error?.includes('não encontrada') || data.error?.includes('excluída')) {
+          alert('Esta sala não existe mais ou foi excluída. Atualizando lista de salas...');
+          await fetchRooms(1, filterClientId);
+        } else {
+          alert(data.error || 'Erro ao enviar mensagem.');
+        }
       }
     } catch (err) {
       console.error('Erro ao enviar mensagem:', err);
@@ -468,10 +475,15 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
         body: JSON.stringify({ prompt: promptText, messageId })
       });
       const data = await res.json();
-      if (data.success && data.data?.imageUrl) {
+      if (res.ok && data.success && data.data?.imageUrl) {
         setMessages(prev => prev.map(m => m.id === messageId ? { ...m, imageUrl: data.data.imageUrl } : m));
       } else {
-        alert(data.error || 'Não foi possível gerar a imagem.');
+        if (res.status === 404 || data.error?.includes('não encontrada') || data.error?.includes('excluída')) {
+          alert('Esta sala não existe mais ou foi excluída.');
+          await fetchRooms(1, filterClientId);
+        } else {
+          alert(data.error || 'Não foi possível gerar a imagem.');
+        }
       }
     } catch (err: any) {
       alert(err.message || 'Falha ao gerar imagem.');
@@ -509,7 +521,12 @@ export const WarRoomChat: React.FC<WarRoomChatProps> = ({ jwtToken, onClose, isM
         setMessages(prev => [...prev, ...data.data]);
         setTimeout(scrollToBottom, 200);
       } else {
-        alert(data.error || 'Não foi possível convocar o especialista. Verifique os provedores de IA nas configurações.');
+        if (res.status === 404 || data.error?.includes('não encontrada') || data.error?.includes('excluída')) {
+          alert('Esta sala não existe mais ou foi excluída. Atualizando lista de salas...');
+          await fetchRooms(1, filterClientId);
+        } else {
+          alert(data.error || 'Não foi possível convocar o especialista. Verifique os provedores de IA nas configurações.');
+        }
       }
     } catch (err: any) {
       console.error(err);
