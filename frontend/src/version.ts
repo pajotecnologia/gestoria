@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.5.0';
+export const APP_VERSION = '1.5.1';
 
 export type ReleaseItem = {
   version: string;
@@ -8,6 +8,16 @@ export type ReleaseItem = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: '1.5.1',
+    date: '07/10/2026',
+    title: 'Ajustes no Fallback de IA & Otimização do Modal de Especialistas',
+    changes: [
+      'Correção do roteamento e fallback dinâmico entre provedores de IA (OpenAI, Gemini, Groq e Ollama), garantindo compatibilidade automática de modelos durante alternâncias de contingência.',
+      'Atualização dos modelos Google Gemini para os IDs oficiais (Gemini 2.0 Flash, Gemini 1.5 Flash/Pro e Flash-Lite).',
+      'Ajuste responsivo no modal de edição de especialistas para evitar estouro de tela em resoluções menores com rolagem fluida e botões de ação sempre acessíveis.',
+    ],
+  },
   {
     version: '1.5.0',
     date: '29/09/2026',

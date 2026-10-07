@@ -474,15 +474,16 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
 
       {/* MODAL DE CRIAÇÃO / EDIÇÃO DO ESPECIALISTA */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 my-8">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-2xl max-h-[90vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-500/20">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                     {editingSpecialist ? `Editar ${editingSpecialist.name}` : 'Criar Novo Especialista'}
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Parametrize o papel, estilo e modelo de inferência da IA.</p>
@@ -491,221 +492,226 @@ export const SpecialistManager: React.FC<{ jwtToken: string }> = ({ jwtToken }) 
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Sugestões de Modelos Prontos */}
-            {!editingSpecialist && (
-              <div>
-                <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2">
-                  Modelos Prontos de Especialistas (Clique para Carregar):
-                </label>
-                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {SPECIALIST_TEMPLATES.map((tpl) => (
-                    <button
-                      key={tpl.roleKey}
-                      type="button"
-                      onClick={() => handleApplyTemplate(tpl)}
-                      className="text-left p-2.5 rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60 hover:border-indigo-500/40 text-xs transition cursor-pointer"
-                    >
-                      <span className="font-bold text-slate-900 dark:text-white block truncate">{tpl.name}</span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">{tpl.title}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+              {/* Sugestões de Modelos Prontos */}
+              {!editingSpecialist && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Nome do Especialista</label>
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2">
+                    Modelos Prontos de Especialistas (Clique para Carregar):
+                  </label>
+                  <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {SPECIALIST_TEMPLATES.map((tpl) => (
+                      <button
+                        key={tpl.roleKey}
+                        type="button"
+                        onClick={() => handleApplyTemplate(tpl)}
+                        className="text-left p-2.5 rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60 hover:border-indigo-500/40 text-xs transition cursor-pointer"
+                      >
+                        <span className="font-bold text-slate-900 dark:text-white block truncate">{tpl.name}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">{tpl.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <form id="specialist-form" onSubmit={handleSave} className="space-y-4">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Nome do Especialista</label>
+                    <input
+                      required
+                      type="text"
+                      value={form.name || ''}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="Ex: Dr. Roberto Silva"
+                      className="shadcn-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Tag / Identificador (@Comando)
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      disabled={Boolean(editingSpecialist)}
+                      value={form.roleKey || ''}
+                      onChange={(e) => setForm({ ...form, roleKey: e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase() })}
+                      placeholder="Ex: TRIBUTARIO, DEV, SEO"
+                      className="shadcn-input disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Cargo / Especialidade Principal</label>
                   <input
                     required
                     type="text"
-                    value={form.name || ''}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="Ex: Dr. Roberto Silva"
+                    value={form.title || ''}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="Ex: Especialista em Direito Tributário & M&A"
                     className="shadcn-input"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Tag / Identificador (@Comando)
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    disabled={Boolean(editingSpecialist)}
-                    value={form.roleKey || ''}
-                    onChange={(e) => setForm({ ...form, roleKey: e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase() })}
-                    placeholder="Ex: TRIBUTARIO, DEV, SEO"
-                    className="shadcn-input disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Cargo / Especialidade Principal</label>
-                <input
-                  required
-                  type="text"
-                  value={form.title || ''}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="Ex: Especialista em Direito Tributário & M&A"
-                  className="shadcn-input"
-                />
-              </div>
-
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Provedor de IA</label>
-                  <select
-                    value={form.provider || 'gemini'}
-                    onChange={(e) => {
-                      const p = e.target.value;
-                      const defaultModel = (PROVIDER_MODELS[p] && PROVIDER_MODELS[p][0]?.id) || 'gpt-4o';
-                      setForm({ ...form, provider: p, model: defaultModel });
-                      setCustomModelMode(false);
-                    }}
-                    className="shadcn-input cursor-pointer"
-                  >
-                    <option value="gemini">Google Gemini (Recomendado)</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="groq">Groq (LPU Speed)</option>
-                    <option value="ollama">Ollama (Local / Hermes 3)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Modelo</label>
-                    <button
-                      type="button"
-                      onClick={() => setCustomModelMode(!customModelMode)}
-                      className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 underline cursor-pointer"
-                    >
-                      {customModelMode ? 'Ver Lista Padrão' : 'Digitar Outro'}
-                    </button>
-                  </div>
-                  {customModelMode ? (
-                    <input
-                      required
-                      type="text"
-                      value={form.model || ''}
-                      onChange={(e) => setForm({ ...form, model: e.target.value })}
-                      placeholder="gemini-3.8-flash"
-                      className="shadcn-input font-mono"
-                    />
-                  ) : (
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Provedor de IA</label>
                     <select
-                      value={form.model || ''}
-                      onChange={(e) => setForm({ ...form, model: e.target.value })}
-                      className="shadcn-input cursor-pointer font-mono"
+                      value={form.provider || 'gemini'}
+                      onChange={(e) => {
+                        const p = e.target.value;
+                        const defaultModel = (PROVIDER_MODELS[p] && PROVIDER_MODELS[p][0]?.id) || 'gpt-4o';
+                        setForm({ ...form, provider: p, model: defaultModel });
+                        setCustomModelMode(false);
+                      }}
+                      className="shadcn-input cursor-pointer"
                     >
-                      {(PROVIDER_MODELS[form.provider || 'gemini'] || []).map((m) => (
-                        <option key={m.id} value={m.id}>{m.name}</option>
+                      <option value="gemini">Google Gemini (Recomendado)</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="groq">Groq (LPU Speed)</option>
+                      <option value="ollama">Ollama (Local / Hermes 3)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Modelo</label>
+                      <button
+                        type="button"
+                        onClick={() => setCustomModelMode(!customModelMode)}
+                        className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 underline cursor-pointer"
+                      >
+                        {customModelMode ? 'Ver Lista Padrão' : 'Digitar Outro'}
+                      </button>
+                    </div>
+                    {customModelMode ? (
+                      <input
+                        required
+                        type="text"
+                        value={form.model || ''}
+                        onChange={(e) => setForm({ ...form, model: e.target.value })}
+                        placeholder="gemini-2.0-flash"
+                        className="shadcn-input font-mono"
+                      />
+                    ) : (
+                      <select
+                        value={form.model || ''}
+                        onChange={(e) => setForm({ ...form, model: e.target.value })}
+                        className="shadcn-input cursor-pointer font-mono"
+                      >
+                        {(PROVIDER_MODELS[form.provider || 'gemini'] || []).map((m) => (
+                          <option key={m.id} value={m.id}>{m.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                      Temperatura ({form.temperature})
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={form.temperature ?? 0.7}
+                      onChange={(e) => setForm({ ...form, temperature: parseFloat(e.target.value) })}
+                      className="w-full accent-indigo-600 mt-2 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Cor do Avatar</label>
+                    <select
+                      value={form.avatarColor}
+                      onChange={(e) => setForm({ ...form, avatarColor: e.target.value })}
+                      className="shadcn-input cursor-pointer"
+                    >
+                      {COLOR_PRESETS.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
                     </select>
-                  )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Ícone Visual</label>
+                    <select
+                      value={form.iconName}
+                      onChange={(e) => setForm({ ...form, iconName: e.target.value })}
+                      className="shadcn-input cursor-pointer"
+                    >
+                      <option value="BrainCircuit">Cérebro / Estratégia (BrainCircuit)</option>
+                      <option value="PenTool">Caneta / Redação (PenTool)</option>
+                      <option value="Palette">Paleta / Design (Palette)</option>
+                      <option value="Video">Câmera / Vídeo (Video)</option>
+                      <option value="TrendingUp">Gráfico / Tráfego (TrendingUp)</option>
+                      <option value="Code">Código / Dev (Code)</option>
+                      <option value="Scale">Balança / Jurídico (Scale)</option>
+                      <option value="DollarSign">Cifrão / Financeiro (DollarSign)</option>
+                      <option value="Bot">Robô / Geral (Bot)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Temperatura ({form.temperature})
+                    Treinamento & System Prompt (Instruções RTCE do Especialista)
                   </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={form.temperature ?? 0.7}
-                    onChange={(e) => setForm({ ...form, temperature: parseFloat(e.target.value) })}
-                    className="w-full accent-indigo-600 mt-2 cursor-pointer"
+                  <textarea
+                    required
+                    rows={6}
+                    value={form.systemPrompt || ''}
+                    onChange={(e) => setForm({ ...form, systemPrompt: e.target.value })}
+                    placeholder={`Você é [Nome], [Cargo] especialista em...\nSua missão é...\nEstruture suas respostas em:\n1. ...\n2. ...`}
+                    className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-xs text-slate-900 font-mono placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-600"
                   />
                 </div>
-              </div>
 
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Cor do Avatar</label>
-                  <select
-                    value={form.avatarColor}
-                    onChange={(e) => setForm({ ...form, avatarColor: e.target.value })}
-                    className="shadcn-input cursor-pointer"
-                  >
-                    {COLOR_PRESETS.map((c) => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
-                    ))}
-                  </select>
+                <div className="flex items-center justify-between pt-1">
+                  <label className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.generateImage || false}
+                      onChange={(e) => setForm({ ...form, generateImage: e.target.checked })}
+                      className="rounded accent-indigo-600 w-4 h-4"
+                    />
+                    <span>Gera Imagens com IA (DALL-E 3) automaticamente no Squad</span>
+                  </label>
                 </div>
+              </form>
+            </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Ícone Visual</label>
-                  <select
-                    value={form.iconName}
-                    onChange={(e) => setForm({ ...form, iconName: e.target.value })}
-                    className="shadcn-input cursor-pointer"
-                  >
-                    <option value="BrainCircuit">Cérebro / Estratégia (BrainCircuit)</option>
-                    <option value="PenTool">Caneta / Redação (PenTool)</option>
-                    <option value="Palette">Paleta / Design (Palette)</option>
-                    <option value="Video">Câmera / Vídeo (Video)</option>
-                    <option value="TrendingUp">Gráfico / Tráfego (TrendingUp)</option>
-                    <option value="Code">Código / Dev (Code)</option>
-                    <option value="Scale">Balança / Jurídico (Scale)</option>
-                    <option value="DollarSign">Cifrão / Financeiro (DollarSign)</option>
-                    <option value="Bot">Robô / Geral (Bot)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Treinamento & System Prompt (Instruções RTCE do Especialista)
-                </label>
-                <textarea
-                  required
-                  rows={6}
-                  value={form.systemPrompt || ''}
-                  onChange={(e) => setForm({ ...form, systemPrompt: e.target.value })}
-                  placeholder={`Você é [Nome], [Cargo] especialista em...\nSua missão é...\nEstruture suas respostas em:\n1. ...\n2. ...`}
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-xs text-slate-900 font-mono placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:placeholder:text-slate-600"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <label className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.generateImage || false}
-                    onChange={(e) => setForm({ ...form, generateImage: e.target.checked })}
-                    className="rounded accent-indigo-600 w-4 h-4"
-                  />
-                  <span>Gera Imagens com IA (DALL-E 3) automaticamente no Squad</span>
-                </label>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition cursor-pointer"
-                >
-                  Salvar Especialista
-                </button>
-              </div>
-            </form>
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end space-x-3 p-4 px-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="specialist-form"
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition cursor-pointer"
+              >
+                Salvar Especialista
+              </button>
+            </div>
           </div>
         </div>
       )}

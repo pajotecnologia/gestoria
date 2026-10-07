@@ -147,24 +147,34 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
       : {}),
   });
 
-  const defaultModel =
-    provider === 'gemini'
-      ? 'gemini-2.5-flash'
-      : provider === 'groq'
-      ? 'llama-3.3-70b-versatile'
-      : 'gpt-4o';
+  const getProviderModel = (prov: AiProvider, requestedModel?: string | null): string => {
+    if (prov === 'gemini') {
+      if (requestedModel && requestedModel.toLowerCase().startsWith('gemini')) return requestedModel;
+      return 'gemini-2.0-flash';
+    }
+    if (prov === 'groq') {
+      if (requestedModel && (requestedModel.includes('llama') || requestedModel.includes('mixtral') || requestedModel.includes('gemma') || requestedModel.includes('deepseek') || requestedModel.includes('qwen'))) return requestedModel;
+      return 'llama-3.3-70b-versatile';
+    }
+    if (prov === 'ollama') {
+      if (requestedModel && !requestedModel.startsWith('gpt-') && !requestedModel.startsWith('gemini-')) return requestedModel;
+      return 'llama3.1';
+    }
+    // openai
+    if (requestedModel && (requestedModel.startsWith('gpt-') || requestedModel.startsWith('o1') || requestedModel.startsWith('o3') || requestedModel.startsWith('chatgpt'))) return requestedModel;
+    return 'gpt-4o';
+  };
 
-  const modelToUse = options.model || defaultModel;
+  const modelToUse = getProviderModel(provider, options.model);
 
-  // Handle Gemini model candidates if deprecated model name is passed
+  // Handle Gemini model candidates if primary model is unavailable or fails with 404/503
   const geminiCandidates = [
     modelToUse,
-    'gemini-2.5-flash',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
     'gemini-1.5-pro',
     'gemini-2.0-flash-lite'
-  ];
+  ].filter((v, i, a) => a.indexOf(v) === i);
 
   if (provider === 'gemini') {
     let lastErr: any = null;
@@ -243,7 +253,7 @@ export async function generateText(options: ChatOptions): Promise<{ text: string
         if (!result.text.trim()) throw new Error('Provedor retornou resposta vazia.');
         const fallbackModel =
           provider === 'gemini'
-            ? 'gemini-2.5-flash'
+            ? 'gemini-2.0-flash'
             : provider === 'groq'
             ? 'llama-3.3-70b-versatile'
             : provider === 'ollama'
@@ -649,7 +659,7 @@ export async function checkProviderBalance(provider: AiProvider, rawKey: string,
         apiKey: cleanKey,
         baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
       });
-      const testModel = model || 'gemini-2.5-flash';
+      const testModel = (model && model.startsWith('gemini') && model !== 'gemini-2.5-flash') ? model : 'gemini-2.0-flash';
       await client.chat.completions.create({
         model: testModel,
         messages: [{ role: 'user', content: 'ping' }],

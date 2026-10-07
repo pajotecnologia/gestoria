@@ -48,10 +48,10 @@ export type ProviderBalanceInfo = {
 
 export const PROVIDER_MODELS: Record<string, Array<{ id: string; name: string }>> = {
   gemini: [
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Recomendado - Mais Recente)' },
-    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Ultra Rápido & Baixa Latência)' },
-    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Estável)' },
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Recomendado - Ultra Rápido)' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Estável & Alta Capacidade)' },
     { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Raciocínio Avançado)' },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash-Lite (Econômico)' },
   ],
   openai: [
     { id: 'gpt-4o', name: 'GPT-4o (Recomendado para Produção)' },
@@ -76,7 +76,7 @@ export const PROVIDER_MODELS: Record<string, Array<{ id: string; name: string }>
 const emptyForm = {
   name: '',
   provider: 'gemini',
-  model: 'gemini-2.5-flash',
+  model: 'gemini-2.0-flash',
   apiKey: '',
   priority: 100,
   enabled: true
