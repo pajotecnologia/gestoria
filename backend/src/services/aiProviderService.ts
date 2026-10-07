@@ -66,8 +66,8 @@ function isAvailable(provider: AiProvider, identity: string): boolean {
   return (cooldownUntil.get(cooldownKey(provider, identity)) || 0) <= Date.now();
 }
 
-function markCapacity(provider: AiProvider, identity: string): void {
-  cooldownUntil.set(cooldownKey(provider, identity), Date.now() + 60_000);
+function markCapacity(provider: AiProvider, identity: string, durationMs: number = 20_000): void {
+  cooldownUntil.set(cooldownKey(provider, identity), Date.now() + durationMs);
 }
 
 export async function callChat(provider: AiProvider, value: string, options: ChatOptions): Promise<{ text: string; inputTokens: number; outputTokens: number; totalTokens: number }> {
@@ -191,8 +191,9 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
         return { text, inputTokens, outputTokens, totalTokens: completion.usage?.total_tokens || inputTokens + outputTokens };
       } catch (err: any) {
         lastErr = err;
-        // If 404 (model not found/deprecated) or 503 (demand spike), try next candidate
-        if (err?.status === 404 || err?.status === 503) {
+        // If 404 (model not found), 503 (overloaded) or 429 (rate limit on this model), try next candidate model with short delay
+        if (err?.status === 404 || err?.status === 503 || err?.status === 429) {
+          await new Promise((resolve) => setTimeout(resolve, 600));
           continue;
         }
         throw err;
