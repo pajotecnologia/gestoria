@@ -1,16 +1,31 @@
-export const APP_VERSION = '1.5.1';
+export const APP_VERSION = '1.5.2';
+export const APP_BUILD_TIME = '20:45';
+export const APP_BUILD_DATE = '07/10/2026';
 
 export type ReleaseItem = {
   version: string;
   date: string;
+  time?: string;
   title: string;
   changes: string[];
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
   {
+    version: '1.5.2',
+    date: '07/10/2026',
+    time: '20:45',
+    title: 'Auto-Discovery Dinâmico de Modelos & Auto-Cura (Self-Healing) de IA',
+    changes: [
+      'Implementação de Auto-Discovery universal em tempo real: Se qualquer IA descontinuar ou alterar o nome de um modelo, o sistema busca os modelos ativos direto na API do provedor e recupera a resposta sem apresentar erros.',
+      'Sincronização de Modelos em 1 Clique no painel de Provedores de IA para listar os modelos habilitados na conta do usuário.',
+      'Exibição de data e horário da build logo abaixo do badge de versão no cabeçalho do sistema.',
+    ],
+  },
+  {
     version: '1.5.1',
     date: '07/10/2026',
+    time: '19:25',
     title: 'Ajustes no Fallback de IA & Otimização do Modal de Especialistas',
     changes: [
       'Correção do roteamento e fallback dinâmico entre provedores de IA (OpenAI, Gemini, Groq e Ollama), garantindo compatibilidade automática de modelos durante alternâncias de contingência.',

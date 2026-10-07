@@ -37,7 +37,7 @@ import { AdStudio } from './components/AdStudio';
 import { ExecutiveReports } from './components/ExecutiveReports';
 import { HelpGuideModal } from './components/HelpGuideModal';
 import { CommandPalette } from './components/CommandPalette';
-import { APP_VERSION, RELEASE_HISTORY } from './version';
+import { APP_VERSION, APP_BUILD_TIME, APP_BUILD_DATE, RELEASE_HISTORY } from './version';
 import {
   Tooltip,
   TooltipContent,
@@ -589,11 +589,16 @@ export const App: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setReleaseModalOpen(true)}
-                className="flex h-9 items-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2.5 text-xs font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20 transition cursor-pointer"
-                title="Ver notas de versão"
+                className="flex flex-col items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/10 px-2.5 py-0.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-500/20 transition cursor-pointer leading-tight min-w-[58px]"
+                title={`Versão ${APP_VERSION} (${APP_BUILD_DATE} às ${APP_BUILD_TIME}) - Clique para ver notas de versão`}
               >
-                <History className="h-3.5 w-3.5" />
-                <span>v{APP_VERSION}</span>
+                <div className="flex items-center gap-1 text-[11px] font-bold">
+                  <History className="h-3 w-3 text-indigo-500 shrink-0" />
+                  <span>v{APP_VERSION}</span>
+                </div>
+                <span className="text-[9px] font-mono font-medium text-indigo-500/80 dark:text-indigo-400/80">
+                  {APP_BUILD_TIME}
+                </span>
               </button>
 
               {/* Theme Toggle Button (Light / Dark) */}
@@ -709,7 +714,7 @@ export const App: React.FC = () => {
                   <History className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />
                   <DialogTitle>Atualizações do Sistema</DialogTitle>
                 </div>
-                <DialogDescription>Versão Atual: v{APP_VERSION}</DialogDescription>
+                <DialogDescription>Versão Atual: v{APP_VERSION} • Atualizado em {APP_BUILD_DATE} às {APP_BUILD_TIME}</DialogDescription>
               </DialogHeader>
 
               <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
@@ -726,7 +731,7 @@ export const App: React.FC = () => {
                       </div>
                       <div className="text-right text-[10px] text-slate-500 dark:text-zinc-500">
                         <div className="font-mono text-indigo-600 dark:text-indigo-300 font-semibold">v{release.version}</div>
-                        <div>{release.date}</div>
+                        <div>{release.date}{release.time ? ` às ${release.time}` : ''}</div>
                       </div>
                     </div>
                     <ul className="mt-3 space-y-1.5">
