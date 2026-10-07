@@ -748,16 +748,42 @@ export async function checkProviderBalance(provider: AiProvider, rawKey: string,
   }
 
   if (provider === 'groq') {
+    let availableModels: string[] = [];
+    try {
+      const modelsRes = await axios.get('https://api.groq.com/openai/v1/models', {
+        headers: { Authorization: `Bearer ${cleanKey}` },
+        timeout: 5000
+      });
+      availableModels = (modelsRes.data?.data || []).map((m: any) => m.id);
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        const latencyMs = Date.now() - startTime;
+        return {
+          provider,
+          status: 'invalid_key',
+          balanceDisplay: 'Chave Inválida (401)',
+          hasCredits: false,
+          billingUrl: 'https://console.groq.com/keys',
+          message: 'Chave da Groq incorreta, expirada ou revogada.',
+          latencyMs
+        };
+      }
+    }
+
     const groqCandidates = [
       model,
+      ...(availableModels.length > 0 ? availableModels : []),
       'llama-3.3-70b-versatile',
+      'llama-3.1-70b-versatile',
       'llama3-70b-8192',
       'llama3-8b-8192',
-      'mixtral-8x7b-32768'
+      'mixtral-8x7b-32768',
+      'gemma2-9b-it'
     ].filter(Boolean) as string[];
 
+    const uniqueCandidates = groqCandidates.filter((v, i, a) => a.indexOf(v) === i);
     let lastErr: any = null;
-    for (const testModel of groqCandidates) {
+    for (const testModel of uniqueCandidates) {
       try {
         const client = new OpenAI({
           apiKey: cleanKey,
