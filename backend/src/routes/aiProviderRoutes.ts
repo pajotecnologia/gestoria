@@ -4,7 +4,7 @@ import { tenantMiddleware } from '../middlewares/tenantMiddleware';
 import { requireRoles } from '../middlewares/authorization';
 import { writeAuditLog } from '../services/auditLog';
 import { encryptCredential, decryptCredential } from '../services/aiCredentialCrypto';
-import { callChat, checkProviderBalance, AiProvider } from '../services/aiProviderService';
+import { callChat, checkProviderBalance, discoverAvailableModels, AiProvider } from '../services/aiProviderService';
 import { z } from 'zod';
 
 const router = Router();
@@ -230,6 +230,31 @@ const handleTestUnsaved = async (req: Request, res: Response): Promise<void> => 
 router.post('/test-unsaved', handleTestUnsaved);
 router.post('/test-connection', handleTestUnsaved);
 router.post('/check-balance', handleTestUnsaved);
+
+// Descobrir modelos disponíveis dinamicamente pela API do provedor
+router.post('/discover-models', async (req: Request, res: Response): Promise<void> => {
+  const { provider, apiKey, accountId } = req.body;
+  let keyToUse = apiKey ? String(apiKey).trim() : '';
+
+  if (!keyToUse && accountId) {
+    const account = await prisma.aiProviderAccount.findFirst({
+      where: { id: accountId, tenantId: req.tenantId! }
+    });
+    if (account) keyToUse = decryptCredential(account.encryptedKey);
+  }
+
+  if (!provider || !keyToUse) {
+    res.status(400).json({ error: 'Provedor e Chave são obrigatórios para busca de modelos.' });
+    return;
+  }
+
+  try {
+    const models = await discoverAvailableModels(provider as AiProvider, keyToUse, true);
+    res.json({ success: true, data: models });
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message || 'Falha ao consultar catálogo de modelos.' });
+  }
+});
 
 router.get('/:id/health', async (req: Request, res: Response): Promise<void> => {
   const account = await prisma.aiProviderAccount.findFirst({

@@ -70,6 +70,162 @@ function markCapacity(provider: AiProvider, identity: string, durationMs: number
   cooldownUntil.set(cooldownKey(provider, identity), Date.now() + durationMs);
 }
 
+export interface DiscoveredModel {
+  id: string;
+  name: string;
+}
+
+const discoveredModelsCache = new Map<string, { timestamp: number; models: DiscoveredModel[] }>();
+
+export async function discoverAvailableModels(
+  provider: AiProvider,
+  credential: string,
+  forceRefresh = false
+): Promise<DiscoveredModel[]> {
+  const cleanKey = credential.trim();
+  if (!cleanKey) return [];
+
+  const cacheKey = `${provider}:${cleanKey.slice(-20)}`;
+  const cached = discoveredModelsCache.get(cacheKey);
+  if (!forceRefresh && cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
+    return cached.models;
+  }
+
+  const result: DiscoveredModel[] = [];
+
+  if (provider === 'groq') {
+    try {
+      const response = await axios.get('https://api.groq.com/openai/v1/models', {
+        headers: { Authorization: `Bearer ${cleanKey}` },
+        timeout: 6000
+      });
+      const data: Array<{ id: string }> = response.data?.data || [];
+      const excluded = /whisper|audio|guard|tts|embed|rerank/i;
+      const chatModels = data
+        .map((m) => m.id)
+        .filter((id) => !excluded.test(id));
+
+      chatModels.sort((a, b) => {
+        const score = (id: string) => {
+          if (id.includes('3.3-70b')) return 100;
+          if (id.includes('3.1-70b') || id.includes('3-70b')) return 90;
+          if (id.includes('70b')) return 85;
+          if (id.includes('3.1-8b') || id.includes('3-8b')) return 80;
+          if (id.includes('8b')) return 75;
+          if (id.includes('mixtral')) return 70;
+          if (id.includes('deepseek')) return 65;
+          if (id.includes('gemma')) return 60;
+          return 10;
+        };
+        return score(b) - score(a);
+      });
+
+      for (const id of chatModels) {
+        result.push({ id, name: id });
+      }
+    } catch {
+      // ignore
+    }
+  } else if (provider === 'openai') {
+    try {
+      const response = await axios.get('https://api.openai.com/v1/models', {
+        headers: { Authorization: `Bearer ${cleanKey}` },
+        timeout: 6000
+      });
+      const data: Array<{ id: string }> = response.data?.data || [];
+      const chatModels = data
+        .map((m) => m.id)
+        .filter((id) => /^(gpt-4|o1|o3|chatgpt|gpt-3\.5)/i.test(id) && !/realtime|audio|transcription|moderation|embedding|tts|dall/i.test(id));
+
+      chatModels.sort((a, b) => {
+        const score = (id: string) => {
+          if (id === 'gpt-4o') return 100;
+          if (id === 'gpt-4o-mini') return 90;
+          if (id.startsWith('o1')) return 85;
+          if (id.startsWith('o3')) return 80;
+          if (id.startsWith('gpt-4-turbo')) return 75;
+          return 10;
+        };
+        return score(b) - score(a);
+      });
+
+      for (const id of chatModels) {
+        result.push({ id, name: id });
+      }
+    } catch {
+      // ignore
+    }
+  } else if (provider === 'gemini') {
+    try {
+      const response = await axios.get(`https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`, {
+        timeout: 6000
+      });
+      const data: Array<{ name: string; supportedGenerationMethods?: string[] }> = response.data?.models || [];
+      const chatModels = data
+        .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
+        .map((m) => m.name.replace(/^models\//, ''))
+        .filter((id) => /gemini/i.test(id) && !/embedding|aqa|imagen/i.test(id));
+
+      chatModels.sort((a, b) => {
+        const score = (id: string) => {
+          if (id === 'gemini-2.0-flash') return 100;
+          if (id === 'gemini-1.5-flash') return 90;
+          if (id === 'gemini-1.5-pro') return 80;
+          if (id === 'gemini-2.0-flash-lite') return 70;
+          return 10;
+        };
+        return score(b) - score(a);
+      });
+
+      for (const id of chatModels) {
+        result.push({ id, name: id });
+      }
+    } catch {
+      try {
+        const response = await axios.get('https://generativelanguage.googleapis.com/v1beta/openai/models', {
+          headers: { Authorization: `Bearer ${cleanKey}` },
+          timeout: 6000
+        });
+        const data: Array<{ id: string }> = response.data?.data || [];
+        for (const m of data) {
+          if (/gemini/i.test(m.id)) result.push({ id: m.id, name: m.id });
+        }
+      } catch {
+        // ignore
+      }
+    }
+  } else if (provider === 'ollama') {
+    let baseUrl = cleanKey.split('|')[0].split('###')[0].trim().replace(/\/$/, '');
+    const headers: Record<string, string> = {};
+    if (cleanKey.includes('|')) headers['Authorization'] = `Bearer ${cleanKey.split('|')[1].trim()}`;
+    else if (cleanKey.includes('###')) headers['Authorization'] = `Bearer ${cleanKey.split('###')[1].trim()}`;
+
+    try {
+      const response = await axios.get(`${baseUrl}/api/tags`, { headers, timeout: 4000 });
+      const models: Array<{ name: string }> = response.data?.models || [];
+      for (const m of models) {
+        result.push({ id: m.name, name: m.name });
+      }
+    } catch {
+      try {
+        const response = await axios.get(`${baseUrl}/ollama/api/tags`, { headers, timeout: 4000 });
+        const models: Array<{ name: string }> = response.data?.models || [];
+        for (const m of models) {
+          result.push({ id: m.name, name: m.name });
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  if (result.length > 0) {
+    discoveredModelsCache.set(cacheKey, { timestamp: Date.now(), models: result });
+  }
+
+  return result;
+}
+
 export async function callChat(provider: AiProvider, value: string, options: ChatOptions): Promise<{ text: string; inputTokens: number; outputTokens: number; totalTokens: number }> {
   if (provider === 'ollama') {
     let baseUrl = value.trim();
@@ -102,7 +258,6 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
     for (const endpoint of candidateEndpoints) {
       try {
         if (endpoint.includes('/chat/completions')) {
-          // OpenAI compatible format
           const response = await axios.post(endpoint, {
             model: options.model || 'llama3.1',
             messages: options.messages,
@@ -113,7 +268,6 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
           const outputTokens = Number(response.data?.usage?.completion_tokens || 0);
           return { text, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
         } else {
-          // Ollama format
           const response = await axios.post(endpoint, {
             model: options.model || 'llama3.1',
             messages: options.messages,
@@ -127,11 +281,9 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
         }
       } catch (err: any) {
         lastError = err;
-        // If it's a 404 or 405 or HTML response, try next candidate endpoint
         if (err?.response?.status === 404 || err?.response?.status === 405 || typeof err?.response?.data === 'string') {
           continue;
         }
-        // If it's an auth error (401/403) or connection refused, throw immediately
         throw err;
       }
     }
@@ -149,7 +301,7 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
 
   const getProviderModel = (prov: AiProvider, requestedModel?: string | null): string => {
     if (prov === 'gemini') {
-      if (requestedModel && requestedModel.toLowerCase().startsWith('gemini')) return requestedModel;
+      if (requestedModel && requestedModel.toLowerCase().startsWith('gemini') && requestedModel !== 'gemini-2.5-flash') return requestedModel;
       return 'gemini-2.0-flash';
     }
     if (prov === 'groq') {
@@ -167,84 +319,64 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
 
   const modelToUse = getProviderModel(provider, options.model);
 
-  // Handle Gemini model candidates if primary model is unavailable or fails with 404/503
-  const geminiCandidates = [
-    modelToUse,
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gemini-2.0-flash-lite'
-  ].filter((v, i, a) => a.indexOf(v) === i);
+  // Standard provider candidate lists
+  const defaultCandidates: Record<AiProvider, string[]> = {
+    gemini: [modelToUse, 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-lite'],
+    groq: [modelToUse, 'llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
+    openai: [modelToUse, 'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'o1-mini'],
+    ollama: [modelToUse, 'llama3.1', 'hermes3:8b', 'qwen2.5', 'mistral']
+  };
 
-  if (provider === 'gemini') {
-    let lastErr: any = null;
-    for (const m of geminiCandidates) {
-      try {
-        const completion = await client.chat.completions.create({
-          model: m,
-          temperature: options.temperature ?? 0.7,
-          messages: options.messages,
-        });
-        const text = completion.choices[0]?.message?.content || '';
-        const inputTokens = completion.usage?.prompt_tokens || 0;
-        const outputTokens = completion.usage?.completion_tokens || 0;
-        return { text, inputTokens, outputTokens, totalTokens: completion.usage?.total_tokens || inputTokens + outputTokens };
-      } catch (err: any) {
-        lastErr = err;
-        // If 404 (model not found), 503 (overloaded) or 429 (rate limit on this model), try next candidate model with short delay
-        if (err?.status === 404 || err?.status === 503 || err?.status === 429) {
-          await new Promise((resolve) => setTimeout(resolve, 600));
-          continue;
-        }
-        throw err;
+  const initialCandidates = (defaultCandidates[provider] || [modelToUse]).filter((v, i, a) => a.indexOf(v) === i);
+
+  let lastErr: any = null;
+  for (const m of initialCandidates) {
+    try {
+      const completion = await client.chat.completions.create({
+        model: m,
+        temperature: options.temperature ?? 0.7,
+        messages: options.messages,
+      });
+      const text = completion.choices[0]?.message?.content || '';
+      const inputTokens = completion.usage?.prompt_tokens || 0;
+      const outputTokens = completion.usage?.completion_tokens || 0;
+      return { text, inputTokens, outputTokens, totalTokens: completion.usage?.total_tokens || inputTokens + outputTokens };
+    } catch (err: any) {
+      lastErr = err;
+      if (err?.status === 404 || err?.status === 503 || err?.status === 429) {
+        await new Promise((resolve) => setTimeout(resolve, provider === 'gemini' ? 500 : 250));
+        continue;
       }
+      throw err;
     }
-    throw lastErr;
   }
 
-  // Handle Groq candidate models
-  const groqCandidates = [
-    modelToUse,
-    'llama-3.3-70b-versatile',
-    'llama3-70b-8192',
-    'llama3-8b-8192',
-    'mixtral-8x7b-32768'
-  ].filter((v, i, a) => a.indexOf(v) === i);
-
-  if (provider === 'groq') {
-    let lastErr: any = null;
-    for (const m of groqCandidates) {
-      try {
-        const completion = await client.chat.completions.create({
-          model: m,
-          temperature: options.temperature ?? 0.7,
-          messages: options.messages,
-        });
-        const text = completion.choices[0]?.message?.content || '';
-        const inputTokens = completion.usage?.prompt_tokens || 0;
-        const outputTokens = completion.usage?.completion_tokens || 0;
-        return { text, inputTokens, outputTokens, totalTokens: completion.usage?.total_tokens || inputTokens + outputTokens };
-      } catch (err: any) {
-        lastErr = err;
-        if (err?.status === 404 || err?.status === 503 || err?.status === 429) {
-          await new Promise((resolve) => setTimeout(resolve, 400));
+  // AUTO-DISCOVERY SELF-HEALING: If initial candidates failed with 404, query provider's live models list
+  if (lastErr?.status === 404) {
+    try {
+      const liveModels = await discoverAvailableModels(provider, value, true);
+      const freshCandidates = liveModels.map((m) => m.id).filter((id) => !initialCandidates.includes(id));
+      for (const m of freshCandidates) {
+        try {
+          const completion = await client.chat.completions.create({
+            model: m,
+            temperature: options.temperature ?? 0.7,
+            messages: options.messages,
+          });
+          const text = completion.choices[0]?.message?.content || '';
+          const inputTokens = completion.usage?.prompt_tokens || 0;
+          const outputTokens = completion.usage?.completion_tokens || 0;
+          return { text, inputTokens, outputTokens, totalTokens: completion.usage?.total_tokens || inputTokens + outputTokens };
+        } catch {
           continue;
         }
-        throw err;
       }
+    } catch {
+      // ignore
     }
-    throw lastErr;
   }
 
-  const completion = await client.chat.completions.create({
-    model: modelToUse,
-    temperature: options.temperature ?? 0.7,
-    messages: options.messages,
-  });
-  const text = completion.choices[0]?.message?.content || '';
-  const inputTokens = completion.usage?.prompt_tokens || 0;
-  const outputTokens = completion.usage?.completion_tokens || 0;
-  return { text, inputTokens, outputTokens, totalTokens: completion.usage?.total_tokens || inputTokens + outputTokens };
+  throw lastErr;
 }
 
 export async function generateText(options: ChatOptions): Promise<{ text: string; provider: AiProvider }> {

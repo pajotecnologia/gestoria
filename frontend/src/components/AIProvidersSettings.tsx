@@ -99,6 +99,8 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
   const [isCheckingAll, setIsCheckingAll] = useState(false);
   const [modalTestLoading, setModalTestLoading] = useState(false);
   const [modalTestResult, setModalTestResult] = useState<ProviderBalanceInfo | null>(null);
+  const [liveDiscoveredModels, setLiveDiscoveredModels] = useState<Array<{ id: string; name: string }>>([]);
+  const [isSyncingModels, setIsSyncingModels] = useState(false);
 
   const load = async () => {
     try {
@@ -242,6 +244,35 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
       });
     } finally {
       setModalTestLoading(false);
+    }
+  };
+
+  const handleSyncModels = async () => {
+    setIsSyncingModels(true);
+    try {
+      const res = await fetch(apiUrl('/api/ai-providers/discover-models'), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${jwtToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: form.provider,
+          apiKey: form.apiKey,
+          accountId: editingAccount?.id
+        })
+      });
+      const data = await res.json();
+      if (res.ok && Array.isArray(data.data) && data.data.length > 0) {
+        setLiveDiscoveredModels(data.data);
+        if (!data.data.some((m: any) => m.id === form.model)) {
+          setForm(prev => ({ ...prev, model: data.data[0].id }));
+        }
+        setMessage(`✅ ${data.data.length} modelos sincronizados com sucesso direto da API do provedor!`);
+      } else {
+        setMessage(data.error || 'Nenhum modelo retornado para a credencial informada.');
+      }
+    } catch (err: any) {
+      setMessage(`Falha ao sincronizar modelos: ${err.message}`);
+    } finally {
+      setIsSyncingModels(false);
     }
   };
 
@@ -705,18 +736,29 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-medium text-slate-700 dark:text-zinc-300">Modelo *</label>
-                    <button
-                      type="button"
-                      onClick={() => setCustomModelMode(!customModelMode)}
-                      className="text-[10px] text-indigo-500 hover:underline dark:text-indigo-400"
-                    >
-                      {customModelMode ? 'Ver Lista' : 'Digitar Outro'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSyncModels}
+                        disabled={isSyncingModels}
+                        className="text-[10px] text-indigo-500 hover:underline dark:text-indigo-400 font-semibold cursor-pointer disabled:opacity-50"
+                        title="Buscar catálogo de modelos em tempo real na API"
+                      >
+                        {isSyncingModels ? 'Buscando...' : '⚡ Sincronizar Modelos'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCustomModelMode(!customModelMode)}
+                        className="text-[10px] text-slate-500 hover:underline dark:text-zinc-400"
+                      >
+                        {customModelMode ? 'Ver Lista' : 'Digitar Outro'}
+                      </button>
+                    </div>
                   </div>
                   {customModelMode ? (
                     <input
                       required
-                      placeholder="ID do modelo (ex: gemini-2.5-flash)"
+                      placeholder="ID do modelo (ex: llama-3.3-70b-versatile)"
                       value={form.model}
                       onChange={e => setForm({ ...form, model: e.target.value })}
                       className="shadcn-input"
@@ -725,11 +767,26 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
                     <select
                       value={form.model}
                       onChange={e => setForm({ ...form, model: e.target.value })}
-                      className="shadcn-input"
+                      className="shadcn-input font-mono"
                     >
-                      {(PROVIDER_MODELS[form.provider] || []).map(m => (
-                        <option key={m.id} value={m.id}>{m.name}</option>
-                      ))}
+                      {liveDiscoveredModels.length > 0 ? (
+                        <>
+                          <optgroup label="Modelos Detectados na sua Conta">
+                            {liveDiscoveredModels.map(m => (
+                              <option key={m.id} value={m.id}>{m.name || m.id}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Modelos Padrão do Sistema">
+                            {(PROVIDER_MODELS[form.provider] || []).map(m => (
+                              <option key={`fallback-${m.id}`} value={m.id}>{m.name}</option>
+                            ))}
+                          </optgroup>
+                        </>
+                      ) : (
+                        (PROVIDER_MODELS[form.provider] || []).map(m => (
+                          <option key={m.id} value={m.id}>{m.name}</option>
+                        ))
+                      )}
                     </select>
                   )}
                 </div>
