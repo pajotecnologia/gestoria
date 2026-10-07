@@ -17,14 +17,15 @@ const PROVIDER_MODELS: Record<string, ModelOption[]> = {
     { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' }
   ],
   gemini: [
-    { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Recomendado - Mais Recente)' },
-    { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash (Estável & Rápido)' },
-    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite (Ultra Rápido & Econômico)' },
-    { id: 'gemini-flash-lite-latest', name: 'Gemini Flash Lite (Mais Recente)' }
+    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Recomendado - Ultra Rápido)' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Estável & Alta Capacidade)' },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Raciocínio Avançado)' },
+    { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash-Lite (Econômico)' }
   ],
   groq: [
-    { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B (Groq LPU Speed)' },
-    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Sub-second Latency)' },
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Recomendado - Groq LPU Speed)' },
+    { id: 'llama3-70b-8192', name: 'Llama 3 70B (Alto Desempenho)' },
+    { id: 'llama3-8b-8192', name: 'Llama 3 8B (Ultra Rápido)' },
     { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' }
   ],
   ollama: [

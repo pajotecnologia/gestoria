@@ -61,9 +61,10 @@ export const PROVIDER_MODELS: Record<string, Array<{ id: string; name: string }>
     { id: 'o1-preview', name: 'o1-preview (Raciocínio Avançado)' },
   ],
   groq: [
-    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Groq LPU Speed)' },
-    { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Sub-second Latency)' },
-    { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B' },
+    { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Recomendado - Groq LPU Speed)' },
+    { id: 'llama3-70b-8192', name: 'Llama 3 70B (Alto Desempenho)' },
+    { id: 'llama3-8b-8192', name: 'Llama 3 8B (Ultra Rápido)' },
+    { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B (32k Contexto)' },
   ],
   ollama: [
     { id: 'hermes3:8b', name: 'Hermes 3 (8B - Ideal para Especialistas & Debates)' },

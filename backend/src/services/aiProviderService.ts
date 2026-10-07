@@ -202,6 +202,40 @@ export async function callChat(provider: AiProvider, value: string, options: Cha
     throw lastErr;
   }
 
+  // Handle Groq candidate models
+  const groqCandidates = [
+    modelToUse,
+    'llama-3.3-70b-versatile',
+    'llama3-70b-8192',
+    'llama3-8b-8192',
+    'mixtral-8x7b-32768'
+  ].filter((v, i, a) => a.indexOf(v) === i);
+
+  if (provider === 'groq') {
+    let lastErr: any = null;
+    for (const m of groqCandidates) {
+      try {
+        const completion = await client.chat.completions.create({
+          model: m,
+          temperature: options.temperature ?? 0.7,
+          messages: options.messages,
+        });
+        const text = completion.choices[0]?.message?.content || '';
+        const inputTokens = completion.usage?.prompt_tokens || 0;
+        const outputTokens = completion.usage?.completion_tokens || 0;
+        return { text, inputTokens, outputTokens, totalTokens: completion.usage?.total_tokens || inputTokens + outputTokens };
+      } catch (err: any) {
+        lastErr = err;
+        if (err?.status === 404 || err?.status === 503 || err?.status === 429) {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastErr;
+  }
+
   const completion = await client.chat.completions.create({
     model: modelToUse,
     temperature: options.temperature ?? 0.7,
@@ -714,52 +748,68 @@ export async function checkProviderBalance(provider: AiProvider, rawKey: string,
   }
 
   if (provider === 'groq') {
-    try {
-      const client = new OpenAI({
-        apiKey: cleanKey,
-        baseURL: 'https://api.groq.com/openai/v1'
-      });
-      const testModel = model || 'llama-3.3-70b-versatile';
-      await client.chat.completions.create({
-        model: testModel,
-        messages: [{ role: 'user', content: 'ping' }],
-        max_tokens: 1,
-        temperature: 0
-      });
-      const latencyMs = Date.now() - startTime;
-      return {
-        provider,
-        status: 'active',
-        balanceDisplay: 'Cota Ativa (Groq LPU)',
-        hasCredits: true,
-        billingUrl: 'https://console.groq.com/keys',
-        message: `Conexão validada em ${latencyMs}ms. Velocidade LPU ativa.`,
-        latencyMs
-      };
-    } catch (err: any) {
-      const latencyMs = Date.now() - startTime;
-      const errMsg = String(err?.message || err?.response?.data?.error?.message || err);
-      const status = err?.status || err?.response?.status;
-      if (status === 429) {
+    const groqCandidates = [
+      model,
+      'llama-3.3-70b-versatile',
+      'llama3-70b-8192',
+      'llama3-8b-8192',
+      'mixtral-8x7b-32768'
+    ].filter(Boolean) as string[];
+
+    let lastErr: any = null;
+    for (const testModel of groqCandidates) {
+      try {
+        const client = new OpenAI({
+          apiKey: cleanKey,
+          baseURL: 'https://api.groq.com/openai/v1'
+        });
+        await client.chat.completions.create({
+          model: testModel,
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 1,
+          temperature: 0
+        });
+        const latencyMs = Date.now() - startTime;
         return {
           provider,
-          status: 'rate_limit',
-          balanceDisplay: 'Limite por minuto (Groq)',
-          hasCredits: false,
+          status: 'active',
+          balanceDisplay: 'Cota Ativa (Groq LPU)',
+          hasCredits: true,
           billingUrl: 'https://console.groq.com/keys',
-          message: 'Limite de tokens ou requisições da Groq excedido.',
+          message: `Conexão validada em ${latencyMs}ms (${testModel}). Velocidade LPU ativa.`,
           latencyMs
         };
+      } catch (err: any) {
+        lastErr = err;
+        if (err?.status === 404 || err?.status === 503) {
+          continue;
+        }
+        break;
       }
+    }
+
+    const latencyMs = Date.now() - startTime;
+    const errMsg = String(lastErr?.message || lastErr?.response?.data?.error?.message || lastErr);
+    const status = lastErr?.status || lastErr?.response?.status;
+    if (status === 429) {
       return {
         provider,
-        status: 'invalid_key',
-        balanceDisplay: 'Erro Groq',
+        status: 'rate_limit',
+        balanceDisplay: 'Limite por minuto (Groq)',
         hasCredits: false,
-        message: `Falha: ${errMsg}`,
+        billingUrl: 'https://console.groq.com/keys',
+        message: 'Limite de tokens ou requisições da Groq excedido.',
         latencyMs
       };
     }
+    return {
+      provider,
+      status: 'invalid_key',
+      balanceDisplay: 'Erro Groq',
+      hasCredits: false,
+      message: `Falha: ${errMsg}`,
+      latencyMs
+    };
   }
 
   if (provider === 'ollama') {
