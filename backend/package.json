@@ -1,6 +1,6 @@
 {
   "name": "gestoria-backend",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "description": "Backend Multi-Tenant para Gestão de Agentes de IA",
   "main": "dist/index.js",
   "scripts": {

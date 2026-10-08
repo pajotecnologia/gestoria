@@ -1,5 +1,5 @@
-export const APP_VERSION = '1.5.4';
-export const APP_BUILD_TIME = '20:58';
+export const APP_VERSION = '1.5.5';
+export const APP_BUILD_TIME = '21:05';
 export const APP_BUILD_DATE = '07/10/2026';
 
 export type ReleaseItem = {
@@ -11,6 +11,17 @@ export type ReleaseItem = {
 };
 
 export const RELEASE_HISTORY: ReleaseItem[] = [
+  {
+    version: '1.5.5',
+    date: '07/10/2026',
+    time: '21:05',
+    title: 'Guia de Motores Visuais & Esclarecimentos de Saldos no Painel',
+    changes: [
+      'Inclusão do Guia de Motores Visuais e Roteamento Inteligente na tela de Provedores de IA, explicando detalhadamente a dinâmica entre DALL-E 3 (OpenAI), Flux AI Ultra HD e as diferenças de faturamento (ChatGPT Plus vs API).',
+      'Inclusão de badges informativos e tooltips explicativos no Ad Creative Studio e na Central de Ajuda (Help Guide).',
+      'Transparência total para o usuário entender como os créditos de IA funcionam e que a alternância para Flux AI é um recurso inteligente de auto-cura.',
+    ],
+  },
   {
     version: '1.5.4',
     date: '07/10/2026',

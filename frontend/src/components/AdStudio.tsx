@@ -523,6 +523,13 @@ export const AdStudio: React.FC<{ jwtToken: string }> = ({ jwtToken }) => {
                   </span>
                 </button>
               </div>
+
+              <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-950 p-2.5 rounded-xl border border-slate-200/60 dark:border-zinc-800/60">
+                <Sparkles className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+                <span>
+                  <strong>Motor Visual:</strong> Integrado ao <strong>DALL-E 3 (OpenAI)</strong> com contingência inteligente em tempo real via <strong>Flux AI Ultra HD</strong>.
+                </span>
+              </div>
             </div>
 
             {/* Galeria de Imagens Geradas */}

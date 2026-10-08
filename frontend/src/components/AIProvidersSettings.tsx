@@ -444,6 +444,55 @@ export const AIProvidersSettings: React.FC<{ jwtToken: string }> = ({ jwtToken }
         </div>
       )}
 
+      {/* Guia de Motores Visuais & Geração de Imagens com Auto-Cura */}
+      <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-cyan-500/5 p-5 shadow-sm space-y-3 dark:border-indigo-500/15">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 dark:text-indigo-400">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Guia de Geração de Imagens & Roteamento Inteligente
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">
+              Como o sistema gera as peças visuais de anúncios e lida com créditos de forma transparente:
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+          <div className="rounded-xl border border-slate-200/80 bg-white/80 p-3.5 dark:border-zinc-800 dark:bg-zinc-900/60 space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+              <Zap className="h-3.5 w-3.5" />
+              <span>1. Motor DALL-E 3 (OpenAI)</span>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
+              Com uma chave OpenAI com <strong>saldo ativo na API</strong>, o sistema gera imagens com DALL-E 3 em resolução máxima e cortes 1:1, 9:16 e 16:9.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              <span>2. Auto-Cura Flux AI (Tempo Real)</span>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
+              Caso sua chave OpenAI esteja sem saldo ou pausada, o motor <strong>Flux AI Ultra HD</strong> é acionado em tempo real gerando a arte 100% fiel ao briefing.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 space-y-1.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-3.5 w-3.5" />
+              <span>3. ChatGPT Plus vs API OpenAI</span>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
+              A assinatura do ChatGPT Plus <em>(chat.openai.com)</em> <strong>não</strong> inclui créditos de API. Para usar o DALL-E 3 oficial, adicione créditos pré-pagos em <em>platform.openai.com</em>.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Lista de Contas Cadastradas */}
       <div className="space-y-4">
         {accounts.length === 0 ? (
